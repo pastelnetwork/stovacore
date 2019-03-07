@@ -1,6 +1,10 @@
 import React, {Component} from 'react';
 import {Form, FormGroup, Input, Button} from 'reactstrap';
 import {getRenderedErrors} from "../utils";
+import * as settings from '../settings';
+import * as ajaxEntities from '../ajaxEntities';
+import axios from 'axios';
+import {saveAPIToken, startAjax, stopAjax} from "../actions";
 
 export class Register extends Component {
     constructor(props) {
@@ -23,15 +27,28 @@ export class Register extends Component {
     onChange = (e) => {
         this.setState({[e.target.name]: e.target.value, errors: this.emptyErrors});
     };
+    getDataForAjax = () => ({
+        username: this.state.username,
+        password1: this.state.password1,
+        password2: this.state.password2
+    });
 
     handleSubmit = () => {
-        // TODO: maybe local validation
-        // TODO: send data local BE
-        // TODO: render errors (if any)
-        // TODO: get new data with PK and signature
-        // TODO: send data to cloud BE
-        // TODO: render errors (if any)
+        this.props.dispatch(startAjax(ajaxEntities.REGISTER));
+        axios.post(settings.SIGN_RESOURCE_URL, this.getDataForAjax()).then((resp) => {
+            let data = resp.data;
+            return axios.post(settings.REGISTER_RESOURCE_URL, data)
+        }).then((resp) => {
+            const key = resp.data.key;
+            this.props.dispatch(saveAPIToken(key));
+            this.props.dispatch(stopAjax(ajaxEntities.REGISTER));
+        }).catch((err) => {
+            const errors = err.response.data;
+            this.setState({errors: {...this.state.errors, ...errors}});
+            this.props.dispatch(stopAjax(ajaxEntities.REGISTER));
+        });
     };
+
     render() {
         let nonFieldErrors = getRenderedErrors(this.state.errors.non_field_errors);
         let usernameErrors = getRenderedErrors(this.state.errors.username);
@@ -41,7 +58,7 @@ export class Register extends Component {
         return <Form>
             <FormGroup>
                 <Input type="text" name="username" id="idUsername" placeholder="Login"
-                       value={this.state.login} onChange={this.onChange}/>
+                       value={this.state.username} onChange={this.onChange}/>
                 {usernameErrors}
             </FormGroup>
             <FormGroup>

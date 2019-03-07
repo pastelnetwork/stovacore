@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders',
     'core',
     'api',
 ]
@@ -45,6 +46,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -150,6 +152,9 @@ PASTEL_TRADE_PRIVKEY = os.path.join(PASTEL_BASEDIR, "pymn", "config", "private.k
 PASTEL_RPC_IP = os.environ["PASTEL_RPC_IP"]
 PASTEL_RPC_PORT = int(os.environ["PASTEL_RPC_PORT"])
 PASTEL_RPC_PUBKEY = base64.b64decode(os.environ["PASTEL_RPC_PUBKEY"])
+
+# TODO: use whitelist with localhost instead
+CORS_ORIGIN_ALLOW_ALL = True
 
 try:
     from frontend.settings_dev import *
