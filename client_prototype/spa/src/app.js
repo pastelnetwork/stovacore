@@ -13,19 +13,21 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import Main from "./components/MainComponent";
 import history from './history';
 
-const token = localStorage.getItem('token');
+
 let defaultAjaxInProgress = Object.getOwnPropertyNames(ajaxEntities).filter(a => a !== '__esModule').reduce((acc, curr) => {
     acc[ajaxEntities[curr]] = false;
     return acc;
 }, {});
 
-const defaultState = {
-    token,
+export const initialState = {
+    token: '',
     ajaxInProgress: defaultAjaxInProgress
 };
+const token = localStorage.getItem('token');
+const defaultStore = {...initialState, token};
 
 const store = createStore(reducer,
-    defaultState,
+    defaultStore,
     window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__());
 
 store.subscribe(() => {

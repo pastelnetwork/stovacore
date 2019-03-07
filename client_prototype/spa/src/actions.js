@@ -5,6 +5,7 @@ export const saveAPIToken = (token) => ({
     token
 });
 
+export const forgetAPIToken = () => saveAPIToken('');
 
 export const startAjax = (entity) => ({
    type: actionTypes.START_AJAX,
@@ -14,4 +15,8 @@ export const startAjax = (entity) => ({
 export const stopAjax = (entity) => ({
    type: actionTypes.STOP_AJAX,
    entity
+});
+
+export const resetStore = () => ({
+   type: actionTypes.RESET_STORE
 });

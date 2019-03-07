@@ -1,4 +1,6 @@
 import * as actionTypes from './actionTypes';
+import {initialState} from "./app";
+
 
 const reducer  = (state = {}, action) => {
     switch (action.type) {
@@ -8,6 +10,8 @@ const reducer  = (state = {}, action) => {
             return {...state, ajaxInProgress: {...state.ajaxInProgress, [action.entity]: true}};
         case actionTypes.STOP_AJAX:
             return {...state, ajaxInProgress: {...state.ajaxInProgress, [action.entity]: false}};
+        case actionTypes.RESET_STORE:
+            return {...initialState};
         default:
             return state;
     }
