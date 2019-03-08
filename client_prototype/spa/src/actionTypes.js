@@ -2,3 +2,5 @@ export const SAVE_API_TOKEN = 'SAVE_API_TOKEN';
 export const START_AJAX = 'START_AJAX';
 export const STOP_AJAX = 'STOP_AJAX';
 export const RESET_STORE = 'RESET_STORE';
+export const SAVE_USER_PROFILE = 'SAVE_USER_PROFILE';
+export const CHANGE_USER_PROFILE = 'CHANGE_USER_PROFILE';

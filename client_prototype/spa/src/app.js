@@ -1,7 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import {Provider} from 'react-redux';
-import {createStore} from 'redux';
+import thunkMiddleware from 'redux-thunk'
+import {createStore, applyMiddleware, compose} from 'redux';
 import {Router} from 'react-router-dom';
 import reducer from './reducers';
 import * as ajaxEntities from './ajaxEntities';
@@ -21,14 +22,20 @@ let defaultAjaxInProgress = Object.getOwnPropertyNames(ajaxEntities).filter(a =>
 
 export const initialState = {
     token: '',
-    ajaxInProgress: defaultAjaxInProgress
+    ajaxInProgress: defaultAjaxInProgress,
+    userProfile: null
 };
 const token = localStorage.getItem('token');
 const defaultStore = {...initialState, token};
 
+const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
 const store = createStore(reducer,
     defaultStore,
-    window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__());
+    composeEnhancers(applyMiddleware(thunkMiddleware)));
+
+// const store = createStore(reducer,
+//     defaultStore,
+//     window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__());
 
 store.subscribe(() => {
     localStorage.setItem('token', store.getState().token);
