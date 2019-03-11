@@ -1,0 +1,21 @@
+ - create instance with Ubuntu 18.04 (say, in digital ocean)
+ - ssh to the instance
+ - clone repo: `git clone https://github.com/ANIME-AnimeCoin/AnimeCoin.git`
+ - `apt update`
+ - `apt install python3 python3-pip build-essential automake libtool pkg-config libcap-dev`
+ - `apt install git-lfs`
+ - mkdir animecoin_blockchain
+ - cp -r ~/AnimeCoin/ ~/animecoin_blockchain/
+ - cd ~/AnimeCoin/src
+ - `git clone https://github.com/ANIME-AnimeCoin/python_layer.git` 
+ - cd ~/animecoin_blockchain/AnimeCoin
+ - ./acutil/build.sh
+ - cd ~/animecoin_blockchain/AnimeCoin
+ - ./acutil/fetch-params.sh
+ - cd ~/AnimeCoin/src/python_layer
+ - git lfs pull
+ - pip3 install -r requirements.txt
+ - `ln /usr/bin/python3 /usr/bin/python`
+ - python start_simulator.py ~/sim/
+ - cd ~/AnimeCoin/src/python_layer/client_prototype/django_frontend
+ - PYTHONPATH="~/AnimeCoin/src/python_layer" python manage.py migrate
