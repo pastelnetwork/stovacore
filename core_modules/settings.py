@@ -53,8 +53,9 @@ if FROZEN:
         os.path.join(NetWorkSettings.BASEDIR, "parse_image_in_jail")]
 else:
     NetWorkSettings.DEBUG = True
-    NetWorkSettings.BLOCKCHAIN_BINARY = os.path.join(NetWorkSettings.BASEDIR, "..", "..", "..", "animecoin_blockchain",
-                                                     "AnimeCoin", "src", "animecoind")
+    NetWorkSettings.BLOCKCHAIN_BINARY = 'animecoind'
+    # NetWorkSettings.BLOCKCHAIN_BINARY = os.path.join(NetWorkSettings.BASEDIR, "..", "..", "..", "animecoin_blockchain",
+    #                                                  "AnimeCoin", "src", "animecoind")
     NetWorkSettings.DJANGOCMDLINE = ["python", os.path.join(NetWorkSettings.DJANGO_ROOT, "start_django.py")]
     NetWorkSettings.IMAGEPARSERCMDLINE = NetWorkSettings.UNSHARE_CMDLINE + [
         "python", os.path.join(NetWorkSettings.BASEDIR, "parse_image_in_jail.py")]
