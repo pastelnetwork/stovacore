@@ -19,3 +19,8 @@
  - python start_simulator.py ~/sim/
  - cd ~/AnimeCoin/src/python_layer/client_prototype/django_frontend
  - PYTHONPATH="~/AnimeCoin/src/python_layer" python manage.py migrate
+ - cd ~/AnimeCoin/src/python_layer 
+ - mkdir ~/sim
+ - cp -r config_sample/* ~/sim/
+ - python start_simulator.py ~/sim/
+ 
