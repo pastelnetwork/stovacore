@@ -1,3 +1,5 @@
+### Manual node installation
+
  - create instance with Ubuntu 18.04 (say, in digital ocean)
  - ssh to the instance
  - mkdir animecoin_blockchain; cd animecoin_blockchain
@@ -22,5 +24,23 @@
  - mkdir ~/sim
  - cp -r config_sample/* ~/sim/
  - python start_simulator.py ~/sim/
- - simulator is running, available only from localhost. Django UI is available on ports 14239.
+ - simulator is running, available only from localhost. Django UI is available on ports 14239, 14240, 14241] for each node respectively.
  - to make UI available from outside - you need to setup some proxy (nginx is suitable, for example) to bypass request from outer world to django UI ports.
+
+
+### Docker image installation (any OS, suitable for local machine)
+ - Install docker to the local machine
+ - `docker run -d -p 80:80 alexdobrushskiy/python_layer:0.1`
+ - (This will download image and run it in detached mode. )
+ - Open browser, try `127.0.0.1` in address string. 
+
+### Building docker image
+ 
+ A `python_layer` docker image depends on `animecoind` docker image, which can be build from AnimeCoin repository
+ - Go to python_layer directory
+ - cd `client_prototype/spa`
+ - `npm i`
+ - `npm run build`
+ - `cd .. ; cd ..;`
+ - `docker build .`
+ - Then docker image can be tagged and pushed to dockerhub.
