@@ -23,11 +23,6 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'i8zyxqcec2(t0ps_@k@(7v$3jud$kzl90izy*s-0-3v4i=bwu!'
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
-
 
 # Application definition
 
@@ -156,10 +151,24 @@ try:
 except KeyError:
     print('Error importing PASTEL node settings - will be unable to start node!')
 
-# TODO: use whitelist with localhost instead
-CORS_ORIGIN_ALLOW_ALL = True
 
-try:
-    from frontend.settings_dev import *
-except ImportError:
-    pass
+if os.getenv('DJANGO_ENV') == 'prod':
+    DEBUG = False
+    if os.getenv('HOST_NAME'):
+        CORS_ORIGIN_WHITELIST = (
+            os.getenv('HOST_NAME'),
+        )
+        ALLOWED_HOSTS = [os.getenv('HOST_NAME')]
+    else:
+        CORS_ORIGIN_WHITELIST = (
+            'localhost',
+        )
+else:
+    DEBUG = True
+    CORS_ORIGIN_ALLOW_ALL = True
+    ALLOWED_HOSTS = ['*']
+
+    try:
+        from frontend.settings_dev import *
+    except ImportError:
+        pass
