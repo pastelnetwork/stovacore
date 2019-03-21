@@ -30,7 +30,7 @@
 
 ### Docker image installation (any OS, suitable for local machine)
  - Install docker to the local machine
- - `docker run -d -p 80:80 alexdobrushskiy/python_layer:0.1`
+ - `docker run -d -p 80:80 alexdobrushskiy/python_layer:0.2`
  - (This will download image and run it in detached mode. )
  - Open browser, try `127.0.0.1` in address string. 
 
