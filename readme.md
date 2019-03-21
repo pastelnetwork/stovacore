@@ -35,23 +35,24 @@
  - Open browser, try `127.0.0.1` in address string. 
 
 ### Building docker image
- 
- A `python_layer` docker image depends on `animecoind` docker image, which can be build from AnimeCoin repository
- - Go to python_layer directory
- - cd `client_prototype/spa`
- - `npm i`
- - `npm run build`
- - `cd .. ; cd ..;`
- - `docker build .`
- - Then docker image can be tagged and pushed to dockerhub.
 
-### Run docker image
+ ##### Dependencies:
+  
+   - Node, npm
+   - git
+   
+ ##### Build proccess:
+   
+   - `cd python_layer`
+   - run `./build_docker_image.sh`. 
+   - Then docker image can be tagged and pushed to dockerhub.   
+ ## Run docker image
  
  Docker container requires 3 things:
   
   - Publish 80 port
   - Environment variable DJANGO_ENV='prod'
-  - Environment variable HOST_NAME='myawesomepastelhost.bc'
+  - Environment variable HOST_NAME='myawesomepastelhost.bc'. Using IP address instead of hostname will work too.
   
  So, the command is:
   - `docker run -d -p 80:80 -e DJANGO_ENV='prod' -e HOST_NAME='myawesomepastelhost.bc' <image name>` 
