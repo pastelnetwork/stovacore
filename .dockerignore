@@ -1,0 +1,10 @@
+# we should leave only dist folder from react_ui_spa
+react_ui_spa/node_modules
+react_ui_spa/src
+react_ui_spa/.babelrc
+react_ui_spa/.gitignore
+react_ui_spa/package.json
+react_ui_spa/package-lock.json
+react_ui_spa/readme.md
+react_ui_spa/webpack.config.js
+

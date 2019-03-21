@@ -44,3 +44,15 @@
  - `cd .. ; cd ..;`
  - `docker build .`
  - Then docker image can be tagged and pushed to dockerhub.
+
+### Run docker image
+ 
+ Docker container requires 3 things:
+  
+  - Publish 80 port
+  - Environment variable DJANGO_ENV='prod'
+  - Environment variable HOST_NAME='myawesomepastelhost.bc'
+  
+ So, the command is:
+  - `docker run -d -p 80:80 -e DJANGO_ENV='prod' -e HOST_NAME='myawesomepastelhost.bc' <image name>` 
+  
