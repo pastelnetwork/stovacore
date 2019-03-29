@@ -129,7 +129,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.1/howto/static-files/
 
-STATIC_ROOT = os.path.join(BASE_DIR, "static", "collected")
+STATIC_ROOT = '/var/www/static/'
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, "static", "to_collect"), ]
 
@@ -154,6 +154,7 @@ except KeyError:
 
 if os.getenv('DJANGO_ENV') == 'prod':
     DEBUG = False
+    STATIC_ROOT = '/var/www/static/';
     if os.getenv('HOST_NAME'):
         CORS_ORIGIN_WHITELIST = (
             os.getenv('HOST_NAME'),

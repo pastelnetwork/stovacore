@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 echo "Cloning SPA repo"
-git clone https://github.com/ANIME-AnimeCoin/react_ui_spa.git
-cd react_ui_spa
+git clone https://github.com/ANIME-AnimeCoin/PastelWallet.git
+cd PastelWallet
 echo "Instaling NPM modules"
 npm i
 
@@ -13,6 +13,6 @@ echo "Starting Docker build"
 docker build .
 
 echo "Clean up"
-rm -rf react_ui_spa
+rm -rf PastelWallet
 
 echo "Done!"
