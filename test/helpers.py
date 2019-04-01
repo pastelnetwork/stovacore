@@ -25,9 +25,9 @@ class Daemon:
     def start(self):
         self.__test_dir = tempfile.mkdtemp()
 
-        animecoin_conf = os.path.join(self.__test_dir, "animecoin.conf")
+        animecoin_conf = os.path.join(self.__test_dir, "pastel.conf")
 
-        # create empty animecoin.conf
+        # create empty pastel.conf
         with open(animecoin_conf, "w") as f:
             pass
 

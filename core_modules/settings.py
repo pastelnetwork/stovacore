@@ -47,13 +47,13 @@ NetWorkSettings.UNSHARE_CMDLINE = ["unshare", "-mUuinpCrf", "--mount-proc=/proc"
 
 if FROZEN:
     NetWorkSettings.DEBUG = True  # TODO: change this to False!
-    NetWorkSettings.BLOCKCHAIN_BINARY = os.path.join(NetWorkSettings.BASEDIR, "animecoind", "animecoind")
+    NetWorkSettings.BLOCKCHAIN_BINARY = os.path.join(NetWorkSettings.BASEDIR, "pasteld", "pasteld")
     NetWorkSettings.DJANGOCMDLINE = [os.path.join(NetWorkSettings.BASEDIR, "start_django")]
     NetWorkSettings.IMAGEPARSERCMDLINE = NetWorkSettings.UNSHARE_CMDLINE + [
         os.path.join(NetWorkSettings.BASEDIR, "parse_image_in_jail")]
 else:
-    NetWorkSettings.DEBUG = True
-    NetWorkSettings.BLOCKCHAIN_BINARY = 'animecoind'
+    NetWorkSettings.DEBUG = False
+    NetWorkSettings.BLOCKCHAIN_BINARY = 'pasteld'
     # NetWorkSettings.BLOCKCHAIN_BINARY = os.path.join(NetWorkSettings.BASEDIR, "..", "..", "..", "animecoin_blockchain",
     #                                                  "AnimeCoin", "src", "animecoind")
     NetWorkSettings.DJANGOCMDLINE = ["python", os.path.join(NetWorkSettings.DJANGO_ROOT, "start_django.py")]
@@ -93,7 +93,7 @@ else:
 NetWorkSettings.COIN = Decimal('100000')
 NetWorkSettings.BASE_TRANSACTION_AMOUNT = Decimal('300.0') / Decimal(NetWorkSettings.COIN)  # 0.00300
 NetWorkSettings.FEEPERKB = Decimal('0.0001')
-NetWorkSettings.CDAEMON_CONFIG_FILE = "animecoin.conf"
+NetWorkSettings.CDAEMON_CONFIG_FILE = "pastel.conf"
 
 NetWorkSettings.TICKET_MATCH_EXPIRY = 30  # 30s blocks x 30: 900s -> 15m
 
