@@ -39,7 +39,6 @@ class MasterNodeLogic:
         # set up ChainWrapper
         self.__chainwrapper = ChainWrapper(self.__nodenum, self.__blockchain, self.__artregistry)
 
-
         # the automatic trader
         self.__autotrader = AutoTrader(self.__nodenum, self.__pubkey, self.__artregistry, self.__blockchain)
 
@@ -110,7 +109,8 @@ class MasterNodeLogic:
 
                 # try to get block - will raise NotEnoughConfirmations if block is not mature
                 # we do this so that it's guaranteed that we don't update artregistry with a bad block
-                self.__blockchain.get_txids_for_block(current_block, confirmations=NetWorkSettings.REQUIRED_CONFIRMATIONS)
+                self.__blockchain.get_txids_for_block(current_block,
+                                                      confirmations=NetWorkSettings.REQUIRED_CONFIRMATIONS)
 
                 # update current block height in artregistry - this purges old tickets / matches
                 self.__artregistry.update_current_block_height(current_block)
@@ -129,7 +129,8 @@ class MasterNodeLogic:
                         # only parse FinalActivationTickets for now
                         if type(ticket) == FinalActivationTicket:
                             # fetch corresponding finalregticket
-                            final_regticket = self.__chainwrapper.retrieve_ticket(ticket.ticket.registration_ticket_txid)
+                            final_regticket = self.__chainwrapper.retrieve_ticket(
+                                ticket.ticket.registration_ticket_txid)
 
                             # get the actual regticket
                             regticket = final_regticket.ticket
@@ -187,9 +188,12 @@ class MasterNodeLogic:
                 # new tickets are in, call automatic trader
                 if current_block < blockcount:
                     # only print a message every 5%
-                    if current_block % int(blockcount/20) == 0:
-                        self.__logger.debug("Parsing historic block %s / %s (%.2f%%)" % (
-                            current_block, blockcount, current_block/blockcount*100))
+                    if blockcount >= 20:
+                        if current_block % int(blockcount / 20) == 0:
+                            self.__logger.debug("Parsing historic block %s / %s (%.2f%%)" % (
+                                current_block, blockcount, current_block / blockcount * 100))
+                    else:
+                        pass
                 else:
                     if not self.__autotrader.enabled():
                         self.__logger.debug("Done parsing history, enabling autottrader")

@@ -17,3 +17,4 @@ if __name__ == "__main__":
 
     mnd = MasterNodeDaemon(settings=settings, addnodes=nodes)
     mnd.run_event_loop()
+masternode_logic.py
