@@ -11,7 +11,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 3:
         nodes = [sys.argv[3]]
 
-    cdaemon_conf = os.path.join(basedir, "animcoin.conf")
+    cdaemon_conf = os.path.join(basedir, "pastel.conf")
     settings = read_settings_file(basedir)
     settings["ip"] = bindip
 
