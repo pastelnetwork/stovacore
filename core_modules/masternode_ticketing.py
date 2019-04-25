@@ -4,8 +4,7 @@ import time
 from .ticket_models import RegistrationTicket, Signature, FinalRegistrationTicket, ActivationTicket,\
     FinalActivationTicket, ImageData, IDTicket, FinalIDTicket, TransferTicket, FinalTransferTicket, TradeTicket,\
     FinalTradeTicket
-from core_modules.blackbox_modules.signatures import\
-    pastel_id_write_signature_on_data_func
+from PastelCommon.signatures import pastel_id_write_signature_on_data_func
 from core_modules.settings import NetWorkSettings
 from core_modules.helpers import require_true, bytes_to_chunkid
 from core_modules.jailed_image_parser import JailedImageParser

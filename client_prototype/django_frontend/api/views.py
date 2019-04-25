@@ -4,7 +4,7 @@ from django.http import JsonResponse
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from core.models import client
-from core_modules.blackbox_modules.crypto import get_Ed521
+from PastelCommon.crypto import get_Ed521
 
 
 def restore_bytes_from_string(pk_string):

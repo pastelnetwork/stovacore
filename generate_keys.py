@@ -1,5 +1,5 @@
 import os
-from core_modules.blackbox_modules.keys import id_keypair_generation_func
+from PastelCommon.keys import id_keypair_generation_func
 
 if __name__ == '__main__':
     __privkey, __pubkey = id_keypair_generation_func()

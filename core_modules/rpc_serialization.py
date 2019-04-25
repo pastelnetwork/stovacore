@@ -4,7 +4,7 @@ import msgpack
 
 from decimal import Decimal
 
-from core_modules.blackbox_modules.signatures import pastel_id_write_signature_on_data_func,\
+from PastelCommon.signatures import pastel_id_write_signature_on_data_func,\
     pastel_id_verify_signature_with_public_key_func
 from core_modules.blackbox_modules.helpers import sleep_rand
 from core_modules.helpers import get_pynode_digest_bytes

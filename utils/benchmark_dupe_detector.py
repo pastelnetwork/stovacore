@@ -4,13 +4,13 @@ import sys
 import hashlib
 
 import pandas as pd
+from PastelCommon.dupe_detection import DupeDetector
+from core_modules.blackbox_modules.dupe_detection_utils import measure_similarity, assemble_fingerprints_for_pandas
 
 # PATH HACK
+from core_modules.settings import NetWorkSettings
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../")
-
-
-from core_modules.blackbox_modules.dupe_detection import DupeDetector,\
-    measure_similarity, assemble_fingerprints_for_pandas
 
 
 def get_sha256_hash_of_input_data_func(input_data_or_string):
@@ -35,7 +35,7 @@ def get_fingerprint_for_file(current_image_file_path):
     # compute hash
     imghash = get_sha256_hash_of_input_data_func(data)
 
-    fingerprints = DupeDetector().compute_deep_learning_features(data)
+    fingerprints = DupeDetector(NetWorkSettings.DUPE_DETECTION_MODELS, NetWorkSettings.DUPE_DETECTION_TARGET_SIZE).compute_deep_learning_features(data)
     return imghash, fingerprints
 
 

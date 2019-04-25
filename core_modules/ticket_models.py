@@ -4,11 +4,12 @@ import msgpack
 from PIL import Image
 
 from core_modules.helpers import get_pynode_digest_bytes, require_true
-from core_modules.blackbox_modules.signatures import pastel_id_verify_signature_with_public_key_func
-from core_modules.model_validators import FieldValidator, StringField, IntegerField, FingerprintField, SHA3512Field,\
-    LubyChunkHashField, LubyChunkField, ImageField, ThumbnailField, TXIDField, UUIDField, SignatureField, PubkeyField,\
+from PastelCommon.signatures import pastel_id_verify_signature_with_public_key_func
+from core_modules.model_validators import FieldValidator, StringField, IntegerField, FingerprintField, SHA3512Field, \
+    LubyChunkHashField, LubyChunkField, ImageField, ThumbnailField, TXIDField, UUIDField, SignatureField, PubkeyField, \
     LubySeedField, BlockChainAddressField, UnixTimeField, StringChoiceField
-from core_modules.blackbox_modules.dupe_detection import DupeDetector, measure_similarity, assemble_fingerprints_for_pandas
+from PastelCommon.dupe_detection import DupeDetector
+from core_modules.blackbox_modules.dupe_detection_utils import measure_similarity, assemble_fingerprints_for_pandas
 from core_modules.blackbox_modules.nsfw import NSFWDetector
 from core_modules.blackbox_modules import luby
 from core_modules.settings import NetWorkSettings
@@ -139,6 +140,8 @@ class TicketModelBase:
 
     def validate(self, *args, **kwargs):
         raise NotImplementedError()
+
+
 # ===== END ===== #
 
 
@@ -154,7 +157,9 @@ class ImageData(TicketModelBase):
         return get_pynode_digest_bytes(self.image)
 
     def generate_fingerprints(self):
-        fingerprints = DupeDetector().compute_deep_learning_features(self.image)
+        fingerprints = DupeDetector(NetWorkSettings.DUPE_DETECTION_MODELS,
+                                    NetWorkSettings.DUPE_DETECTION_TARGET_SIZE).compute_deep_learning_features(
+            self.image)
         return fingerprints
 
     @staticmethod
@@ -256,7 +261,7 @@ class RegistrationTicket(TicketModelBase):
 
             # collect fingerprints
             # TODO: only collect this for activated regtickets and tickets not older than X blocks
-            fingerprint_db[regticket.imagedata_hash] = ("DUMMY_PATH", regticket.fingerprints)   # TODO: do we need this?
+            fingerprint_db[regticket.imagedata_hash] = ("DUMMY_PATH", regticket.fingerprints)  # TODO: do we need this?
 
             # validate that this art hash does not yet exist on the blockchain
             # TODO: only prohibit registration when this was registered in the past X blocks
@@ -337,10 +342,10 @@ class TradeTicket(TicketModelBase):
         "imagedata_hash": SHA3512Field(),
         "type": StringChoiceField(choices=["ask", "bid"]),
         "copies": IntegerField(minsize=0, maxsize=1000),
-        "price": IntegerField(minsize=0, maxsize=2**32-1),
+        "price": IntegerField(minsize=0, maxsize=2 ** 32 - 1),
         "watched_address": BlockChainAddressField(),
         "collateral_txid": TXIDField(),
-        "expiration": IntegerField(minsize=0, maxsize=1000),   # x==0 means never expire, x > 0 mean X blocks
+        "expiration": IntegerField(minsize=0, maxsize=1000),  # x==0 means never expire, x > 0 mean X blocks
     }
 
     def validate(self, blockchain, chainwrapper, artregistry):
@@ -443,11 +448,12 @@ class MasterNodeSignedTicket(TicketModelBase):
 
             # make sure they're unique
             if len(set(masternode_ordering)) != 3:
-                raise ValueError("Masternodes are not unique as returned by get_masternode_order: %s" % masternode_ordering)
+                raise ValueError(
+                    "Masternodes are not unique as returned by get_masternode_order: %s" % masternode_ordering)
 
             if (self.signature_1.pubkey != masternode_ordering[0] or
-                self.signature_2.pubkey != masternode_ordering[1] or
-                self.signature_3.pubkey != masternode_ordering[2]):
+                    self.signature_2.pubkey != masternode_ordering[1] or
+                    self.signature_3.pubkey != masternode_ordering[2]):
                 raise ValueError("Invalid pubkey for masternode ordering")
 
             # validate signatures

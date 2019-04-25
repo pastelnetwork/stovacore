@@ -1,3 +1,8 @@
+### Fetching submodules
+
+This repository uses git submodules feature. To fetch modules run:
+ - `git submodule init && git submodule update`
+
 ### Manual node installation
 
  - create instance with Ubuntu 18.04 (say, in digital ocean)

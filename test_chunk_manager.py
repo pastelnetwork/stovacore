@@ -10,7 +10,7 @@ from datetime import datetime as dt
 
 from masternode_prototype.masternode_logic import MasterNodeLogic
 from core_modules.helpers import get_nodeid_from_pubkey, getrandbytes
-from core_modules.blackbox_modules.keys import id_keypair_generation_func
+from PastelCommon.keys import id_keypair_generation_func
 
 
 async def heartbeat():

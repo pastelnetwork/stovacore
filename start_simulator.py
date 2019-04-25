@@ -8,7 +8,7 @@ import multiprocessing
 
 from masternode_prototype.masternode_daemon import MasterNodeDaemon
 from core_modules.masternode_discovery import discover_nodes
-from core_modules.blackbox_modules.keys import id_keypair_generation_func
+from PastelCommon.keys import id_keypair_generation_func
 
 
 class Simulator:

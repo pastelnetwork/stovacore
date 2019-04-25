@@ -1,9 +1,9 @@
 import unittest
 from unittest.mock import patch
 
-from core_modules.blackbox_modules.crypto import get_Ed521
-from core_modules.blackbox_modules import keys
-from core_modules.blackbox_modules.signatures import pastel_id_write_signature_on_data_func, \
+from PastelCommon.crypto import get_Ed521
+from PastelCommon import keys
+from PastelCommon.signatures import pastel_id_write_signature_on_data_func, \
     pastel_id_verify_signature_with_public_key_func
 
 

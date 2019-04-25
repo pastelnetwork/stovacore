@@ -4,7 +4,7 @@ import os
 # PATH HACK
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../")
 
-from core_modules.blackbox_modules import keys
+from PastelCommon import keys
 
 
 if __name__ == "__main__":

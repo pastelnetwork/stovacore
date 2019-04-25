@@ -1,6 +1,6 @@
 import unittest
 
-from core_modules.blackbox_modules.crypto import get_Ed521
+from PastelCommon.crypto import get_Ed521
 
 
 class TestCrypto(unittest.TestCase):
