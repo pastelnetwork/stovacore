@@ -1,0 +1,3 @@
+[submodule "PastelCommon"]
+	path = PastelCommon
+	url = git@github.com:ANIME-AnimeCoin/PastelCommon.git
