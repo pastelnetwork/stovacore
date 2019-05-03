@@ -19,16 +19,15 @@ from core_modules.helpers import get_pynode_digest_int, get_nodeid_from_pubkey, 
 
 
 class MasterNodeLogic:
-    def __init__(self, nodenum, blockchain, basedir, privkey, pubkey, ip, port, django_pubkey):
+    def __init__(self, nodenum, blockchain, basedir, privkey, pubkey):
         self.__name = "node%s" % nodenum
         self.__nodenum = nodenum
         self.__nodeid = get_nodeid_from_pubkey(pubkey)
         self.__basedir = basedir
         self.__privkey = privkey
         self.__pubkey = pubkey
-        self.__ip = ip
-        self.__port = port
-        self.__django_pubkey = django_pubkey
+        self.__ip = '127.0.0.1'
+        self.__port = 4444
 
         self.__logger = initlogging(self.__nodenum, __name__)
         self.__blockchain = blockchain
@@ -62,10 +61,7 @@ class MasterNodeLogic:
                                                              self.__chainwrapper, self.__chunkmanager)
 
         # django interface
-        self.__djangointerface = DjangoInterface(self.__privkey, self.__pubkey, self.__nodenum,
-                                                 self.__artregistry, self.__chunkmanager,
-                                                 self.__blockchain, self.__chainwrapper, self.__aliasmanager,
-                                                 self.__mn_manager, self.__django_pubkey)
+        # replace RPC interface to http
 
         # functions exposed from chunkmanager
         # self.load_full_chunks = self.__chunkmanager.load_full_chunks
@@ -82,11 +78,9 @@ class MasterNodeLogic:
                                       self.__chunkmanager_rpc.receive_rpc_fetchchunk)
 
         self.__artregistrationserver.register_rpcs(self.__rpcserver)
-        self.__djangointerface.register_rpcs(self.__rpcserver)
 
         # we like to enable/disable this from masternodedaemon
         self.issue_random_tests_forever = self.__chunkmanager_rpc.issue_random_tests_forever
-        self.run_django_tasks_forever = self.__djangointerface.run_django_tasks_forever
 
     def __refresh_masternode_list(self):
         added, removed = self.__mn_manager.update_masternode_list()

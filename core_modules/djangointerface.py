@@ -16,14 +16,12 @@ from core_modules.helpers import bytes_to_chunkid, hex_to_chunkid, bytes_from_he
 
 class DjangoInterface:
     def __init__(self, privkey, pubkey, nodenum, artregistry, chunkmanager, blockchain,
-                 chainwrapper, aliasmanager, nodemanager, django_pubkey):
+                 chainwrapper, aliasmanager, nodemanager):
 
         self.__logger = initlogging(nodenum, __name__)
 
         self.__privkey = privkey
         self.__pubkey = pubkey
-
-        self.__django_pubkey = django_pubkey
 
         self.__artregistry = artregistry
         self.__chunkmanager = chunkmanager

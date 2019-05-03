@@ -3,7 +3,6 @@ import random
 
 from core_modules.zmq_rpc import RPCClient
 from core_modules.helpers import get_nodeid_from_pubkey
-from core_modules.masternode_discovery import discover_nodes
 from core_modules.settings import NetWorkSettings
 from core_modules.logger import initlogging
 
@@ -46,6 +45,7 @@ class NodeManager:
 
     def update_masternode_list(self):
         # TODO: this list should come from cNode
+        # TODO: cNode will return something like [(ip1, pubkey1), ...]
         if not NetWorkSettings.DEBUG:
             raise NotImplementedError()
 
