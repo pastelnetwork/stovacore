@@ -1,13 +1,12 @@
-from flask import Flask, jsonify
 import os
 import random
+import asyncio
 from PastelCommon.keys import id_keypair_generation_func
+from aiohttp import web
 from PastelCommon.signatures import pastel_id_write_signature_on_data_func, \
     pastel_id_verify_signature_with_public_key_func
 
 KEY_PATH = 'keys'
-
-app = Flask(__name__)
 
 
 def generate_key_id():
@@ -17,8 +16,7 @@ def generate_key_id():
     return key_id
 
 
-@app.route('/generate_keys', methods=['GET'])
-def generate_keys():
+async def generate_keys(request):
     __privkey, __pubkey = id_keypair_generation_func()
     key_id = generate_key_id()
     privkey = 'private_{}.key'.format(key_id)
@@ -31,27 +29,36 @@ def generate_keys():
     with open(os.path.join(KEY_PATH, pubkey), "wb") as f:
         f.write(__pubkey)
     os.chmod(os.path.join(KEY_PATH, pubkey), 0o0700)
-    return jsonify({
+    return web.json_response({
         'private': os.path.join(KEY_PATH, privkey),
         'public': os.path.join(KEY_PATH, pubkey)
     })
 
 
-@app.route('/sign_message', methods=['GET'])
-def sign_message():
-    return jsonify({'method': 'sign_message'})
+async def sign_message(request):
+    return web.json_response({'method': 'sign_message'})
 
 
-@app.route('/verify_signature', methods=['GET'])
-def verify_signature():
-    return jsonify({'method': verify_signature})
+async def verify_signature(request):
+    return web.json_response({'method': 'verify_signature'})
 
 
-@app.route('/register_image', methods=['GET'])
-def register_image():
+async def register_image(request):
     # TODO: get and adjust implementation from djangointerface.py
-    return jsonify({'method': register_image})
+    return web.json_response({'method': 'register_image'})
 
+
+async def taksa_handle(request):
+    return web.json_response({'taksa': 'krot'})
+
+
+app = web.Application()
+app.add_routes([
+    web.get('/generate_keys', generate_keys),
+    web.get('/sign_message', sign_message),
+    web.get('/verify_signature', verify_signature),
+    web.post('/register_image', register_image)
+])
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    web.run_app(app, port=5000)
