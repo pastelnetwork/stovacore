@@ -8,12 +8,13 @@ from core_modules.logger import initlogging
 
 
 class NodeManager:
-    def __init__(self, nodenum, privkey, pubkey):
+    def __init__(self, nodenum, privkey, pubkey, blockchain):
         self.__masternodes = {}
         self.__nodenum = nodenum
         self.__logger = initlogging(nodenum, __name__)
         self.__privkey = privkey
         self.__pubkey = pubkey
+        self.__blockchain = blockchain
 
     def get(self, nodeid):
         return self.__masternodes[nodeid]
@@ -44,17 +45,19 @@ class NodeManager:
             return mnlist
 
     def update_masternode_list(self):
-        # TODO: this list should come from cNode
-        # TODO: cNode will return something like [(ip1, pubkey1), ...]
-        if not NetWorkSettings.DEBUG:
-            raise NotImplementedError()
+        workers_dict = self.__blockchain.masternode_workers()
 
         # parse new list
         new_mn_list = {}
-        for pubkey, ip, pyrpcport in NetWorkSettings.MASTERNODE_LIST:
-            nodeid = get_nodeid_from_pubkey(pubkey)
-            new_mn_list[nodeid] = RPCClient(self.__nodenum, self.__privkey, self.__pubkey,
-                                            nodeid, ip, pyrpcport, pubkey)
+        if len(workers_dict):
+            for node in list(workers_dict.values())[0]:
+                pubkey = node['pyPubKey']
+                if not pubkey:
+                    continue
+                ip, pyrpcport = node['pyAddress'].split(':')
+                nodeid = get_nodeid_from_pubkey(pubkey)
+                new_mn_list[nodeid] = RPCClient(self.__nodenum, self.__privkey, self.__pubkey,
+                                                nodeid, ip, pyrpcport, pubkey)
 
         old = set(self.__masternodes.keys())
         new = set(new_mn_list.keys())

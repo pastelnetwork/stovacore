@@ -65,10 +65,10 @@ class MasterNodeDaemon:
 
     def __connect_to_daemon(self):
         while True:
-            blockchain = BlockChain(user='rpcuser',
-                                    password='rpcpassword',
+            blockchain = BlockChain(user='rt',
+                                    password='rt',
                                     ip='127.0.0.1',
-                                    rpcport=9932)
+                                    rpcport=19932)
             try:
                 blockchain.getwalletinfo()
             except (ConnectionRefusedError, bitcoinrpc.authproxy.JSONRPCException) as exc:
@@ -89,10 +89,6 @@ class MasterNodeDaemon:
         loop.create_task(self.logic.zmq_run_forever())
         loop.create_task(self.logic.run_masternode_parser())
         loop.create_task(self.logic.run_ticket_parser())
-        loop.create_task(self.logic.run_django_tasks_forever())
-        # loop.create_task(self.logic.run_heartbeat_forever())
-        # loop.create_task(self.logic.run_ping_test_forever())
-        # loop.create_task(self.logic.issue_random_tests_forever(1))
         loop.create_task(self.logic.run_chunk_fetcher_forever())
 
         try:
@@ -101,5 +97,3 @@ class MasterNodeDaemon:
             pass
         finally:
             loop.stop()
-        self.__stop_cmn()
-        self.__stop_django()

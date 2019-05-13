@@ -42,7 +42,7 @@ class MasterNodeLogic:
         self.__autotrader = AutoTrader(self.__nodenum, self.__pubkey, self.__artregistry, self.__blockchain)
 
         # masternode manager
-        self.__mn_manager = NodeManager(self.__nodenum, self.__privkey, self.__pubkey)
+        self.__mn_manager = NodeManager(self.__nodenum, self.__privkey, self.__pubkey, blockchain)
 
         # alias manager
         self.__aliasmanager = AliasManager(self.__nodenum, self.__nodeid, self.__mn_manager)

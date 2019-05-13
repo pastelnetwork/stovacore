@@ -16,13 +16,13 @@ class NotEnoughConfirmations(Exception):
 
 class BlockChain:
     def __init__(self, user, password, ip, rpcport):
-        self.__url = "http://%s:%s@%s:%s" % (user, password, ip, rpcport)
+        self.url = "http://%s:%s@%s:%s" % (user, password, ip, rpcport)
         self.__reconnect()
 
     def __reconnect(self):
         while True:
             try:
-                newjsonrpc = AuthServiceProxy(self.__url)
+                newjsonrpc = AuthServiceProxy(self.url)
 
                 # we need this so that we know the blockchain has started
                 newjsonrpc.getwalletinfo()
@@ -144,6 +144,9 @@ class BlockChain:
 
     def generate(self, n):
         return self.__call_jsonrpc("generate", int(n))
+
+    def masternode_workers(self):
+        return self.__call_jsonrpc("masternode", "workers")
 
     def search_chain(self, confirmations=NetWorkSettings.REQUIRED_CONFIRMATIONS):
         blockcount = self.getblockcount() - 1
