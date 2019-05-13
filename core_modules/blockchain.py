@@ -37,11 +37,6 @@ class BlockChain:
                 self.__jsonrpc = newjsonrpc
                 break
 
-    def get_masternode_order(self, blocknum):
-        # TODO: should return MN list: [(sha256(pubkey), ip, port, pubkey), (sha256(pubkey), ip, port, pubkey)...]
-        # sha256(pubkey) is the nodeid as int
-        raise NotImplementedError("TODO")
-
     def __call_jsonrpc(self, name, *params):
         while True:
             f = getattr(self.__jsonrpc, name)
@@ -145,8 +140,14 @@ class BlockChain:
     def generate(self, n):
         return self.__call_jsonrpc("generate", int(n))
 
-    def masternode_workers(self):
-        return self.__call_jsonrpc("masternode", "workers")
+    def masternode_workers(self, blocknum=None):
+        if blocknum is None:
+            result = self.__call_jsonrpc("masternode", "workers")
+        else:
+            result = self.__call_jsonrpc("masternode", "workers", blocknum)
+        # cNode returns data with the following format:
+        # {<block_number>: [{node_data1, node_data2, node_data3}]}
+        return list(result.values())[0]
 
     def search_chain(self, confirmations=NetWorkSettings.REQUIRED_CONFIRMATIONS):
         blockcount = self.getblockcount() - 1

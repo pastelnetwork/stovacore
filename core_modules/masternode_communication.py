@@ -1,6 +1,5 @@
 import random
 
-
 from core_modules.zmq_rpc import RPCClient
 from core_modules.helpers import get_nodeid_from_pubkey
 from core_modules.settings import NetWorkSettings
@@ -37,27 +36,31 @@ class NodeManager:
         return other_nodes
 
     def get_masternode_ordering(self, blocknum):
+        mn_rpc_clients = []
         if NetWorkSettings.VALIDATE_MN_SIGNATURES:
-            # TODO: We need to return rpcclient instances for each MN
-            raise NotImplementedError("TODO")
-        else:
-            mnlist = self.get_all()[0:3]
-            return mnlist
+            workers = self.__blockchain.masternode_workers(blocknum)
+            for node in workers:
+                pubkey = node['pyPubKey']
+                node_id = get_nodeid_from_pubkey(pubkey)
+                ip, py_rpc_port = node['pyAddress'].split(':')
+                rpc_client = RPCClient(self.__nodenum, self.__privkey, self.__pubkey,
+                                       node_id, ip, py_rpc_port, pubkey)
+                mn_rpc_clients.append(rpc_client)
+        return mn_rpc_clients
 
     def update_masternode_list(self):
-        workers_dict = self.__blockchain.masternode_workers()
+        workers_list = self.__blockchain.masternode_workers()
 
         # parse new list
         new_mn_list = {}
-        if len(workers_dict):
-            for node in list(workers_dict.values())[0]:
-                pubkey = node['pyPubKey']
-                if not pubkey:
-                    continue
-                ip, pyrpcport = node['pyAddress'].split(':')
-                nodeid = get_nodeid_from_pubkey(pubkey)
-                new_mn_list[nodeid] = RPCClient(self.__nodenum, self.__privkey, self.__pubkey,
-                                                nodeid, ip, pyrpcport, pubkey)
+        for node in workers_list:
+            pubkey = node['pyPubKey']
+            if not pubkey:
+                continue
+            ip, py_rpc_port = node['pyAddress'].split(':')
+            node_id = get_nodeid_from_pubkey(pubkey)
+            new_mn_list[node_id] = RPCClient(self.__nodenum, self.__privkey, self.__pubkey,
+                                             node_id, ip, py_rpc_port, pubkey)
 
         old = set(self.__masternodes.keys())
         new = set(new_mn_list.keys())

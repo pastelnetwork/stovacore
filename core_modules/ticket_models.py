@@ -440,7 +440,7 @@ class MasterNodeSignedTicket(TicketModelBase):
 
         if NetWorkSettings.VALIDATE_MN_SIGNATURES:
             # validate masternode order that's in the ticket
-            masternode_ordering = chainwrapper.get_masternode_order(self.ticket.order_block_txid)
+            masternode_ordering = chainwrapper.masternode_workers(self.ticket.order_block_txid)
 
             # make sure we got 3 MNs
             if len(masternode_ordering) != 3:
