@@ -181,9 +181,9 @@ class MasterNodeLogic:
 
                 # new tickets are in, call automatic trader
                 if current_block < blockcount:
-                    # only print a message every 5%
+                    # only print a message every 2%
                     if blockcount >= 20:
-                        if current_block % int(blockcount / 20) == 0:
+                        if current_block % int(blockcount / 50) == 0:
                             self.__logger.debug("Parsing historic block %s / %s (%.2f%%)" % (
                                 current_block, blockcount, current_block / blockcount * 100))
                     else:
@@ -201,7 +201,7 @@ class MasterNodeLogic:
             else:
                 # successfully parsed this block
                 current_block += 1
-                await asyncio.sleep(.1)
+                await asyncio.sleep(0)
 
     async def run_heartbeat_forever(self):
         while True:
