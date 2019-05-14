@@ -9,6 +9,7 @@ from core_modules.djangointerface import DjangoInterface
 
 KEY_PATH = 'keys'
 
+routes = web.RouteTableDef()
 
 def generate_key_id():
     key_id = random.randint(10000, 99999)
@@ -27,6 +28,7 @@ with open(os.path.join(KEY_PATH, 'public.key'), "rb") as f:
 pastel_client = DjangoInterface(private_key, public_key, None, None, None, None, None, None, None)
 
 
+@routes.get('/generate_keys')
 async def generate_keys(request):
     __privkey, __pubkey = id_keypair_generation_func()
     key_id = generate_key_id()
@@ -46,14 +48,17 @@ async def generate_keys(request):
     })
 
 
+@routes.get('/sign_message')
 async def sign_message(request):
     return web.json_response({'method': 'sign_message'})
 
 
+@routes.get('/verify_signature')
 async def verify_signature(request):
     return web.json_response({'method': 'verify_signature'})
 
 
+@routes.post('/register_image')
 async def register_image(request):
     # TODO: get and adjust implementation from djangointerface.py
     title = request.title
@@ -62,17 +67,8 @@ async def register_image(request):
     return web.json_response({'method': 'register_image'})
 
 
-async def taksa_handle(request):
-    return web.json_response({'taksa': 'krot'})
-
-
 app = web.Application()
-app.add_routes([
-    web.get('/generate_keys', generate_keys),
-    web.get('/sign_message', sign_message),
-    web.get('/verify_signature', verify_signature),
-    web.post('/register_image', register_image)
-])
+app.add_routes(routes)
 
 if __name__ == '__main__':
     web.run_app(app, port=5000)
