@@ -25,7 +25,7 @@ with open(os.path.join(KEY_PATH, 'public.key'), "rb") as f:
     public_key = f.read()
 
 
-pastel_client = DjangoInterface(private_key, public_key, None, None, None, None, None, None, None)
+pastel_client = DjangoInterface(private_key, public_key, None, None, None, None)
 
 
 @routes.get('/generate_keys')
@@ -61,10 +61,14 @@ async def verify_signature(request):
 @routes.post('/register_image')
 async def register_image(request):
     # TODO: get and adjust implementation from djangointerface.py
-    title = request.title
-    data = request.data
-    pastel_client.__register_image(title, data)
-    return web.json_response({'method': 'register_image'})
+    data = await request.post()
+    image = data['image']
+    filename = image.filename
+    image_file = image.file
+    content = image_file.read()
+
+    await pastel_client.register_image(filename, content)
+    return web.json_response({'method': 'register_image', 'title': filename})
 
 
 app = web.Application()

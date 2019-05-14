@@ -201,6 +201,7 @@ class ArtRegistrationClient:
             "lubychunks": ImageData.generate_luby_chunks(image_data),
             "thumbnail": ImageData.generate_thumbnail(image_data),
         })
+
         image.validate()
 
         # generate registration ticket
