@@ -15,6 +15,9 @@ from core_modules.helpers import bytes_to_chunkid, hex_to_chunkid, bytes_from_he
 
 
 class DjangoInterface:
+    # TODO: privkey, pubkey - they're wallet's PastelID keys.
+    # TODO: nodenum - probably we don't need as this code will not be run by node - it will be run only by wallet
+    # TODO: all other fields probably not needed - need to review how they're used
     def __init__(self, privkey, pubkey, nodenum, artregistry, chunkmanager, blockchain,
                  chainwrapper, aliasmanager, nodemanager):
 

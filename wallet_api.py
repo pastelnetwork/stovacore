@@ -5,6 +5,7 @@ from PastelCommon.keys import id_keypair_generation_func
 from aiohttp import web
 from PastelCommon.signatures import pastel_id_write_signature_on_data_func, \
     pastel_id_verify_signature_with_public_key_func
+from core_modules.djangointerface import DjangoInterface
 
 KEY_PATH = 'keys'
 
@@ -14,6 +15,16 @@ def generate_key_id():
     while os.path.exists(os.path.join(KEY_PATH, 'private_{}.key'.format(key_id))):
         key_id = random.randint(10000, 99999)
     return key_id
+
+
+with open(os.path.join(KEY_PATH, 'private.key'), "rb") as f:
+    private_key = f.read()
+
+with open(os.path.join(KEY_PATH, 'public.key'), "rb") as f:
+    public_key = f.read()
+
+
+pastel_client = DjangoInterface(private_key, public_key, None, None, None, None, None, None, None)
 
 
 async def generate_keys(request):
@@ -45,6 +56,9 @@ async def verify_signature(request):
 
 async def register_image(request):
     # TODO: get and adjust implementation from djangointerface.py
+    title = request.title
+    data = request.data
+    pastel_client.__register_image(title, data)
     return web.json_response({'method': 'register_image'})
 
 
