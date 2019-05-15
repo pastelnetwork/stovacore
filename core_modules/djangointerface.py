@@ -1,14 +1,18 @@
 import asyncio
 import random
+import time
 import uuid
 import traceback
 
+import bitcoinrpc
 from bitcoinrpc.authproxy import JSONRPCException
 
 from core_modules.blackbox_modules.luby import decode as luby_decode, NotEnoughChunks
-from core_modules.masternode_ticketing import ArtRegistrationClient, IDRegistrationClient, TransferRegistrationClient,\
+from core_modules.blockchain import BlockChain
+from core_modules.chainwrapper import ChainWrapper
+from core_modules.masternode_ticketing import ArtRegistrationClient, IDRegistrationClient, TransferRegistrationClient, \
     TradeRegistrationClient
-from core_modules.masternode_ticketing import FinalIDTicket, FinalTradeTicket, FinalTransferTicket,\
+from core_modules.masternode_ticketing import FinalIDTicket, FinalTradeTicket, FinalTransferTicket, \
     FinalActivationTicket, FinalRegistrationTicket
 from core_modules.logger import initlogging
 from core_modules.helpers import bytes_to_chunkid, hex_to_chunkid, bytes_from_hex, require_true
@@ -18,22 +22,37 @@ class DjangoInterface:
     # TODO: privkey, pubkey - they're wallet's PastelID keys.
     # TODO: nodenum - probably we don't need as this code will not be run by node - it will be run only by wallet
     # TODO: all other fields probably not needed - need to review how they're used
-    def __init__(self, privkey, pubkey, nodenum, artregistry, chunkmanager, blockchain,
-                 chainwrapper, aliasmanager, nodemanager):
+    def __init__(self, privkey, pubkey, artregistry, chunkmanager, aliasmanager, nodemanager):
 
-        self.__logger = initlogging(nodenum, __name__)
+        self.__logger = initlogging('Wallet interface', __name__)
 
         self.__privkey = privkey
         self.__pubkey = pubkey
 
         self.__artregistry = artregistry
         self.__chunkmanager = chunkmanager
-        self.__blockchain = blockchain
-        self.__chainwrapper = chainwrapper
+        self.__blockchain = self.__connect_to_daemon()
+        self.__chainwrapper = ChainWrapper(None, self.__blockchain, self.__artregistry)
         self.__aliasmanager = aliasmanager
         self.__nodemanager = nodemanager
 
         self.__active_tasks = {}
+
+    def __connect_to_daemon(self):
+        while True:
+            blockchain = BlockChain(user='rt',
+                                    password='rt',
+                                    ip='127.0.0.1',
+                                    rpcport=19932)
+            try:
+                blockchain.getwalletinfo()
+            except (ConnectionRefusedError, bitcoinrpc.authproxy.JSONRPCException) as exc:
+                self.__logger.debug("Exception %s while getting wallet info, retrying..." % exc)
+                time.sleep(0.5)
+            else:
+                self.__logger.debug("Successfully connected to daemon!")
+                break
+        return blockchain
 
     def register_rpcs(self, rpcserver):
         rpcserver.add_callback("DJANGO_REQ", "DJANGO_RESP", self.process_django_request, coroutine=True,
@@ -155,7 +174,7 @@ class DjangoInterface:
         # find MNs that have this chunk
         owners = list(self.__aliasmanager.find_other_owners_for_chunk(chunkid))
         random.shuffle(owners)
-        
+
         for owner in owners:
             mn = self.__nodemanager.get(owner)
 
@@ -205,7 +224,7 @@ class DjangoInterface:
         else:
             return None
 
-    async def __register_image(self, image_field, image_data):
+    async def register_image(self, image_field, image_data):
         # get the registration object
         artreg = ArtRegistrationClient(self.__privkey, self.__pubkey, self.__chainwrapper, self.__nodemanager)
 
@@ -344,7 +363,8 @@ class DjangoInterface:
         # watched address is the address we are using to receive the funds in asks and send the collateral to in bids
         watched_address = self.__blockchain.getnewaddress()
 
-        transreg = TradeRegistrationClient(self.__privkey, self.__pubkey, self.__blockchain, self.__chainwrapper, self.__artregistry)
+        transreg = TradeRegistrationClient(self.__privkey, self.__pubkey, self.__blockchain, self.__chainwrapper,
+                                           self.__artregistry)
         await transreg.register_trade(imagedata_hash, tradetype, watched_address, copies, price, expiration)
 
     async def __download_image(self, artid_hex):

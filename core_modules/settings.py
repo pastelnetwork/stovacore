@@ -48,7 +48,8 @@ NetWorkSettings.TICKET_MATCH_EXPIRY = 30  # 30s blocks x 30: 900s -> 15m
 if NetWorkSettings.DEBUG:
     NetWorkSettings.REQUIRED_CONFIRMATIONS = 1
 else:
-    NetWorkSettings.REQUIRED_CONFIRMATIONS = 10
+    # NetWorkSettings.REQUIRED_CONFIRMATIONS = 10
+    NetWorkSettings.REQUIRED_CONFIRMATIONS = 1
 
 # We set this so low, because we don't care if the utxo gets invalidated. If it does, the ticket is lost anyway and
 # we need to be as fast as possible here.
@@ -93,8 +94,10 @@ if NetWorkSettings.DEBUG:
     # NetWorkSettings.DUPE_DETECTION_FINGERPRINT_SIZE = 8064
 else:
     NetWorkSettings.DUPE_DETECTION_ENABLED = True
-    NetWorkSettings.DUPE_DETECTION_MODELS = ["VGG16", "Xception", "InceptionResNetV2", "DenseNet201", "InceptionV3"]
-    NetWorkSettings.DUPE_DETECTION_FINGERPRINT_SIZE = 8064
+    NetWorkSettings.DUPE_DETECTION_MODELS = ["VGG16"]
+    # NetWorkSettings.DUPE_DETECTION_MODELS = ["VGG16", "Xception", "InceptionResNetV2", "DenseNet201", "InceptionV3"]
+    # NetWorkSettings.DUPE_DETECTION_FINGERPRINT_SIZE = 8064
+    NetWorkSettings.DUPE_DETECTION_FINGERPRINT_SIZE = 512
 
 NetWorkSettings.DUPE_DETECTION_TARGET_SIZE = (240, 240)  # the dupe detection modules were trained with this size
 NetWorkSettings.DUPE_DETECTION_SPEARMAN_THRESHOLD = 0.86
