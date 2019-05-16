@@ -5,6 +5,7 @@ from PIL import Image
 
 from core_modules.helpers import get_pynode_digest_bytes, require_true
 from PastelCommon.signatures import pastel_id_verify_signature_with_public_key_func
+from core_modules.logger import initlogging
 from core_modules.model_validators import FieldValidator, StringField, IntegerField, FingerprintField, SHA3512Field, \
     LubyChunkHashField, LubyChunkField, ImageField, ThumbnailField, TXIDField, UUIDField, SignatureField, PubkeyField, \
     LubySeedField, BlockChainAddressField, UnixTimeField, StringChoiceField
@@ -13,6 +14,8 @@ from core_modules.blackbox_modules.dupe_detection_utils import measure_similarit
 from core_modules.blackbox_modules.nsfw import NSFWDetector
 from core_modules.blackbox_modules import luby
 from core_modules.settings import NetWorkSettings
+
+ticket_logger = initlogging('Ticket logger', __name__)
 
 
 # ===== VALIDATORS ===== #
@@ -197,6 +200,7 @@ class ImageData(TicketModelBase):
 
     def validate(self):
         # verify luby chunks
+        ticket_logger.debug('Start validate')
         luby.verify_blocks(self.lubychunks)
 
         # assemble image from chunks and check if it matches
@@ -207,6 +211,7 @@ class ImageData(TicketModelBase):
         # TODO: we should not regenerate the thumbnail, just look for similarities as this might not be deterministic
         new_thumbnail = self.generate_thumbnail(self.image)
         require_true(self.thumbnail == new_thumbnail)
+        ticket_logger.debug('Finish validate')
 
 
 class RegistrationTicket(TicketModelBase):
@@ -241,6 +246,7 @@ class RegistrationTicket(TicketModelBase):
         # after these checks are done we know that fingerprints are not dupes and there is no race
 
         # validate that lubyhashes and lubychunks are the same length
+        ticket_logger.debug('Start validate regticket')
         require_true(len(self.lubyhashes) == len(self.lubyseeds))
 
         # validate that order txid is not too old

@@ -36,9 +36,11 @@ class NodeManager:
         return other_nodes
 
     def get_masternode_ordering(self, blocknum):
+        self.__logger.debug('Get masternode ordering for {}'.format(blocknum))
         mn_rpc_clients = []
         if NetWorkSettings.VALIDATE_MN_SIGNATURES:
-            workers = self.__blockchain.masternode_workers(blocknum)
+            workers = self.__blockchain.masternode_workers()
+            self.__logger.debug('Workers: {}'.format(workers))
             for node in workers:
                 pubkey = node['pyPubKey']
                 node_id = get_nodeid_from_pubkey(pubkey)

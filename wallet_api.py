@@ -1,6 +1,6 @@
 import os
 import random
-import asyncio
+import signal
 from PastelCommon.keys import id_keypair_generation_func
 from aiohttp import web
 from PastelCommon.signatures import pastel_id_write_signature_on_data_func, \
@@ -76,3 +76,4 @@ app.add_routes(routes)
 
 if __name__ == '__main__':
     web.run_app(app, port=5000)
+    app.loop.add_signal_handler(signal.SIGINT, app.loop.stop)
