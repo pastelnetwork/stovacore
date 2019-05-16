@@ -26,7 +26,7 @@ class MasterNodeLogic:
         self.__basedir = basedir
         self.__privkey = privkey
         self.__pubkey = pubkey
-        self.__ip = '127.0.0.1'
+        self.__ip = '0.0.0.0'
         self.__port = 4444
 
         self.__logger = initlogging(self.__nodenum, __name__)
