@@ -17,6 +17,18 @@ def generate_key_id():
         key_id = random.randint(10000, 99999)
     return key_id
 
+__privkey, __pubkey = id_keypair_generation_func()
+
+if not os.path.exists(KEY_PATH):
+    os.mkdir(KEY_PATH)
+
+if not os.path.exists(os.path.join(KEY_PATH, 'private.key')):
+    with open(os.path.join(KEY_PATH, 'private.key'), "wb") as f:
+        f.write(__privkey)
+    os.chmod(os.path.join(KEY_PATH, 'private.key'), 0o0700)
+    with open(os.path.join(KEY_PATH, 'public.key'), "wb") as f:
+        f.write(__pubkey)
+    os.chmod(os.path.join(KEY_PATH, 'public.key'), 0o0700)
 
 with open(os.path.join(KEY_PATH, 'private.key'), "rb") as f:
     private_key = f.read()
