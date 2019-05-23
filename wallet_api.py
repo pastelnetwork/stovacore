@@ -30,6 +30,23 @@ if not os.path.exists(os.path.join(KEY_PATH, 'private.key')):
         f.write(__pubkey)
     os.chmod(os.path.join(KEY_PATH, 'public.key'), 0o0700)
 
+def generate_pastel_keys():
+    __privkey, __pubkey = id_keypair_generation_func()
+
+    privkey = 'private.key'
+    pubkey = 'public.key'
+    if not os.path.exists(KEY_PATH):
+        os.mkdir(KEY_PATH)
+    with open(os.path.join(KEY_PATH, privkey), "wb") as f:
+        f.write(__privkey)
+    os.chmod(os.path.join(KEY_PATH, privkey), 0o0700)
+    with open(os.path.join(KEY_PATH, pubkey), "wb") as f:
+        f.write(__pubkey)
+    os.chmod(os.path.join(KEY_PATH, pubkey), 0o0700)
+
+if not (os.path.exists(os.path.join(KEY_PATH, 'private.key')) and os.path.exists(os.path.join(KEY_PATH, 'public.key'))):
+    generate_pastel_keys()
+
 with open(os.path.join(KEY_PATH, 'private.key'), "rb") as f:
     private_key = f.read()
 
@@ -42,18 +59,13 @@ pastel_client = DjangoInterface(private_key, public_key, None, None, None, None)
 
 @routes.get('/generate_keys')
 async def generate_keys(request):
-    __privkey, __pubkey = id_keypair_generation_func()
-    key_id = generate_key_id()
-    privkey = 'private_{}.key'.format(key_id)
-    pubkey = 'public_{}.key'.format(key_id)
-    if not os.path.exists(KEY_PATH):
-        os.mkdir(KEY_PATH)
-    with open(os.path.join(KEY_PATH, privkey), "wb") as f:
-        f.write(__privkey)
-    os.chmod(os.path.join(KEY_PATH, privkey), 0o0700)
-    with open(os.path.join(KEY_PATH, pubkey), "wb") as f:
-        f.write(__pubkey)
-    os.chmod(os.path.join(KEY_PATH, pubkey), 0o0700)
+    if os.path.exists(os.path.join(KEY_PATH, 'private.key')) and os.path.exists(os.path.join(KEY_PATH, 'public.key')):
+        return web.json_response({
+            'private': os.path.join(KEY_PATH, 'private.key'),
+            'public': os.path.join(KEY_PATH, 'public.key')
+        })
+
+    generate_pastel_keys()
     return web.json_response({
         'private': os.path.join(KEY_PATH, privkey),
         'public': os.path.join(KEY_PATH, pubkey)
