@@ -20,6 +20,7 @@ else:
 
 NetWorkSettings = __NetworkSettings()
 
+NetWorkSettings.FROZEN = FROZEN
 NetWorkSettings.BASEDIR = os.path.abspath(os.path.join(__file__, "..", ".."))
 NetWorkSettings.CHROOT_DIR = os.path.join(NetWorkSettings.BASEDIR, "chroot_dir")
 NetWorkSettings.NSFW_MODEL_FILE = os.path.join(NetWorkSettings.BASEDIR, "misc", "nsfw_trained_model.pb")
