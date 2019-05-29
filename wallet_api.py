@@ -1,6 +1,7 @@
 import os
 import random
 import signal
+import sys
 from PastelCommon.keys import id_keypair_generation_func
 from aiohttp import web
 from PastelCommon.signatures import pastel_id_write_signature_on_data_func, \
@@ -17,18 +18,20 @@ def generate_key_id():
         key_id = random.randint(10000, 99999)
     return key_id
 
-__privkey, __pubkey = id_keypair_generation_func()
 
-if not os.path.exists(KEY_PATH):
-    os.mkdir(KEY_PATH)
+def check_or_generate_keys(app_dir):
+    __privkey, __pubkey = id_keypair_generation_func()
+    key_path = os.path.join(app_dir, KEY_PATH)
+    if not os.path.exists(key_path):
+        os.mkdir(key_path)
 
-if not os.path.exists(os.path.join(KEY_PATH, 'private.key')):
-    with open(os.path.join(KEY_PATH, 'private.key'), "wb") as f:
-        f.write(__privkey)
-    os.chmod(os.path.join(KEY_PATH, 'private.key'), 0o0700)
-    with open(os.path.join(KEY_PATH, 'public.key'), "wb") as f:
-        f.write(__pubkey)
-    os.chmod(os.path.join(KEY_PATH, 'public.key'), 0o0700)
+    if not os.path.exists(os.path.join(key_path, 'private.key')):
+        with open(os.path.join(key_path, 'private.key'), "wb") as f:
+            f.write(__privkey)
+        os.chmod(os.path.join(key_path, 'private.key'), 0o0700)
+        with open(os.path.join(key_path, 'public.key'), "wb") as f:
+            f.write(__pubkey)
+        os.chmod(os.path.join(key_path, 'public.key'), 0o0700)
 
 def generate_pastel_keys():
     __privkey, __pubkey = id_keypair_generation_func()
@@ -43,18 +46,6 @@ def generate_pastel_keys():
     with open(os.path.join(KEY_PATH, pubkey), "wb") as f:
         f.write(__pubkey)
     os.chmod(os.path.join(KEY_PATH, pubkey), 0o0700)
-
-if not (os.path.exists(os.path.join(KEY_PATH, 'private.key')) and os.path.exists(os.path.join(KEY_PATH, 'public.key'))):
-    generate_pastel_keys()
-
-with open(os.path.join(KEY_PATH, 'private.key'), "rb") as f:
-    private_key = f.read()
-
-with open(os.path.join(KEY_PATH, 'public.key'), "rb") as f:
-    public_key = f.read()
-
-
-pastel_client = DjangoInterface(private_key, public_key, None, None, None, None)
 
 
 @routes.get('/generate_keys')
@@ -99,5 +90,17 @@ app = web.Application()
 app.add_routes(routes)
 
 if __name__ == '__main__':
+    if len(sys.argv) < 2:
+        raise Exception('Usage: ./wallet_api <wallet_dir>')
+    app_dir = sys.argv[1]
+    check_or_generate_keys(app_dir)
+    with open(os.path.join(app_dir, KEY_PATH, 'private.key'), "rb") as f:
+        private_key = f.read()
+
+    with open(os.path.join(app_dir, KEY_PATH, 'public.key'), "rb") as f:
+        public_key = f.read()
+
+    pastel_client = DjangoInterface(private_key, public_key, None, None, None, None)
+
     web.run_app(app, port=5000)
     app.loop.add_signal_handler(signal.SIGINT, app.loop.stop)
