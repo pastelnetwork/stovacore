@@ -6,11 +6,19 @@ from PastelCommon.keys import id_keypair_generation_func
 from aiohttp import web
 from PastelCommon.signatures import pastel_id_write_signature_on_data_func, \
     pastel_id_verify_signature_with_public_key_func
-from core_modules.djangointerface import DjangoInterface
 
 KEY_PATH = 'keys'
 APP_DIR = None
 routes = web.RouteTableDef()
+pastel_client = None
+
+def get_pastel_client():
+    global pastel_client
+    if pastel_client is None:
+        from core_modules.djangointerface import DjangoInterface
+        pastel_client = DjangoInterface(private_key, public_key, None, None, None, None)
+    return pastel_client
+
 
 def generate_key_id():
     key_id = random.randint(10000, 99999)
@@ -84,13 +92,14 @@ async def verify_signature(request):
 @routes.post('/register_image')
 async def register_image(request):
     # TODO: get and adjust implementation from djangointerface.py
+    global pastel_client
     data = await request.post()
     image = data['image']
     filename = image.filename
     image_file = image.file
     content = image_file.read()
 
-    await pastel_client.register_image(filename, content)
+    await get_pastel_client().register_image(filename, content)
     return web.json_response({'method': 'register_image', 'title': filename})
 
 
@@ -107,8 +116,6 @@ if __name__ == '__main__':
 
     with open(os.path.join(APP_DIR, KEY_PATH, 'public.key'), "rb") as f:
         public_key = f.read()
-
-    pastel_client = DjangoInterface(private_key, public_key, None, None, None, None)
 
     web.run_app(app, port=5000)
     app.loop.add_signal_handler(signal.SIGINT, app.loop.stop)
