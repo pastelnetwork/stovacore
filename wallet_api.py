@@ -9,7 +9,7 @@ from PastelCommon.signatures import pastel_id_write_signature_on_data_func, \
 from core_modules.djangointerface import DjangoInterface
 
 KEY_PATH = 'keys'
-
+APP_DIR = None
 routes = web.RouteTableDef()
 
 def generate_key_id():
@@ -62,6 +62,14 @@ async def generate_keys(request):
         'public': os.path.join(KEY_PATH, pubkey)
     })
 
+@routes.get('/get_keys')
+async def get_keys(request):
+    return web.json_response({
+        'private': os.path.join(APP_DIR, KEY_PATH, 'private.key'),
+        'public': os.path.join(APP_DIR, KEY_PATH, 'public.key')
+    })
+
+
 
 @routes.get('/sign_message')
 async def sign_message(request):
@@ -92,12 +100,12 @@ app.add_routes(routes)
 if __name__ == '__main__':
     if len(sys.argv) < 2:
         raise Exception('Usage: ./wallet_api <wallet_dir>')
-    app_dir = sys.argv[1]
-    check_or_generate_keys(app_dir)
-    with open(os.path.join(app_dir, KEY_PATH, 'private.key'), "rb") as f:
+    APP_DIR = sys.argv[1]
+    check_or_generate_keys(APP_DIR)
+    with open(os.path.join(APP_DIR, KEY_PATH, 'private.key'), "rb") as f:
         private_key = f.read()
 
-    with open(os.path.join(app_dir, KEY_PATH, 'public.key'), "rb") as f:
+    with open(os.path.join(APP_DIR, KEY_PATH, 'public.key'), "rb") as f:
         public_key = f.read()
 
     pastel_client = DjangoInterface(private_key, public_key, None, None, None, None)
