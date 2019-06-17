@@ -2,6 +2,9 @@ import os
 import random
 import signal
 import sys
+import base64
+import json
+from collections import OrderedDict
 from PastelCommon.keys import id_keypair_generation_func
 from aiohttp import web
 from PastelCommon.signatures import pastel_id_write_signature_on_data_func, \
@@ -11,6 +14,11 @@ KEY_PATH = 'keys'
 APP_DIR = None
 routes = web.RouteTableDef()
 pastel_client = None
+
+def ordered_json_string_from_dict(data):
+    sorted_data = sorted(data.items(), key=lambda x: x[0])
+    ordered = OrderedDict(sorted_data)
+    return json.dumps(ordered)
 
 def get_pastel_client():
     global pastel_client
@@ -79,9 +87,21 @@ async def get_keys(request):
 
 
 
-@routes.get('/sign_message')
+@routes.post('/sign_message')
 async def sign_message(request):
-    return web.json_response({'method': 'sign_message'})
+    global public_key
+    str_pk = base64.encodebytes(public_key).decode()
+    data = await request.json()
+    string_data = ordered_json_string_from_dict(data)
+    bytes_data = string_data.encode()
+    signature = pastel_id_write_signature_on_data_func(bytes_data, private_key, public_key)
+    signature_string = base64.encodebytes(signature).decode()
+
+    # signature_restored = base64.b64decode(signature_string.encode())
+    # pk_restored = base64.b64decode(str_pk.encode())
+    # verified = pastel_id_verify_signature_with_public_key_func(bytes_data, signature_restored, pk_restored)
+    return web.json_response({'signature': signature_string,
+                              'pastel_id': str_pk})
 
 
 @routes.get('/verify_signature')
