@@ -103,6 +103,12 @@ async def sign_message(request):
     return web.json_response({'signature': signature_string,
                               'pastel_id': str_pk})
 
+@routes.get('/get_base64_pastel_id')
+async def get_base64_pastel_id(request):
+    global public_key
+    str_pk = base64.encodebytes(public_key).decode()
+    return web.json_response({'pastel_id': str_pk})
+
 
 @routes.get('/verify_signature')
 async def verify_signature(request):
