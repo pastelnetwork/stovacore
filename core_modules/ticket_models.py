@@ -203,7 +203,7 @@ class ImageData(TicketModelBase):
 
     def validate(self):
         # verify luby chunks
-        ticket_logger.debug('Start validate')
+
         luby.verify_blocks(self.lubychunks)
 
         # assemble image from chunks and check if it matches
@@ -214,7 +214,6 @@ class ImageData(TicketModelBase):
         # TODO: we should not regenerate the thumbnail, just look for similarities as this might not be deterministic
         new_thumbnail = self.generate_thumbnail(self.image)
         require_true(self.thumbnail == new_thumbnail)
-        ticket_logger.debug('Finish validate')
 
 
 class RegistrationTicket(TicketModelBase):
@@ -249,14 +248,12 @@ class RegistrationTicket(TicketModelBase):
         # after these checks are done we know that fingerprints are not dupes and there is no race
 
         # validate that lubyhashes and lubychunks are the same length
-        ticket_logger.debug('Start validate regticket')
         require_true(len(self.lubyhashes) == len(self.lubyseeds))
 
         # validate that order txid is not too old
         block_distance = chainwrapper.get_block_distance(chainwrapper.get_last_block_hash(), self.order_block_txid)
         if block_distance > NetWorkSettings.MAX_REGISTRATION_BLOCK_DISTANCE:
             raise ValueError("Block distance between order_block_height and current block is too large!")
-
         # validate that art hash doesn't exist:
         # TODO: move this artwork index logic into chainwrapper
         fingerprint_db = {}

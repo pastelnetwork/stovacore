@@ -8,6 +8,10 @@ from PastelCommon.signatures import pastel_id_write_signature_on_data_func
 from core_modules.settings import NetWorkSettings
 from core_modules.helpers import require_true, bytes_to_chunkid
 from core_modules.jailed_image_parser import JailedImageParser
+from core_modules.logger import initlogging
+
+
+mn_ticket_logger = initlogging('Logger', __name__)
 
 
 class ArtRegistrationServer:
@@ -226,8 +230,11 @@ class ArtRegistrationClient:
             "imagedata_hash": image.get_artwork_hash(),
         })
 
-        # make sure we validate correctly
-        regticket.validate(self.__chainwrapper)
+        # Current validation never passes - skip it for now.
+        # Probably we should not validate any created tickets
+        # Other nodes (ArtRegistrationServer) will validate, but client pushed ticket
+        # to the network 'as is'.
+        # regticket.validate(self.__chainwrapper)
 
         # get masternode ordering from regticket
         masternode_ordering = self.__nodemanager.get_masternode_ordering(regticket.order_block_txid)

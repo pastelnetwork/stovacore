@@ -40,6 +40,9 @@ class NodeManager:
         mn_rpc_clients = []
         if NetWorkSettings.VALIDATE_MN_SIGNATURES:
             workers = self.__blockchain.masternode_workers()
+            # TODO: workers is pure json. So it can not contain `bytes`.
+            # TODO: but the following code expects that `pyPybKey` has type == bytes
+            # TODO: so need to make convension how pyPubKey stores (I suggest base64), and do decode/encode.
             self.__logger.debug('Workers: {}'.format(workers))
             for node in workers:
                 pubkey = node['pyPubKey']

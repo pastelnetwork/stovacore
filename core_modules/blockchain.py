@@ -7,6 +7,7 @@ from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 from core_modules.blackbox_modules.blockchain import store_data_in_utxo,\
     retrieve_data_from_utxo
 from core_modules.settings import NetWorkSettings
+from core_modules.logger import initlogging
 
 # TODO: type check all these rpc calls, so that we can rely on it better
 
@@ -18,6 +19,7 @@ class BlockChain:
     def __init__(self, user, password, ip, rpcport):
         self.url = "http://%s:%s@%s:%s" % (user, password, ip, rpcport)
         self.__reconnect()
+        self.__logger = initlogging(0, __name__)
 
     def __reconnect(self):
         while True:
@@ -50,7 +52,6 @@ class BlockChain:
                 self.__reconnect()
             else:
                 break
-
         return ret
 
     def help(self):
@@ -127,9 +128,6 @@ class BlockChain:
 
     def getbestblockhash(self):
         return self.__call_jsonrpc("getbestblockhash")
-
-    def getwalletinfo(self):
-        return self.__call_jsonrpc("getwalletinfo")
 
     def getrawtransaction(self, txid, verbose):
         return self.__call_jsonrpc("getrawtransaction", txid, verbose)

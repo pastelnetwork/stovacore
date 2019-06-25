@@ -119,11 +119,11 @@ async def verify_signature(request):
 async def register_image(request):
     # TODO: get and adjust implementation from djangointerface.py
     global pastel_client
-    data = await request.post()
-    image = data['image']
-    filename = image.filename
-    image_file = image.file
-    content = image_file.read()
+    data = await request.json()
+    image_path = data['image']
+    filename = 'new_image.jpg'
+    with open(image_path, 'rb') as f:
+        content = f.read()
 
     await get_pastel_client().register_image(filename, content)
     return web.json_response({'method': 'register_image', 'title': filename})
