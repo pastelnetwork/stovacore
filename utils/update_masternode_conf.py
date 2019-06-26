@@ -5,8 +5,10 @@ import base64
 with open('/home/animecoinuser/.pastel/testnet3/masternode.conf', 'r') as f:
     config_data = f.read()
 json_config_data = json.loads(config_data)
-del json_config_data['pyAddress']
-del json_config_data['pyPubKey']
+if 'pyAddress' in json_config_data:
+    del json_config_data['pyAddress']
+if 'pyPubKey' in json_config_data:
+    del json_config_data['pyPubKey']
 
 mn_key = list(json_config_data.keys())[0]
 ip = urllib.request.urlopen('https://ipinfo.io/ip').read()
