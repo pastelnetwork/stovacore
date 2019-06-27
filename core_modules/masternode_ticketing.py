@@ -237,15 +237,19 @@ class ArtRegistrationClient:
         # regticket.validate(self.__chainwrapper)
 
         # get masternode ordering from regticket
+        mn_ticket_logger.info('Get masternode ordering')
         masternode_ordering = self.__nodemanager.get_masternode_ordering(regticket.order_block_txid)
+        mn_ticket_logger.info('Get masternode ordering ... done')
         mn0, mn1, mn2 = masternode_ordering
 
         # sign ticket
+        mn_ticket_logger.info('Sign ticket')
         signature_regticket = self.__generate_signed_ticket(regticket)
-
+        mn_ticket_logger.info('Sign ticket .... done')
         # have masternodes sign the ticket
+        mn_ticket_logger.info('Collect signatures')
         mn_signatures = await self.__collect_mn_regticket_signatures(signature_regticket, regticket, masternode_ordering)
-
+        mn_ticket_logger.info('Collect signatures ... done')
         # assemble final regticket
         final_regticket = self.__generate_final_ticket(FinalRegistrationTicket, regticket, signature_regticket,
                                                        mn_signatures)

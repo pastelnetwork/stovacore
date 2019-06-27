@@ -38,21 +38,13 @@ class NodeManager:
         return other_nodes
 
     def get_masternode_ordering(self, blocknum):
-        self.__logger.debug('Get masternode ordering for {}'.format(blocknum))
         mn_rpc_clients = []
         if NetWorkSettings.VALIDATE_MN_SIGNATURES:
             workers = self.__blockchain.masternode_workers()
-            # TODO: workers is pure json. So it can not contain `bytes`.
-            # TODO: but the following code expects that `pyPybKey` has type == bytes
-            # TODO: so need to make convension how pyPubKey stores (I suggest base64), and do decode/encode.
-            self.__logger.debug('Workers: {}'.format(workers))
             for node in workers:
-                b64chars = string.ascii_letters + string.digits + '+/'
-                # py_pub_key = ''.join([b64chars[random.randint(len(b64chars))] for x in range(90)])
                 py_pub_key = node['pyPubKey']
-                key_bytes = base64.b64decode(py_pub_key)
+                pubkey = base64.b64decode(py_pub_key)
 
-                pubkey = key_bytes
                 node_id = get_nodeid_from_pubkey(pubkey)
                 ip, py_rpc_port = node['pyAddress'].split(':')
                 rpc_client = RPCClient(self.__nodenum, self.__privkey, self.__pubkey,
