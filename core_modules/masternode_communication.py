@@ -58,7 +58,8 @@ class NodeManager:
         # parse new list
         new_mn_list = {}
         for node in workers_list:
-            pubkey = node['pyPubKey']
+            py_pub_key = node['pyPubKey']
+            pubkey = base64.b64decode(py_pub_key)
             if not pubkey:
                 continue
             ip, py_rpc_port = node['pyAddress'].split(':')

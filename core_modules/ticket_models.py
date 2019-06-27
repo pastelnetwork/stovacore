@@ -1,3 +1,4 @@
+import base64
 import io
 import msgpack
 
@@ -457,9 +458,9 @@ class MasterNodeSignedTicket(TicketModelBase):
                 raise ValueError(
                     "Masternodes are not unique as returned by get_masternode_order: %s" % masternode_ordering)
 
-            if (self.signature_1.pubkey != masternode_ordering[0] or
-                    self.signature_2.pubkey != masternode_ordering[1] or
-                    self.signature_3.pubkey != masternode_ordering[2]):
+            if (self.signature_1.pubkey != base64.b64decode(masternode_ordering[0]['pyPubKey']) or
+                    self.signature_2.pubkey != base64.b64decode(masternode_ordering[1]['pyPubKey']) or
+                    self.signature_3.pubkey != base64.b64decode(masternode_ordering[2]['pyPubKey'])):
                 raise ValueError("Invalid pubkey for masternode ordering")
 
             # validate signatures
