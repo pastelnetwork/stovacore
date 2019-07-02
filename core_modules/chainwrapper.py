@@ -26,6 +26,9 @@ class ChainWrapper:
         # nonces stores the nonces we have already seen
         self.__nonces = set()
 
+    def masternode_workers(self, blocknum=None):
+        return self.__blockchain.masternode_workers(blocknum)
+
     def get_tickets_by_type(self, tickettype):
         if tickettype not in ["identity", "regticket", "actticket", "transticket", "tradeticket"]:
             raise ValueError("%s is not a valid ticket type!" % tickettype)
