@@ -52,6 +52,16 @@ class NodeManager:
                 mn_rpc_clients.append(rpc_client)
         return mn_rpc_clients
 
+    def get_rpc_client_for_masternode(self, masternode):
+        py_pub_key = masternode['pyPubKey']
+        pubkey = base64.b64decode(py_pub_key)
+
+        node_id = get_nodeid_from_pubkey(pubkey)
+        ip, py_rpc_port = masternode['pyAddress'].split(':')
+        rpc_client = RPCClient(self.__nodenum, self.__privkey, self.__pubkey,
+                               node_id, ip, py_rpc_port, pubkey)
+        return rpc_client
+
     def update_masternode_list(self):
         workers_list = self.__blockchain.masternode_workers()
 

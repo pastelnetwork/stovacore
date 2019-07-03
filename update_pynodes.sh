@@ -5,7 +5,7 @@ cp -a PastelCommon for_dist/StoVaCore/
 cp -a utils for_dist/StoVaCore/
 # model is heavy - so it's copied from previous version
 # if model should be updated - uncomment the following line
-cp -a misc for_dist/StoVaCore/
+#cp -a misc for_dist/StoVaCore/
 cp * for_dist/StoVaCore/
 
 rm -rf for_dist/StoVaCore/PastelCommon/__pycache__

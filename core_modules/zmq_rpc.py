@@ -68,23 +68,28 @@ class RPCClient:
         while True:
             try:
                 await self.__zmq.send_multipart([send_msgid, msg], flags=zmq.NOBLOCK)
+                self.__logger.info('RPC message is sent, server IP: {}'.format(self.__server_ip))
             except zmq.error.Again:
                 await asyncio.sleep(0.01)
             else:
                 break
-
+        counter = 0
         # on receive we have to make sure that the message we get back belongs to this particular coroutine
         while True:
+            # if counter > 400:
+            #     raise Exception('No response for 4 seconds - skipping')
             # has another coroutine received our message?
             if send_msgid in self.__outstanding_responses:
                 msg = self.__outstanding_responses[send_msgid]
                 del self.__outstanding_responses[send_msgid]
+                self.__logger.info('RPC response received')
                 return msg
 
             # try to fetch the next message
             try:
                 recv_msgid, msg = await self.__zmq.recv_multipart(flags=zmq.NOBLOCK)  # waits for msg to be ready
             except zmq.error.Again:
+                counter += 1
                 await asyncio.sleep(0.01)
             else:
                 # does this message belong to us?
@@ -92,6 +97,7 @@ class RPCClient:
                     self.__outstanding_responses[recv_msgid] = msg
                     continue
                 else:
+                    self.__logger.info('RPC response received')
                     return msg
 
     async def __send_rpc_to_mn(self, response_name, request_packet):
@@ -116,7 +122,11 @@ class RPCClient:
 
         request_packet = self.__return_rpc_packet(self.__server_pubkey, ["PING_REQ", data])
 
-        returned_data = await self.__send_rpc_to_mn("PING_RESP", request_packet)
+        try:
+            returned_data = await self.__send_rpc_to_mn("PING_RESP", request_packet)
+        except:
+            self.__logger.warn('Skipping by timout')
+            return None
 
         if set(returned_data.keys()) != {"data"}:
             raise ValueError("RPC parameters are wrong for PING RESP: %s" % returned_data.keys())
@@ -177,6 +187,7 @@ class RPCClient:
     async def __send_mn_ticket_rpc(self, rpcreq, rpcresp, data):
         await asyncio.sleep(0)
         request_packet = self.__return_rpc_packet(self.__server_pubkey, [rpcreq, data])
+        self.__logger.info('Sending mn ticket to RPC')
         returned_data = await self.__send_rpc_to_mn(rpcresp, request_packet)
         return returned_data
 
@@ -211,6 +222,7 @@ class RPCServer:
         self.__RPCs[callback_req] = [callback_resp, callback_function, coroutine, allowed_pubkey]
 
     def __receive_rpc_ping(self, data):
+        self.__logger.info('Ping request received')
         if not isinstance(data, bytes):
             raise TypeError("Data must be a bytes!")
 
