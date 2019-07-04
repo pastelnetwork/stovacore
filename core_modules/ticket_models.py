@@ -454,7 +454,7 @@ class MasterNodeSignedTicket(TicketModelBase):
                 raise ValueError("Incorrect masternode list returned by get_masternode_order: %s" % masternode_ordering)
 
             # make sure they're unique
-            if len(set(masternode_ordering)) != 3:
+            if len(set([x['IP:port'] for x in masternode_ordering])) != 3:
                 raise ValueError(
                     "Masternodes are not unique as returned by get_masternode_order: %s" % masternode_ordering)
 
