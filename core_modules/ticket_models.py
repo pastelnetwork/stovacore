@@ -222,7 +222,7 @@ class RegistrationTicket(TicketModelBase):
         # mandatory fields for Final Ticket
         "author": PubkeyField(),
         "order_block_txid": TXIDField(),
-
+        "blocknum": IntegerField(minsize=0, maxsize=120),
         "imagedata_hash": SHA3512Field(),
 
         "artist_name": StringField(minsize=0, maxsize=120),
@@ -447,7 +447,7 @@ class MasterNodeSignedTicket(TicketModelBase):
 
         if NetWorkSettings.VALIDATE_MN_SIGNATURES:
             # validate masternode order that's in the ticket
-            masternode_ordering = chainwrapper.masternode_workers(self.ticket.order_block_txid)
+            masternode_ordering = chainwrapper.masternode_workers(self.ticket.blocknum)
 
             # make sure we got 3 MNs
             if len(masternode_ordering) != 3:

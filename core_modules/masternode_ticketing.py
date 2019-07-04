@@ -228,6 +228,7 @@ class ArtRegistrationClient:
 
             "author": self.__pubkey,
             "order_block_txid": self.__chainwrapper.get_last_block_hash(),
+            "blocknum": self.__chainwrapper.get_last_block_number(),
             "imagedata_hash": image.get_artwork_hash(),
         })
 

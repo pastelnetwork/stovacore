@@ -72,6 +72,9 @@ class ChainWrapper:
     def get_last_block_hash(self):
         return self.__blockchain.getbestblockhash()
 
+    def get_last_block_number(self):
+        return self.__blockchain.getblockcount()
+
     def store_ticket(self, ticket):
         if type(ticket) == FinalIDTicket:
             identifier = b'idticket'
