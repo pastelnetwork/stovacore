@@ -222,7 +222,7 @@ class RegistrationTicket(TicketModelBase):
         # mandatory fields for Final Ticket
         "author": PubkeyField(),
         "order_block_txid": TXIDField(),
-        "blocknum": IntegerField(minsize=0, maxsize=120),
+        "blocknum": IntegerField(minsize=0, maxsize=9999999999999),
         "imagedata_hash": SHA3512Field(),
 
         "artist_name": StringField(minsize=0, maxsize=120),
