@@ -164,8 +164,11 @@ def store_data_in_utxo(jsonrpc, input_data):
     signed_tx = jsonrpc.signrawtransaction(hexlify(final_tx).decode('utf-8'))
     require_true(signed_tx['complete'])
     hex_signed_transaction = signed_tx['hex']
-    # print('Sending data transaction to address: ' + receiving_blockchain_address)
-    # print('Size: %d  Fee: %2.8f' % (len(hex_signed_transaction) / 2, fee), file=sys.stderr)
+    print('Sending data transaction to address: ' + receiving_blockchain_address)
+    print('Size: %d  Fee: %2.8f' % (len(hex_signed_transaction) / 2, fee), file=sys.stderr)
+    print('store_data_in_utxo input_data: {}'.format(input_data))
+    print('store_data_in_utxo hex_signed_transaction: {}'.format(hex_signed_transaction))
+    
     send_raw_transaction_result = jsonrpc.sendrawtransaction(hex_signed_transaction)
     blockchain_transaction_id = send_raw_transaction_result
     # print('Transaction ID: ' + blockchain_transaction_id)
