@@ -145,7 +145,8 @@ class ArtRegistrationClient:
         })
 
         # make sure we validate correctly
-        final_ticket.validate(self.__chainwrapper)
+        # FIXME: suppress validation on client. pyNodes should care about validation, but not wallet.
+        #final_ticket.validate(self.__chainwrapper)
         return final_ticket
 
     async def __collect_mn_regticket_signatures(self, signature, ticket, masternode_ordering):

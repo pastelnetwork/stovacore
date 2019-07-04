@@ -113,6 +113,7 @@ class RPCClient:
             raise ValueError("Spotcheck response has rpc name: %s" % rpcname)
 
         if success != "SUCCESS":
+            self.__logger.warn('Error from masternode {}'.format(self.__server_ip))
             raise RPCException(response_msg)
 
         return response_data

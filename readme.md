@@ -69,4 +69,3 @@ This repository uses git submodules feature. To fetch modules run:
  - `pynode_control.sh` - helping script, should not be executed directly. It is executed on masternode machine by `pynodes.sh` script
  - `pynodes.sh` - provides start/stop/status functionality for pynodes of the testnet. Connects to testnet machines and executes `pynode_control.sh` fetched from 3rd party host. Return result to the local console. `Parameters`: `start` | `stop` | `status`. Applied to all known masternodes of testnet (mn2 .. mn11)
  - `python test_rpc.py` - connects to pyNodes from local `masternodes.conf` file, send ping packet with zeroMQ RPC. If any node hangs with response - it probably requires restart.
- 
