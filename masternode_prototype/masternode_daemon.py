@@ -86,7 +86,7 @@ class MasterNodeDaemon:
         # set signal handlers
         loop.add_signal_handler(signal.SIGTERM, loop.stop)
 
-        loop.create_task(self.logic.zmq_run_forever())
+        loop.create_task(self.logic.run_rpc_server())
         loop.create_task(self.logic.run_masternode_parser())
         loop.create_task(self.logic.run_ticket_parser())
         loop.create_task(self.logic.run_chunk_fetcher_forever())
@@ -96,4 +96,6 @@ class MasterNodeDaemon:
         except KeyboardInterrupt:
             pass
         finally:
+            # FIXME: such stopping create infinite recursion. Need to close port when stopping.
+            # loop.run_until_complete(self.logic.stop_rpc_server())
             loop.stop()

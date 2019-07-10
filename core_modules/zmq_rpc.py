@@ -1,4 +1,5 @@
 import asyncio
+from aiohttp import web
 
 import zmq
 import zmq.asyncio
@@ -205,16 +206,16 @@ class RPCServer:
         self.__port = port
         self.__privkey = privkey
         self.__pubkey = pubkey
-
-        # our RPC socket
-        self.__zmq = zmq.asyncio.Context().socket(zmq.ROUTER)
-        self.__zmq.setsockopt(zmq.IDENTITY, bytes(str(self.__nodenum), "utf-8"))
-        bindaddr = "tcp://%s:%s" % (self.__ip, self.__port)
-        self.__zmq.bind(bindaddr)
-        self.__logger.debug("RPC listening on %s" % bindaddr)
+        self.runner = None
+        self.site = None
 
         # define our RPCs
         self.__RPCs = {}
+        self.app = web.Application()
+        self.app.add_routes([web.post('/', self.__http_proccess)])
+        self.app.on_shutdown.append(self.stop_server)
+
+        self.__logger.debug("RPC listening on {}".format(self.__port))
 
         # add our only call
         self.add_callback("PING_REQ", "PING_RESP", self.__receive_rpc_ping)
@@ -269,6 +270,14 @@ class RPCServer:
         self.__logger.debug("Done with RPC RPC %s" % rpcname)
         return ret
 
+    async def __http_proccess(self, request):
+        msg = await request.content.read()
+        sender_id, received_msg = verify_and_unpack(msg, self.__pubkey)
+        rpcname, data = received_msg
+        reply_packet = await self.__process_local_rpc(sender_id, rpcname, data)
+
+        return web.Response(body=reply_packet)
+
     async def __zmq_process(self, ident, msgid, msg):
         # TODO: authenticate RPC, only allow from other MNs
         sender_id, received_msg = verify_and_unpack(msg, self.__pubkey)
@@ -295,6 +304,12 @@ class RPCServer:
 
         asyncio.ensure_future(self.__zmq_process(ident, msgid, msg))
 
-    async def zmq_run_forever(self):
-        while True:
-            await self.zmq_run_once()
+    async def run_server(self):
+        self.runner = web.AppRunner(self.app)
+        await self.runner.setup()
+        self.site = web.TCPSite(self.runner, port=self.__port)
+        await self.site.start()
+
+    async def stop_server(self, *args, **kwargs):
+        print('Stopping server')
+        await self.runner.cleanup()

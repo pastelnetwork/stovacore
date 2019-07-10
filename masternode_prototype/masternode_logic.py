@@ -283,5 +283,8 @@ class MasterNodeLogic:
             await asyncio.gather(*tasks)
             await asyncio.sleep(1)
 
-    async def zmq_run_forever(self):
-        await self.__rpcserver.zmq_run_forever()
+    async def run_rpc_server(self):
+        await self.__rpcserver.run_server()
+
+    async def stop_rpc_server(self):
+        await self.__rpcserver.stop_server()
