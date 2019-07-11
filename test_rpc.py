@@ -21,7 +21,7 @@ pastel_client = DjangoInterface(private_key, public_key, None, None, None, None)
 
 clients = dict()
 
-exclude = {}#{'mn6'}
+exclude = {}  # {'mn6'}
 
 result = {}
 

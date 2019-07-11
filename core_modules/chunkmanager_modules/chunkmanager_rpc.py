@@ -1,7 +1,7 @@
 import random
 import asyncio
 
-from core_modules.zmq_rpc import RPCException
+from core_modules.http_rpc import RPCException
 from core_modules.helpers import hex_to_chunkid, chunkid_to_hex, require_true, get_pynode_digest_hex
 from core_modules.logger import initlogging
 from core_modules.settings import NetWorkSettings

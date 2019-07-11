@@ -2,7 +2,7 @@ import base64
 import random
 import string
 
-from core_modules.zmq_rpc import RPCClient
+from core_modules.http_rpc import RPCClient
 from core_modules.helpers import get_nodeid_from_pubkey
 from core_modules.settings import NetWorkSettings
 from core_modules.logger import initlogging

@@ -11,7 +11,7 @@ from core_modules.chunkmanager import ChunkManager
 from core_modules.chunkmanager_modules.chunkmanager_rpc import ChunkManagerRPC
 from core_modules.chunkmanager_modules.aliasmanager import AliasManager
 from core_modules.ticket_models import FinalActivationTicket, FinalTransferTicket, FinalTradeTicket
-from core_modules.zmq_rpc import RPCException, RPCServer
+from core_modules.http_rpc import RPCException, RPCServer
 from core_modules.masternode_communication import NodeManager
 from core_modules.masternode_ticketing import ArtRegistrationServer
 from core_modules.settings import NetWorkSettings
