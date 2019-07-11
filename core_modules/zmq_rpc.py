@@ -1,13 +1,9 @@
 import asyncio
-from aiohttp import web
-
-import zmq
-import zmq.asyncio
-import uuid
+from aiohttp import web, ClientSession
 
 from core_modules.logger import initlogging
 from core_modules.rpc_serialization import pack_and_sign, verify_and_unpack
-from core_modules.helpers import get_cnode_digest_hex, chunkid_to_hex
+from core_modules.helpers import chunkid_to_hex
 
 
 class RPCException(Exception):
@@ -31,10 +27,6 @@ class RPCClient:
         self.__server_port = server_port
         self.__server_pubkey = mnpubkey
 
-        self.__outstanding_responses = {}
-
-        self.__zmq = None
-
         # pubkey and nodeid should be public for convenience, so that we can identify which server this is
         self.pubkey = self.__server_pubkey
         self.nodeid = nodeid
@@ -56,50 +48,13 @@ class RPCClient:
         return response_packet
 
     async def __send_rpc_and_wait_for_response(self, msg):
-        ctx = zmq.asyncio.Context()
-        if self.__zmq is None:
-            self.__zmq = ctx.socket(zmq.DEALER)
-            # TODO: make sure identity handling is correct and secure
-            self.__zmq.setsockopt(zmq.IDENTITY, bytes(str(uuid.uuid4()), "utf-8"))
-            self.__zmq.connect("tcp://%s:%s" % (self.__server_ip, self.__server_port))
-
-        # we use the msgid to figure out which coroutine the response belongs to
-        send_msgid = uuid.uuid4().bytes
-
-        while True:
-            try:
-                await self.__zmq.send_multipart([send_msgid, msg], flags=zmq.NOBLOCK)
-                self.__logger.info('RPC message is sent, server IP: {}'.format(self.__server_ip))
-            except zmq.error.Again:
-                await asyncio.sleep(0.01)
-            else:
-                break
-        counter = 0
-        # on receive we have to make sure that the message we get back belongs to this particular coroutine
-        while True:
-            # if counter > 400:
-            #     raise Exception('No response for 4 seconds - skipping')
-            # has another coroutine received our message?
-            if send_msgid in self.__outstanding_responses:
-                msg = self.__outstanding_responses[send_msgid]
-                del self.__outstanding_responses[send_msgid]
+        url = 'http://{}:{}/'.format(self.__server_ip, self.__server_port)
+        async with ClientSession() as session:
+            async with session.post(url, data=msg) as resp:
+                self.__logger.info('RPC request sent, waiting for response')
+                msg = await resp.read()
                 self.__logger.info('RPC response received')
                 return msg
-
-            # try to fetch the next message
-            try:
-                recv_msgid, msg = await self.__zmq.recv_multipart(flags=zmq.NOBLOCK)  # waits for msg to be ready
-            except zmq.error.Again:
-                counter += 1
-                await asyncio.sleep(0.01)
-            else:
-                # does this message belong to us?
-                if recv_msgid != send_msgid:
-                    self.__outstanding_responses[recv_msgid] = msg
-                    continue
-                else:
-                    self.__logger.info('RPC response received')
-                    return msg
 
     async def __send_rpc_to_mn(self, response_name, request_packet):
         await asyncio.sleep(0)
@@ -277,32 +232,6 @@ class RPCServer:
         reply_packet = await self.__process_local_rpc(sender_id, rpcname, data)
 
         return web.Response(body=reply_packet)
-
-    async def __zmq_process(self, ident, msgid, msg):
-        # TODO: authenticate RPC, only allow from other MNs
-        sender_id, received_msg = verify_and_unpack(msg, self.__pubkey)
-        rpcname, data = received_msg
-
-        reply_packet = await self.__process_local_rpc(sender_id, rpcname, data)
-
-        while True:
-            try:
-                await self.__zmq.send_multipart([ident, msgid, reply_packet], flags=zmq.NOBLOCK)
-            except zmq.error.Again:
-                await asyncio.sleep(0.01)
-            else:
-                break
-
-    async def zmq_run_once(self):
-        while True:
-            try:
-                ident, msgid, msg = await self.__zmq.recv_multipart(flags=zmq.NOBLOCK)  # waits for msg to be ready
-            except zmq.error.Again:
-                await asyncio.sleep(0.01)
-            else:
-                break
-
-        asyncio.ensure_future(self.__zmq_process(ident, msgid, msg))
 
     async def run_server(self):
         self.runner = web.AppRunner(self.app)
