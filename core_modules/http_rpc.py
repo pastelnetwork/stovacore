@@ -1,9 +1,11 @@
 import asyncio
+import ssl
 from aiohttp import web, ClientSession
 
 from core_modules.logger import initlogging
 from core_modules.rpc_serialization import pack_and_sign, verify_and_unpack
 from core_modules.helpers import chunkid_to_hex
+from core_modules.settings import NetWorkSettings
 
 
 class RPCException(Exception):
@@ -48,10 +50,10 @@ class RPCClient:
         return response_packet
 
     async def __send_rpc_and_wait_for_response(self, msg):
-        url = 'http://{}:{}/'.format(self.__server_ip, self.__server_port)
+        url = 'https://{}:{}/'.format(self.__server_ip, self.__server_port)
         self.__logger.info('Sending RPC message to {}'.format(url))
         async with ClientSession() as session:
-            async with session.post(url, data=msg) as resp:
+            async with session.post(url, data=msg, ssl=False) as resp:
                 self.__logger.info('RPC request sent, waiting for response')
                 msg = await resp.read()
                 self.__logger.info('RPC response received')
@@ -169,7 +171,7 @@ class RPCServer:
         self.__RPCs = {}
         self.app = web.Application()
         self.app.add_routes([web.post('/', self.__http_proccess)])
-        self.app.on_shutdown.append(self.stop_server)
+        # self.app.on_shutdown.append(self.stop_server)
 
         self.__logger.debug("RPC listening on {}".format(self.__port))
 
@@ -237,7 +239,11 @@ class RPCServer:
     async def run_server(self):
         self.runner = web.AppRunner(self.app)
         await self.runner.setup()
-        self.site = web.TCPSite(self.runner, port=self.__port)
+
+        ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+        ssl_context.load_cert_chain(NetWorkSettings.HTTPS_CERTIFICATE_FILE,
+                                    NetWorkSettings.HTTPS_KEY_FILE)
+        self.site = web.TCPSite(self.runner, port=self.__port, ssl_context=ssl_context)
         await self.site.start()
 
     async def stop_server(self, *args, **kwargs):

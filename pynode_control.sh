@@ -50,8 +50,16 @@ function start()
     fi
 }
 
+function generate_cert()
+{
+    mkdir /home/animecoinuser/.pastel/pynode_https_cert
+    cd /home/animecoinuser/.pastel/pynode_https_cert
+    openssl req -newkey rsa:2048 -nodes -keyout privkey.pem -x509 -days 36500 -out certificate.pem -subj "/C=US"
+}
+
 case $1 in
     "start") start;;
     "status") status;;
     "stop") kill_pynode;;
+    "generate_cert") generate_cert;;
 esac
