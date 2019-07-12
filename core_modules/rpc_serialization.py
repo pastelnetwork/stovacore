@@ -4,7 +4,7 @@ import msgpack
 
 from decimal import Decimal
 
-from PastelCommon.signatures import pastel_id_write_signature_on_data_func,\
+from PastelCommon.signatures import pastel_id_write_signature_on_data_func, \
     pastel_id_verify_signature_with_public_key_func
 from core_modules.blackbox_modules.helpers import sleep_rand
 from core_modules.helpers import get_pynode_digest_bytes
@@ -14,7 +14,6 @@ from core_modules.settings import NetWorkSettings
 
 MAX_SUPPORTED_VERSION = 1
 NONCE_LENGTH = 32
-
 
 VALID_CONTAINER_KEYS_v1 = {"version", "sender_id", "receiver_id", "data", "nonce", "timestamp", "signature"}
 
@@ -33,6 +32,8 @@ def ext_hook(code, data):
     if code == 0:
         return Decimal(data.decode("utf-8"))
     return msgpack.ExtType(code, data)
+
+
 # END MSGPACK EXT TYPES
 
 
@@ -68,7 +69,7 @@ def verify_and_unpack(raw_message_contents, expected_receiver_id):
     if version == 1:
         # validate all keys for this version
         a, b = set(container.keys()), VALID_CONTAINER_KEYS_v1
-        if len(a-b) + len(b-a) > 0:
+        if len(a - b) + len(b - a) > 0:
             raise KeyError("Keys don't match %s != %s" % (a, b))
 
         # typecheck all the fields
@@ -78,8 +79,8 @@ def verify_and_unpack(raw_message_contents, expected_receiver_id):
             raise ValueError("receiver_id is not us (%s != %s)" % (receiver_id, expected_receiver_id))
 
         # TODO: validate timestamp - is this enough?
-        require_true (timestamp > time.time() - 60)
-        require_true (timestamp < time.time() + 60)
+        require_true(timestamp > time.time() - 60)
+        require_true(timestamp < time.time() + 60)
 
         # validate signature:
         #  since signature can't be put into the dict we have to recreate it without the signature field
@@ -112,7 +113,7 @@ def pack_and_sign(privkey, pubkey, receiver_id, message_body, version=MAX_SUPPOR
             "version": version,
             "sender_id": pubkey,
             "receiver_id": receiver_id,
-            "data": message_body,
+            "data": message_body,  # here message_body is already serialized with msgpack
             "nonce": nacl.utils.random(NONCE_LENGTH),
             "timestamp": time.time(),
             "signature": b'',
@@ -124,9 +125,16 @@ def pack_and_sign(privkey, pubkey, receiver_id, message_body, version=MAX_SUPPOR
         # serialize container, calculate hash and sign with private key
         # signature is None as this point as we can't know the signature without calculating it
         container_serialized = msgpack.packb(container, default=default, use_bin_type=True)
-        signature = pastel_id_write_signature_on_data_func(get_pynode_digest_bytes(container_serialized), privkey, pubkey)
+        signature = pastel_id_write_signature_on_data_func(get_pynode_digest_bytes(container_serialized), privkey,
+                                                           pubkey)
 
         # TODO: serializing twice is not the best solution if we want to work with large messages
+
+        # TODO: AlexD: Actually here we serialize data even 3 times - cause `message_body` comes here already serialized
+        # TODO: but as we cannot sign python dict as is - we have to serialize it to bytestring somehow before signing
+        # TODO: so we cannot avoid double serialization, but can avoid triple one. `message_body` here should come as
+        # TODO: dict, not a binary string.
+        # TODO: On the other hand serialization/deserialization time expenses are nothing compairing to network delays.
 
         # fill signature field in and serialize again
         container["signature"] = signature

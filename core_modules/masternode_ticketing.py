@@ -1,15 +1,14 @@
 import uuid
 import time
 
-from .ticket_models import RegistrationTicket, Signature, FinalRegistrationTicket, ActivationTicket,\
-    FinalActivationTicket, ImageData, IDTicket, FinalIDTicket, TransferTicket, FinalTransferTicket, TradeTicket,\
+from .ticket_models import RegistrationTicket, Signature, FinalRegistrationTicket, ActivationTicket, \
+    FinalActivationTicket, ImageData, IDTicket, FinalIDTicket, TransferTicket, FinalTransferTicket, TradeTicket, \
     FinalTradeTicket
 from PastelCommon.signatures import pastel_id_write_signature_on_data_func
 from core_modules.settings import NetWorkSettings
 from core_modules.helpers import require_true, bytes_to_chunkid
 from core_modules.jailed_image_parser import JailedImageParser
 from core_modules.logger import initlogging
-
 
 mn_ticket_logger = initlogging('Logger', __name__)
 
@@ -146,7 +145,7 @@ class ArtRegistrationClient:
 
         # make sure we validate correctly
         # FIXME: suppress validation on client. pyNodes should care about validation, but not wallet.
-        #final_ticket.validate(self.__chainwrapper)
+        # final_ticket.validate(self.__chainwrapper)
         return final_ticket
 
     async def __collect_mn_regticket_signatures(self, signature, ticket, masternode_ordering):
@@ -172,8 +171,8 @@ class ArtRegistrationClient:
         signatures = []
         for mn in masternode_ordering:
             data_from_mn = await mn.call_masternode("SIGNACTTICKET_REQ", "SIGNACTTICKET_RESP", [signature.serialize(),
-                                                                                          ticket.serialize(),
-                                                                                          image.serialize()])
+                                                                                                ticket.serialize(),
+                                                                                                image.serialize()])
 
             # client parses signed ticket and validated signature
             mn_signature = Signature(serialized=data_from_mn)
@@ -198,8 +197,8 @@ class ArtRegistrationClient:
         return new_ticket
 
     async def register_image(self, image_data, artist_name=None, artist_website=None, artist_written_statement=None,
-                       artwork_title=None, artwork_series_name=None, artwork_creation_video_youtube_url=None,
-                       artwork_keyword_set=None, total_copies=None):
+                             artwork_title=None, artwork_series_name=None, artwork_creation_video_youtube_url=None,
+                             artwork_keyword_set=None, total_copies=None):
         # generate image ticket
         image = ImageData(dictionary={
             "image": image_data,
@@ -245,12 +244,29 @@ class ArtRegistrationClient:
         mn0, mn1, mn2 = masternode_ordering
 
         # sign ticket
-        mn_ticket_logger.info('Sign ticket')
-        signature_regticket = self.__generate_signed_ticket(regticket)
-        mn_ticket_logger.info('Sign ticket .... done')
+        # FIXME: No need to sign ticket here, cause every message sent to MN is signed in `pack_and_sign` method.
+        # mn_ticket_logger.info('Sign ticket')
+        # signature_regticket = self.__generate_signed_ticket(regticket)
+        # mn_ticket_logger.info('Sign ticket .... done')
+
+        # TODO: here changes start
+        # TODO: send ticket to MN0
+        # TODO: get upload_code in response - implement in MN code/art registration server
+        # TODO: upload image to MN0 using upload code
+        # TODO: (design upload_code logic/behaviour) - implement in MN code/art regisgration server
+        # TODO: get final fee from MN0
+        mn_ticket_logger.info('Initially sending regticket to the first masternode')
+        response = await mn0.call_masternode("REGTICKET_REQ", "REGTICKET_RESP",
+                                             ["regticket", regticket.serialize()])
+        # response here contains `upload_code`
+        mn_ticket_logger.info('Upload code received: {}'.format(response))
+
+        # TODO: below is old code, which is being replaced with new one
+
         # have masternodes sign the ticket
         mn_ticket_logger.info('Collect signatures')
-        mn_signatures = await self.__collect_mn_regticket_signatures(signature_regticket, regticket, masternode_ordering)
+        mn_signatures = await self.__collect_mn_regticket_signatures(signature_regticket, regticket,
+                                                                     masternode_ordering)
         mn_ticket_logger.info('Collect signatures ... done')
         # assemble final regticket
         final_regticket = self.__generate_final_ticket(FinalRegistrationTicket, regticket, signature_regticket,
@@ -274,7 +290,8 @@ class ArtRegistrationClient:
         signature_actticket = self.__generate_signed_ticket(actticket)
 
         # place image in chunkstorage
-        await mn0.call_masternode("PLACEINCHUNKSTORAGE_REQ", "PLACEINCHUNKSTORAGE_RESP", [regticket_txid, image.serialize()])
+        await mn0.call_masternode("PLACEINCHUNKSTORAGE_REQ", "PLACEINCHUNKSTORAGE_RESP",
+                                  [regticket_txid, image.serialize()])
 
         # have masternodes sign the ticket
         mn_signatures = await self.__collect_mn_actticket_signatures(signature_actticket, actticket, image,
@@ -345,7 +362,8 @@ class TransferRegistrationClient:
                                                            transferticket.copies))
 
         signature = Signature(dictionary={
-            "signature": pastel_id_write_signature_on_data_func(transferticket.serialize(), self.__privkey, self.__pubkey),
+            "signature": pastel_id_write_signature_on_data_func(transferticket.serialize(), self.__privkey,
+                                                                self.__pubkey),
             "pubkey": self.__pubkey,
         })
         signature.validate(transferticket)
