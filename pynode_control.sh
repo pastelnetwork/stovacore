@@ -60,7 +60,12 @@ function generate_cert()
 function create_tables()
 {
     cd ~/StoVaCore/utils
-    /home/animecoinuser/.virtualenvs/StoVaCore/bin/python create_tables.py
+    PYTHONPATH=/home/animecoinuser/StoVaCore/ /home/animecoinuser/.virtualenvs/StoVaCore/bin/python create_tables.py
+}
+
+function update_requirements()
+{
+    /home/animecoinuser/.virtualenvs/StoVaCore/bin/pip install -r ~/StoVaCore/requirements.txt
 }
 
 case $1 in
@@ -68,5 +73,6 @@ case $1 in
     "status") status;;
     "stop") kill_pynode;;
     "generate_cert") generate_cert;;
-    "creatre_tables") create_tables;;
+    "create_tables") create_tables;;
+    "update_requirements") update_requirements;;
 esac
