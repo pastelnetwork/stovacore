@@ -1,6 +1,8 @@
 import uuid
 import time
 
+from datetime import datetime
+from core_modules.database import UploadCode, db
 from .ticket_models import RegistrationTicket, Signature, FinalRegistrationTicket, ActivationTicket, \
     FinalActivationTicket, ImageData, IDTicket, FinalIDTicket, TransferTicket, FinalTransferTicket, TradeTicket, \
     FinalTradeTicket
@@ -25,6 +27,8 @@ class ArtRegistrationServer:
         self.pubkey = self.__pub
 
     def register_rpcs(self, rpcserver):
+        rpcserver.add_callback("REGTICKET_REQ", "REGTICKET_RESP",
+                               self.masternode_validate_registration_ticket)
         rpcserver.add_callback("SIGNREGTICKET_REQ", "SIGNREGTICKET_RESP",
                                self.masternode_sign_registration_ticket)
         rpcserver.add_callback("SIGNACTTICKET_REQ", "SIGNACTTICKET_RESP",
@@ -53,6 +57,21 @@ class ArtRegistrationServer:
             "pubkey": self.__pub,
         })
         return ticket_signed_by_mn.serialize()
+
+    def masternode_validate_registration_ticket(self, data):
+        # parse inputs
+        regticket_serialized = data
+        mn_ticket_logger.info('Masternode validate regticket, data: {}'.format(data))
+        regticket = RegistrationTicket(serialized=regticket_serialized)
+
+        # validate registration ticket
+        regticket.validate(self.__chainwrapper)
+        upload_code = uuid.uuid4().bytes
+
+        db.connect(reuse_if_open=True)
+        UploadCode.create(public_key=regticket.author, upload_code=upload_code, created=datetime.now())
+
+        return upload_code
 
     def masternode_sign_activation_ticket(self, data):
         # parse inputs
@@ -257,7 +276,7 @@ class ArtRegistrationClient:
         # TODO: get final fee from MN0
         mn_ticket_logger.info('Initially sending regticket to the first masternode')
         response = await mn0.call_masternode("REGTICKET_REQ", "REGTICKET_RESP",
-                                             ["regticket", regticket.serialize()])
+                                             regticket.serialize())
         # response here contains `upload_code`
         mn_ticket_logger.info('Upload code received: {}'.format(response))
 

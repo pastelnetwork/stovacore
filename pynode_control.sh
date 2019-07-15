@@ -57,9 +57,16 @@ function generate_cert()
     openssl req -newkey rsa:2048 -nodes -keyout privkey.pem -x509 -days 36500 -out certificate.pem -subj "/C=US"
 }
 
+function create_tables()
+{
+    cd ~/StoVaCore/utils
+    /home/animecoinuser/.virtualenvs/StoVaCore/bin/python create_tables.py
+}
+
 case $1 in
     "start") start;;
     "status") status;;
     "stop") kill_pynode;;
     "generate_cert") generate_cert;;
+    "creatre_tables") create_tables;;
 esac
