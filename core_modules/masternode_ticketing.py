@@ -2,6 +2,9 @@ import uuid
 import time
 
 from datetime import datetime
+
+from peewee import DoesNotExist
+
 from core_modules.database import UploadCode, db
 from .ticket_models import RegistrationTicket, Signature, FinalRegistrationTicket, ActivationTicket, \
     FinalActivationTicket, ImageData, IDTicket, FinalIDTicket, TransferTicket, FinalTransferTicket, TradeTicket, \
@@ -29,6 +32,8 @@ class ArtRegistrationServer:
     def register_rpcs(self, rpcserver):
         rpcserver.add_callback("REGTICKET_REQ", "REGTICKET_RESP",
                                self.masternode_validate_registration_ticket)
+        rpcserver.add_callback("IMAGE_UPLOAD_REQ", "IMAGE_UPLOAD_RESP",
+                               self.masternode_image_upload_request)
         rpcserver.add_callback("SIGNREGTICKET_REQ", "SIGNREGTICKET_RESP",
                                self.masternode_sign_registration_ticket)
         rpcserver.add_callback("SIGNACTTICKET_REQ", "SIGNACTTICKET_RESP",
@@ -38,7 +43,7 @@ class ArtRegistrationServer:
         rpcserver.add_callback("PLACEINCHUNKSTORAGE_REQ", "PLACEINCHUNKSTORAGE_RESP",
                                self.masternode_place_image_data_in_chunkstorage)
 
-    def masternode_sign_registration_ticket(self, data):
+    def masternode_sign_registration_ticket(self, data, *args, **kwargs):
         # parse inputs
         signature_serialized, regticket_serialized = data
         signed_regticket = Signature(serialized=signature_serialized)
@@ -68,12 +73,69 @@ class ArtRegistrationServer:
         regticket.validate(self.__chainwrapper)
         upload_code = uuid.uuid4().bytes
 
+        # TODO: clean upload code and regticket from local db when ticket was placed on the blockchain
+        # TODO: clean upload code and regticket from local db if they're old enough
         db.connect(reuse_if_open=True)
-        UploadCode.create(public_key=regticket.author, upload_code=upload_code, created=datetime.now())
+        UploadCode.create(regticket=regticket_serialized, upload_code=upload_code, created=datetime.now())
 
         return upload_code
 
-    def masternode_sign_activation_ticket(self, data):
+    def validate_image(self, image_data):
+        # TODO: we should validate image only after 10% burn fee is payed by the wallet
+        # validate image
+        image.validate()
+
+        # get registration ticket
+        final_regticket = chainwrapper.retrieve_ticket(self.registration_ticket_txid)
+
+        # validate final ticket
+        final_regticket.validate(chainwrapper)
+
+        # validate registration ticket
+        regticket = final_regticket.ticket
+
+        # validate that the authors match
+        require_true(regticket.author == self.author)
+
+        # validate that imagehash, fingerprints, lubyhashes and thumbnailhash indeed belong to the image
+        require_true(regticket.fingerprints == image.generate_fingerprints())  # TODO: is this deterministic?
+        require_true(regticket.lubyhashes == image.get_luby_hashes())
+        require_true(regticket.lubyseeds == image.get_luby_seeds())
+        require_true(regticket.thumbnailhash == image.get_thumbnail_hash())
+
+        # validate that MN order matches between registration ticket and activation ticket
+        require_true(regticket.order_block_txid == self.order_block_txid)
+
+        # image hash matches regticket hash
+        require_true(regticket.imagedata_hash == image.get_artwork_hash())
+
+        # run nsfw check
+        if NSFWDetector.is_nsfw(image.image):
+            raise ValueError("Image is NSFW, score: %s" % NSFWDetector.get_score(image.image))
+
+    def masternode_image_upload_request(self, data, *args, **kwargs):
+        # parse inputs
+        upload_code = data['upload_code']
+        image_data = data['image_data']
+        mn_ticket_logger.info('Masternode image upload received, upload_code: {}'.format(upload_code))
+        sender_id = kwargs.get('sender_id')
+        db.connect(reuse_if_open=True)
+        try:
+            upload_code_db_record = UploadCode.get(upload_code=upload_code)
+            regticket = RegistrationTicket(serialized=upload_code_db_record.regticket)
+            if regticket.author != sender_id:
+                raise Exception('Given upload code was created by other public key')
+            mn_ticket_logger.info('Given upload code exists with required public key')
+        except DoesNotExist:
+            mn_ticket_logger.warn('Given upload code DOES NOT exists with required public key')
+            raise
+        # TODO: do something with image data - save it? validate it?
+        # TODO: answer: save it. validation should happen only after paying 10% of burn fee
+        # TODO: calculate fee, PSL
+        fee = 10  # PSL # TODO: calculate fee
+        return fee
+
+    def masternode_sign_activation_ticket(self, data, *args, **kwargs):
         # parse inputs
         signature_serialized, activationticket_serialized, image_serialized = data
         signed_actticket = Signature(serialized=signature_serialized)
@@ -98,7 +160,7 @@ class ArtRegistrationServer:
         })
         return ticket_signed_by_mn.serialize()
 
-    def masternode_place_ticket_on_blockchain(self, data):
+    def masternode_place_ticket_on_blockchain(self, data, *args, **kwargs):
         tickettype, ticket_serialized = data
         if tickettype == "regticket":
             ticket = FinalRegistrationTicket(serialized=ticket_serialized)
@@ -113,7 +175,7 @@ class ArtRegistrationServer:
         # place ticket on the blockchain
         return self.__chainwrapper.store_ticket(ticket)
 
-    def masternode_place_image_data_in_chunkstorage(self, data):
+    def masternode_place_image_data_in_chunkstorage(self, data, *args, **kwargs):
         regticket_txid, imagedata_serialized = data
 
         imagedata = ImageData(serialized=imagedata_serialized)
@@ -268,17 +330,20 @@ class ArtRegistrationClient:
         # signature_regticket = self.__generate_signed_ticket(regticket)
         # mn_ticket_logger.info('Sign ticket .... done')
 
-        # TODO: here changes start
-        # TODO: send ticket to MN0
-        # TODO: get upload_code in response - implement in MN code/art registration server
+        mn_ticket_logger.info('Initially sending regticket to the first masternode')
+        upload_code = await mn0.call_masternode("REGTICKET_REQ", "REGTICKET_RESP",
+                                                regticket.serialize())
+        mn_ticket_logger.info('Upload code received: {}'.format(upload_code))
+
         # TODO: upload image to MN0 using upload code
         # TODO: (design upload_code logic/behaviour) - implement in MN code/art regisgration server
         # TODO: get final fee from MN0
-        mn_ticket_logger.info('Initially sending regticket to the first masternode')
-        response = await mn0.call_masternode("REGTICKET_REQ", "REGTICKET_RESP",
-                                             regticket.serialize())
-        # response here contains `upload_code`
-        mn_ticket_logger.info('Upload code received: {}'.format(response))
+
+        worker_fee = await mn0.call_masternode("IMAGE_UPLOAD_REQ", "IMAGE_UPLOAD_RESP",
+                                               {'image_data': image_data, 'upload_code': upload_code})
+
+
+
 
         # TODO: below is old code, which is being replaced with new one
 

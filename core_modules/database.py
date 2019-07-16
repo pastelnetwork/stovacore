@@ -6,8 +6,8 @@ db = SqliteDatabase(NetWorkSettings.MN_DATABASE_FILE)
 
 
 class UploadCode(Model):
-    public_key = BlobField()
     upload_code = BlobField()
+    regticket = BlobField()
     created = DateTimeField()
 
     class Meta:

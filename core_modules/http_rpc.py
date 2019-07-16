@@ -214,9 +214,9 @@ class RPCServer:
             try:
                 # handle callback depending on whether or not it's old-style blocking or new-style coroutine
                 if not coroutine:
-                    ret = fn(data)
+                    ret = fn(data, sender_id=sender_id)
                 else:
-                    ret = await fn(data)
+                    ret = await fn(data, sender_id=sender_id)
             except Exception as exc:
                 self.__logger.exception("Exception received while doing RPC: %s" % exc)
                 msg = [response_name, "ERROR", "RPC ERROR happened: %s" % exc]

@@ -63,6 +63,11 @@ function create_tables()
     PYTHONPATH=/home/animecoinuser/StoVaCore/ /home/animecoinuser/.virtualenvs/StoVaCore/bin/python create_tables.py
 }
 
+function drop_db()
+{
+    rm /home/animecoinuser/.pastel/masternode.db
+}
+
 function update_requirements()
 {
     /home/animecoinuser/.virtualenvs/StoVaCore/bin/pip install -r ~/StoVaCore/requirements.txt
@@ -75,4 +80,5 @@ case $1 in
     "generate_cert") generate_cert;;
     "create_tables") create_tables;;
     "update_requirements") update_requirements;;
+    "drop_db") drop_db;;
 esac
