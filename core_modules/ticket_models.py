@@ -258,22 +258,23 @@ class RegistrationTicket(TicketModelBase):
         # validate that art hash doesn't exist:
         # TODO: move this artwork index logic into chainwrapper
         fingerprint_db = {}
-        for txid, ticket in chainwrapper.all_ticket_iterator():
-            if type(ticket) == FinalRegistrationTicket:
-                ticket.validate(chainwrapper)
-            else:
-                continue
+        if NetWorkSettings.LONG_REGTICKET_VALIDATION_ENABLED:
+            for txid, ticket in chainwrapper.all_ticket_iterator():
+                if type(ticket) == FinalRegistrationTicket:
+                    ticket.validate(chainwrapper)
+                else:
+                    continue
 
-            regticket = ticket.ticket
+                regticket = ticket.ticket
 
-            # collect fingerprints
-            # TODO: only collect this for activated regtickets and tickets not older than X blocks
-            fingerprint_db[regticket.imagedata_hash] = ("DUMMY_PATH", regticket.fingerprints)  # TODO: do we need this?
+                # collect fingerprints
+                # TODO: only collect this for activated regtickets and tickets not older than X blocks
+                fingerprint_db[regticket.imagedata_hash] = ("DUMMY_PATH", regticket.fingerprints)  # TODO: do we need this?
 
-            # validate that this art hash does not yet exist on the blockchain
-            # TODO: only prohibit registration when this was registered in the past X blocks
-            # TODO: if regticket is activated: prohibit registration forever
-            require_true(regticket.imagedata_hash != self.imagedata_hash)
+                # validate that this art hash does not yet exist on the blockchain
+                # TODO: only prohibit registration when this was registered in the past X blocks
+                # TODO: if regticket is activated: prohibit registration forever
+                require_true(regticket.imagedata_hash != self.imagedata_hash)
 
         # validate that fingerprints are not dupes
         if len(fingerprint_db) > 0:

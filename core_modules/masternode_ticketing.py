@@ -63,7 +63,7 @@ class ArtRegistrationServer:
         })
         return ticket_signed_by_mn.serialize()
 
-    def masternode_validate_registration_ticket(self, data):
+    def masternode_validate_registration_ticket(self, data, *args, **kwargs):
         # parse inputs
         regticket_serialized = data
         mn_ticket_logger.info('Masternode validate regticket, data: {}'.format(data))
@@ -342,7 +342,7 @@ class ArtRegistrationClient:
         worker_fee = await mn0.call_masternode("IMAGE_UPLOAD_REQ", "IMAGE_UPLOAD_RESP",
                                                {'image_data': image_data, 'upload_code': upload_code})
 
-
+        mn_ticket_logger.info('Worker fee received: {}'.format(worker_fee))
 
 
         # TODO: below is old code, which is being replaced with new one
