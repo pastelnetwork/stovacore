@@ -129,9 +129,8 @@ class ArtRegistrationServer:
         except DoesNotExist:
             mn_ticket_logger.warn('Given upload code DOES NOT exists with required public key')
             raise
-        # TODO: do something with image data - save it? validate it?
-        # TODO: answer: save it. validation should happen only after paying 10% of burn fee
-        # TODO: calculate fee, PSL
+        upload_code_db_record.image_data = image_data
+        upload_code_db_record.save()
         fee = 10  # PSL # TODO: calculate fee
         return fee
 

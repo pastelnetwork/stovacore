@@ -9,6 +9,7 @@ class UploadCode(Model):
     upload_code = BlobField()
     regticket = BlobField()
     created = DateTimeField()
+    image_data = BlobField(null=True)
 
     class Meta:
         database = db
