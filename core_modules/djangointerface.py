@@ -249,6 +249,23 @@ class DjangoInterface:
         final_actticket = self.__chainwrapper.retrieve_ticket(actticket_txid, validate=True)
         return actticket_txid, final_actticket.to_dict()
 
+    async def get_image_registration_fee(self, title, image_data):
+        artreg = ArtRegistrationClient(self.__privkey, self.__pubkey, self.__chainwrapper, self.__nodemanager)
+
+        fee = await artreg.get_workers_fee(
+            image_data=image_data,
+            artist_name="Example Artist",
+            artist_website="exampleartist.com",
+            artist_written_statement="This is only a test",
+            artwork_title=title,
+            artwork_series_name="Examples and Tests collection",
+            artwork_creation_video_youtube_url="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            artwork_keyword_set="example, testing, sample",
+            total_copies=10
+        )
+
+        return fee
+
     def __get_identities(self):
         addresses = []
         for unspent in self.__blockchain.listunspent():

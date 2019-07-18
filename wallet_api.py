@@ -115,9 +115,14 @@ async def verify_signature(request):
     return web.json_response({'method': 'verify_signature'})
 
 
+# TODO: register_image proccess actually should be subdivided into steps
+# TODO: first step - send regticket - get upload code; upload image - get worker's fee
+# TODO: let's call it 'get fee' - cause its main output is fee.
+
 @routes.post('/register_image')
 async def register_image(request):
-    # TODO: get and adjust implementation from djangointerface.py
+    # TODO: support all form fields
+    # TODO: add required fields to the wallet
     global pastel_client
     data = await request.json()
     image_path = data['image']
@@ -127,6 +132,24 @@ async def register_image(request):
 
     await get_pastel_client().register_image(filename, content)
     return web.json_response({'method': 'register_image', 'title': filename})
+
+
+@routes.post('/get_image_registration_fee')
+async def get_image_registration_fee(request):
+    """
+    Input {image: path_to_image_file, title: image_title}
+    Returns {fee: workers_fee}
+    """
+    global pastel_client
+    data = await request.json()
+    image_path = data['image']
+    title = data['title']
+    with open(image_path, 'rb') as f:
+        content = f.read()
+
+    workers_fee = await get_pastel_client().get_image_registration_fee(title, content)
+    print('Fee received: {}'.format(workers_fee))
+    return web.json_response({'fee': workers_fee})
 
 
 app = web.Application()

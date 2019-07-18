@@ -131,7 +131,7 @@ class ArtRegistrationServer:
             raise
         upload_code_db_record.image_data = image_data
         upload_code_db_record.save()
-        fee = 10  # PSL # TODO: calculate fee
+        fee = 0.01*(len(image_data)/1024)  # PSL # TODO: calculate fee
         return fee
 
     def masternode_sign_activation_ticket(self, data, *args, **kwargs):
@@ -276,6 +276,47 @@ class ArtRegistrationClient:
         new_ticket.validate(self.__chainwrapper)
         return new_ticket
 
+    async def get_workers_fee(self, image_data, artist_name=None, artist_website=None, artist_written_statement=None,
+                              artwork_title=None, artwork_series_name=None, artwork_creation_video_youtube_url=None,
+                              artwork_keyword_set=None, total_copies=None):
+        image = ImageData(dictionary={
+            "image": image_data,
+            "lubychunks": ImageData.generate_luby_chunks(image_data),
+            "thumbnail": ImageData.generate_thumbnail(image_data),
+        })
+
+        image.validate()
+
+        regticket = RegistrationTicket(dictionary={
+            "artist_name": artist_name,
+            "artist_website": artist_website,
+            "artist_written_statement": artist_written_statement,
+
+            "artwork_title": artwork_title,
+            "artwork_series_name": artwork_series_name,
+            "artwork_creation_video_youtube_url": artwork_creation_video_youtube_url,
+            "artwork_keyword_set": artwork_keyword_set,
+            "total_copies": total_copies,
+
+            "fingerprints": image.generate_fingerprints(),
+            "lubyhashes": image.get_luby_hashes(),
+            "lubyseeds": image.get_luby_seeds(),
+            "thumbnailhash": image.get_thumbnail_hash(),
+
+            "author": self.__pubkey,
+            "order_block_txid": self.__chainwrapper.get_last_block_hash(),
+            "blocknum": self.__chainwrapper.get_last_block_number(),
+            "imagedata_hash": image.get_artwork_hash(),
+        })
+
+        mn0, mn1, mn2 = self.__nodemanager.get_masternode_ordering(regticket.order_block_txid)
+
+        upload_code = await mn0.call_masternode("REGTICKET_REQ", "REGTICKET_RESP",
+                                                regticket.serialize())
+
+        return await mn0.call_masternode("IMAGE_UPLOAD_REQ", "IMAGE_UPLOAD_RESP",
+                                         {'image_data': image_data, 'upload_code': upload_code})
+
     async def register_image(self, image_data, artist_name=None, artist_website=None, artist_written_statement=None,
                              artwork_title=None, artwork_series_name=None, artwork_creation_video_youtube_url=None,
                              artwork_keyword_set=None, total_copies=None):
@@ -342,7 +383,6 @@ class ArtRegistrationClient:
                                                {'image_data': image_data, 'upload_code': upload_code})
 
         mn_ticket_logger.info('Worker fee received: {}'.format(worker_fee))
-
 
         # TODO: below is old code, which is being replaced with new one
 
