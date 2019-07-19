@@ -35,7 +35,7 @@ class DjangoInterface:
         self.__blockchain = self.__connect_to_daemon()
         self.__chainwrapper = ChainWrapper(None, self.__blockchain, self.__artregistry)
         self.__aliasmanager = aliasmanager
-        self.__nodemanager = ClientNodeManager('Django interface NodeManger', self.__privkey, self.__pubkey,
+        self.__nodemanager = ClientNodeManager(self.__privkey, self.__pubkey,
                                                self.__blockchain)
 
         self.__active_tasks = {}
@@ -252,7 +252,7 @@ class DjangoInterface:
     async def get_image_registration_fee(self, title, image_data):
         artreg = ArtRegistrationClient(self.__privkey, self.__pubkey, self.__chainwrapper, self.__nodemanager)
 
-        fee = await artreg.get_workers_fee(
+        result = await artreg.get_workers_fee(
             image_data=image_data,
             artist_name="Example Artist",
             artist_website="exampleartist.com",
@@ -264,7 +264,7 @@ class DjangoInterface:
             total_copies=10
         )
 
-        return fee
+        return result
 
     def __get_identities(self):
         addresses = []

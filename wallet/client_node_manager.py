@@ -3,12 +3,12 @@ import base64
 from core_modules.http_rpc import RPCClient
 from core_modules.helpers import get_nodeid_from_pubkey
 from core_modules.logger import initlogging
+from wallet.database import MasternodeDB
 
 
 class ClientNodeManager:
-    def __init__(self, nodenum, privkey, pubkey, blockchain):
-        self.__nodenum = nodenum
-        self.__logger = initlogging('', __name__)
+    def __init__(self, privkey, pubkey, blockchain):
+        self.__logger = initlogging('ClientNodeManager', __name__)
         self.__privkey = privkey
         self.__pubkey = pubkey
         self.__blockchain = blockchain
@@ -22,7 +22,7 @@ class ClientNodeManager:
 
             node_id = get_nodeid_from_pubkey(pubkey)
             ip, py_rpc_port = node['pyAddress'].split(':')
-            rpc_client = RPCClient(self.__nodenum, self.__privkey, self.__pubkey,
+            rpc_client = RPCClient(self.__privkey, self.__pubkey,
                                    node_id, ip, py_rpc_port, pubkey)
             mn_rpc_clients.append(rpc_client)
         return mn_rpc_clients
@@ -33,6 +33,6 @@ class ClientNodeManager:
 
         node_id = get_nodeid_from_pubkey(pubkey)
         ip, py_rpc_port = masternode['pyAddress'].split(':')
-        rpc_client = RPCClient(self.__nodenum, self.__privkey, self.__pubkey,
+        rpc_client = RPCClient(self.__privkey, self.__pubkey,
                                node_id, ip, py_rpc_port, pubkey)
         return rpc_client

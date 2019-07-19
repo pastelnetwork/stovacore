@@ -13,7 +13,7 @@ class RPCException(Exception):
 
 
 class RPCClient:
-    def __init__(self, nodenum, privkey, pubkey, nodeid, server_ip, server_port, mnpubkey):
+    def __init__(self, privkey, pubkey, nodeid, server_ip, server_port, mnpubkey):
         if type(nodeid) is not int:
             raise TypeError("nodeid must be int!")
 

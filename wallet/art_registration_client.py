@@ -104,7 +104,7 @@ class ArtRegistrationClient:
         })
 
         image.validate()
-
+        blocknum = self.__chainwrapper.get_last_block_number()
         regticket = RegistrationTicket(dictionary={
             "artist_name": artist_name,
             "artist_website": artist_website,
@@ -123,17 +123,19 @@ class ArtRegistrationClient:
 
             "author": self.__pubkey,
             "order_block_txid": self.__chainwrapper.get_last_block_hash(),
-            "blocknum": self.__chainwrapper.get_last_block_number(),
+            "blocknum": blocknum,
             "imagedata_hash": image.get_artwork_hash(),
         })
-        regticket_db = RegticketDB.create(created=datetime.now())
+        regticket_db = RegticketDB.create(created=datetime.now(), blocknum=blocknum)
         mn0, mn1, mn2 = self.__nodemanager.get_masternode_ordering()
-
         upload_code = await mn0.call_masternode("REGTICKET_REQ", "REGTICKET_RESP",
                                                 regticket.serialize())
 
-        return await mn0.call_masternode("IMAGE_UPLOAD_REQ", "IMAGE_UPLOAD_RESP",
+        worker_fee = await mn0.call_masternode("IMAGE_UPLOAD_REQ", "IMAGE_UPLOAD_RESP",
                                          {'image_data': image_data, 'upload_code': upload_code})
+        regticket_db.worker_fee = worker_fee
+        regticket_db.save()
+        return {'regticket_id': regticket_db.id, 'worker_fee': worker_fee}
 
     async def register_image(self, image_data, artist_name=None, artist_website=None, artist_written_statement=None,
                              artwork_title=None, artwork_series_name=None, artwork_creation_video_youtube_url=None,

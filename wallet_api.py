@@ -9,8 +9,6 @@ from PastelCommon.keys import id_keypair_generation_func
 from aiohttp import web
 from PastelCommon.signatures import pastel_id_write_signature_on_data_func
 from datetime import datetime
-
-from utils.create_wallet_tables import create_tables
 from wallet.database import db, RegticketDB
 from wallet.settings import WALLET_DATABASE_FILE
 
@@ -134,12 +132,10 @@ async def get_image_registration_fee(request):
     title = data['title']
     with open(image_path, 'rb') as f:
         content = f.read()
-    regticket_db = RegticketDB.create(created=datetime.now())
-    worker_fee = await get_pastel_client().get_image_registration_fee(title, content)
-    regticket_db.worker_fee = worker_fee
-    regticket_db.save()
-    print('Fee received: {}'.format(worker_fee))
-    return web.json_response({'fee': worker_fee, 'regticket_id': regticket_db.id})
+    result = await get_pastel_client().get_image_registration_fee(title, content)
+    regticket_db = RegticketDB.get(RegticketDB.id==result['regticket_id'])
+    print('Fee received: {}'.format(result['worker_fee']))
+    return web.json_response({'fee': result['worker_fee'], 'regticket_id': regticket_db.id})
 
 
 @routes.post('/pay_image_registration_fee')
