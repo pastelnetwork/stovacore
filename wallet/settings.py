@@ -1,0 +1,1 @@
+WALLET_DATABASE_FILE = 'wallet.db'

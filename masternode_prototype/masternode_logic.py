@@ -1,10 +1,8 @@
-import os
 import asyncio
 
 from core_modules.logger import initlogging
 from core_modules.artregistry import ArtRegistry
 from core_modules.autotrader import AutoTrader
-from core_modules.djangointerface import DjangoInterface
 from core_modules.blockchain import NotEnoughConfirmations
 from core_modules.chainwrapper import ChainWrapper
 from core_modules.chunkmanager import ChunkManager

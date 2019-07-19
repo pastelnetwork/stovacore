@@ -7,13 +7,18 @@ import json
 from collections import OrderedDict
 from PastelCommon.keys import id_keypair_generation_func
 from aiohttp import web
-from PastelCommon.signatures import pastel_id_write_signature_on_data_func, \
-    pastel_id_verify_signature_with_public_key_func
+from PastelCommon.signatures import pastel_id_write_signature_on_data_func
+from datetime import datetime
+
+from utils.create_wallet_tables import create_tables
+from wallet.database import db, RegticketDB
+from wallet.settings import WALLET_DATABASE_FILE
 
 KEY_PATH = 'keys'
 APP_DIR = None
 routes = web.RouteTableDef()
 pastel_client = None
+
 
 def ordered_json_string_from_dict(data):
     sorted_data = sorted(data.items(), key=lambda x: x[0])
@@ -23,7 +28,7 @@ def ordered_json_string_from_dict(data):
 def get_pastel_client():
     global pastel_client
     if pastel_client is None:
-        from core_modules.djangointerface import DjangoInterface
+        from wallet.djangointerface import DjangoInterface
         pastel_client = DjangoInterface(private_key, public_key, None, None, None, None)
     return pastel_client
 
@@ -48,6 +53,7 @@ def check_or_generate_keys(app_dir):
         with open(os.path.join(key_path, 'public.key'), "wb") as f:
             f.write(__pubkey)
         os.chmod(os.path.join(key_path, 'public.key'), 0o0700)
+
 
 def generate_pastel_keys():
     __privkey, __pubkey = id_keypair_generation_func()
@@ -78,13 +84,13 @@ async def generate_keys(request):
         'public': os.path.join(KEY_PATH, pubkey)
     })
 
+
 @routes.get('/get_keys')
 async def get_keys(request):
     return web.json_response({
         'private': os.path.join(APP_DIR, KEY_PATH, 'private.key'),
         'public': os.path.join(APP_DIR, KEY_PATH, 'public.key')
     })
-
 
 
 @routes.post('/sign_message')
@@ -103,6 +109,7 @@ async def sign_message(request):
     return web.json_response({'signature': signature_string,
                               'pastel_id': str_pk})
 
+
 @routes.get('/get_base64_pastel_id')
 async def get_base64_pastel_id(request):
     global public_key
@@ -115,25 +122,6 @@ async def verify_signature(request):
     return web.json_response({'method': 'verify_signature'})
 
 
-# TODO: register_image proccess actually should be subdivided into steps
-# TODO: first step - send regticket - get upload code; upload image - get worker's fee
-# TODO: let's call it 'get fee' - cause its main output is fee.
-
-@routes.post('/register_image')
-async def register_image(request):
-    # TODO: support all form fields
-    # TODO: add required fields to the wallet
-    global pastel_client
-    data = await request.json()
-    image_path = data['image']
-    filename = 'new_image.jpg'
-    with open(image_path, 'rb') as f:
-        content = f.read()
-
-    await get_pastel_client().register_image(filename, content)
-    return web.json_response({'method': 'register_image', 'title': filename})
-
-
 @routes.post('/get_image_registration_fee')
 async def get_image_registration_fee(request):
     """
@@ -143,6 +131,28 @@ async def get_image_registration_fee(request):
     global pastel_client
     data = await request.json()
     image_path = data['image']
+    title = data['title']
+    with open(image_path, 'rb') as f:
+        content = f.read()
+    regticket_db = RegticketDB.create(created=datetime.now())
+    worker_fee = await get_pastel_client().get_image_registration_fee(title, content)
+    regticket_db.worker_fee = worker_fee
+    regticket_db.save()
+    print('Fee received: {}'.format(worker_fee))
+    return web.json_response({'fee': worker_fee, 'regticket_id': regticket_db.id})
+
+
+@routes.post('/pay_image_registration_fee')
+async def send_regticket_to_mn2_mn3(request):
+    """
+    Input {regticket_id: id}
+    Returns transaction id, success/fail
+    """
+    # TODO: get regticket from local DB by ID, get its first masternode payee address (from DB or from cNode with
+    # TODO: `masternode workers <blocknum>`).
+    global pastel_client
+    data = await request.json()
+    regticket_id = data['regticket_id']
     title = data['title']
     with open(image_path, 'rb') as f:
         content = f.read()
@@ -165,6 +175,8 @@ if __name__ == '__main__':
 
     with open(os.path.join(APP_DIR, KEY_PATH, 'public.key'), "rb") as f:
         public_key = f.read()
-
+    db.init(os.path.join(APP_DIR, WALLET_DATABASE_FILE))
+    if not os.path.exists(os.path.join(APP_DIR, WALLET_DATABASE_FILE)):
+        create_tables()
     web.run_app(app, port=5000)
     app.loop.add_signal_handler(signal.SIGINT, app.loop.stop)

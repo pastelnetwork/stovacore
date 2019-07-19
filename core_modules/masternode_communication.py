@@ -39,17 +39,16 @@ class NodeManager:
 
     def get_masternode_ordering(self, blocknum):
         mn_rpc_clients = []
-        if NetWorkSettings.VALIDATE_MN_SIGNATURES:
-            workers = self.__blockchain.masternode_workers()
-            for node in workers:
-                py_pub_key = node['pyPubKey']
-                pubkey = base64.b64decode(py_pub_key)
+        workers = self.__blockchain.masternode_workers()
+        for node in workers:
+            py_pub_key = node['pyPubKey']
+            pubkey = base64.b64decode(py_pub_key)
 
-                node_id = get_nodeid_from_pubkey(pubkey)
-                ip, py_rpc_port = node['pyAddress'].split(':')
-                rpc_client = RPCClient(self.__nodenum, self.__privkey, self.__pubkey,
-                                       node_id, ip, py_rpc_port, pubkey)
-                mn_rpc_clients.append(rpc_client)
+            node_id = get_nodeid_from_pubkey(pubkey)
+            ip, py_rpc_port = node['pyAddress'].split(':')
+            rpc_client = RPCClient(self.__nodenum, self.__privkey, self.__pubkey,
+                                   node_id, ip, py_rpc_port, pubkey)
+            mn_rpc_clients.append(rpc_client)
         return mn_rpc_clients
 
     def get_rpc_client_for_masternode(self, masternode):

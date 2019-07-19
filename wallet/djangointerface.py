@@ -2,7 +2,6 @@ import asyncio
 import random
 import time
 import uuid
-import traceback
 
 import bitcoinrpc
 from bitcoinrpc.authproxy import JSONRPCException
@@ -11,12 +10,13 @@ from core_modules.blackbox_modules.luby import decode as luby_decode, NotEnoughC
 from core_modules.blockchain import BlockChain
 from core_modules.chainwrapper import ChainWrapper
 from core_modules.masternode_communication import NodeManager
-from core_modules.masternode_ticketing import ArtRegistrationClient, IDRegistrationClient, TransferRegistrationClient, \
+from core_modules.masternode_ticketing import IDRegistrationClient, TransferRegistrationClient, \
     TradeRegistrationClient
 from core_modules.masternode_ticketing import FinalIDTicket, FinalTradeTicket, FinalTransferTicket, \
     FinalActivationTicket, FinalRegistrationTicket
 from core_modules.logger import initlogging
-from core_modules.helpers import bytes_to_chunkid, hex_to_chunkid, bytes_from_hex, require_true
+from core_modules.helpers import hex_to_chunkid, bytes_from_hex, require_true
+from wallet.art_registration_client import ArtRegistrationClient
 
 
 class DjangoInterface:
