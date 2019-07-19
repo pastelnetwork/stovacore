@@ -9,7 +9,6 @@ from bitcoinrpc.authproxy import JSONRPCException
 from core_modules.blackbox_modules.luby import decode as luby_decode, NotEnoughChunks
 from core_modules.blockchain import BlockChain
 from core_modules.chainwrapper import ChainWrapper
-from core_modules.masternode_communication import NodeManager
 from core_modules.masternode_ticketing import IDRegistrationClient, TransferRegistrationClient, \
     TradeRegistrationClient
 from core_modules.masternode_ticketing import FinalIDTicket, FinalTradeTicket, FinalTransferTicket, \
@@ -17,6 +16,7 @@ from core_modules.masternode_ticketing import FinalIDTicket, FinalTradeTicket, F
 from core_modules.logger import initlogging
 from core_modules.helpers import hex_to_chunkid, bytes_from_hex, require_true
 from wallet.art_registration_client import ArtRegistrationClient
+from wallet.client_node_manager import ClientNodeManager
 
 
 class DjangoInterface:
@@ -35,8 +35,8 @@ class DjangoInterface:
         self.__blockchain = self.__connect_to_daemon()
         self.__chainwrapper = ChainWrapper(None, self.__blockchain, self.__artregistry)
         self.__aliasmanager = aliasmanager
-        self.__nodemanager = NodeManager('Django interface NodeManger', self.__privkey, self.__pubkey,
-                                         self.__blockchain)
+        self.__nodemanager = ClientNodeManager('Django interface NodeManger', self.__privkey, self.__pubkey,
+                                               self.__blockchain)
 
         self.__active_tasks = {}
 

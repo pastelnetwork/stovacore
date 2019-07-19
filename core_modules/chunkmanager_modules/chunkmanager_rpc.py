@@ -9,7 +9,7 @@ from core_modules.settings import NetWorkSettings
 
 class ChunkManagerRPC:
     def __init__(self, nodenum, chunkmanager, mn_manager, aliasmanager):
-        self.__logger = initlogging(nodenum, __name__)
+        self.__logger = initlogging('', __name__)
         self.__chunkmanager = chunkmanager
         self.__aliasmanager = aliasmanager
         self.__mn_manager = mn_manager

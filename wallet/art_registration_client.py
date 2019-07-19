@@ -1,10 +1,12 @@
 import uuid
+from datetime import datetime
 from core_modules.ticket_models import RegistrationTicket, Signature, FinalRegistrationTicket, ActivationTicket, \
     FinalActivationTicket, ImageData
 from PastelCommon.signatures import pastel_id_write_signature_on_data_func
 from core_modules.settings import NetWorkSettings
 from core_modules.helpers import require_true
 from core_modules.logger import initlogging
+from wallet.database import RegticketDB
 
 art_reg_client_logger = initlogging('Logger', __name__)
 
@@ -124,8 +126,8 @@ class ArtRegistrationClient:
             "blocknum": self.__chainwrapper.get_last_block_number(),
             "imagedata_hash": image.get_artwork_hash(),
         })
-
-        mn0, mn1, mn2 = self.__nodemanager.get_masternode_ordering(regticket.order_block_txid)
+        regticket_db = RegticketDB.create(created=datetime.now())
+        mn0, mn1, mn2 = self.__nodemanager.get_masternode_ordering()
 
         upload_code = await mn0.call_masternode("REGTICKET_REQ", "REGTICKET_RESP",
                                                 regticket.serialize())

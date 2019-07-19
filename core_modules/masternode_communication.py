@@ -1,10 +1,8 @@
 import base64
 import random
-import string
 
 from core_modules.http_rpc import RPCClient
 from core_modules.helpers import get_nodeid_from_pubkey
-from core_modules.settings import NetWorkSettings
 from core_modules.logger import initlogging
 
 
@@ -12,7 +10,7 @@ class NodeManager:
     def __init__(self, nodenum, privkey, pubkey, blockchain):
         self.__masternodes = {}
         self.__nodenum = nodenum
-        self.__logger = initlogging(nodenum, __name__)
+        self.__logger = initlogging('', __name__)
         self.__privkey = privkey
         self.__pubkey = pubkey
         self.__blockchain = blockchain
@@ -39,7 +37,7 @@ class NodeManager:
 
     def get_masternode_ordering(self, blocknum):
         mn_rpc_clients = []
-        workers = self.__blockchain.masternode_workers()
+        workers = self.__blockchain.masternode_workers(blocknum)
         for node in workers:
             py_pub_key = node['pyPubKey']
             pubkey = base64.b64decode(py_pub_key)

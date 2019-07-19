@@ -3,7 +3,7 @@ from core_modules.logger import initlogging
 
 class AutoTrader:
     def __init__(self, nodenum, pubkey, artregistry, blockchain):
-        self.__logger = initlogging(nodenum, __name__)
+        self.__logger = initlogging('', __name__)
         self.__pubkey = pubkey
         self.__artregistry = artregistry
         self.__blockchain = blockchain

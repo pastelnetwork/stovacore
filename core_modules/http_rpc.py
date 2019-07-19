@@ -17,7 +17,7 @@ class RPCClient:
         if type(nodeid) is not int:
             raise TypeError("nodeid must be int!")
 
-        self.__logger = initlogging(nodenum, __name__, level="debug")
+        self.__logger = initlogging('', __name__, level="debug")
 
         # variables of the client
         self.__privkey = privkey
@@ -157,7 +157,7 @@ class RPCClient:
 
 class RPCServer:
     def __init__(self, nodenum, ip, port, privkey, pubkey):
-        self.__logger = initlogging(nodenum, __name__)
+        self.__logger = initlogging('', __name__)
 
         self.__nodenum = nodenum
         self.__ip = ip

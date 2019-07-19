@@ -19,7 +19,7 @@ class BlockChainTicket:
 
 class ChainWrapper:
     def __init__(self, nodenum, blockchain, artregistry):
-        self.__logger = initlogging(nodenum, __name__)
+        self.__logger = initlogging('', __name__)
         self.__blockchain = blockchain
         self.__artregistry = artregistry
 

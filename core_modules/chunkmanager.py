@@ -30,7 +30,7 @@ class ChunkManager:
         # initialize logger
         # IMPORTANT: we must ALWAYS use self.__logger.* for logging and not logging.*,
         # since we need instance-level logging
-        self.__logger = initlogging(nodenum, __name__)
+        self.__logger = initlogging('', __name__)
 
         # our node id
         self.__nodeid = nodeid

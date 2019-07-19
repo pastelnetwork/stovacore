@@ -6,7 +6,7 @@ from core_modules.settings import NetWorkSettings
 
 class JailedImageParser:
     def __init__(self, nodenum, file_data):
-        self.__logger = initlogging(nodenum, __name__)
+        self.__logger = initlogging('', __name__)
 
         if len(file_data) > NetWorkSettings.IMAGE_MAX_SIZE:
             raise ValueError("File is larger than NetWorkSettings.IMAGE_MAX_SIZE (%s)" % NetWorkSettings.IMAGE_MAX_SIZE)

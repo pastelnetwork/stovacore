@@ -5,7 +5,7 @@ from core_modules.logger import initlogging
 
 class AliasManager:
     def __init__(self, nodenum, nodeid, mn_manager):
-        self.__logger = initlogging(nodenum, __name__)
+        self.__logger = initlogging('', __name__)
         self.__nodeid = nodeid
         self.__mn_manager = mn_manager
 

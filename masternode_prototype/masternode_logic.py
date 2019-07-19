@@ -27,7 +27,7 @@ class MasterNodeLogic:
         self.__ip = '0.0.0.0'
         self.__port = 4444
 
-        self.__logger = initlogging(self.__nodenum, __name__)
+        self.__logger = initlogging('', __name__)
         self.__blockchain = blockchain
 
         # the art registry

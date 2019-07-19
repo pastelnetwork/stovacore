@@ -3,8 +3,8 @@ import logging
 loggers = {}
 
 
-def initlogging(nodeid, module, level="debug"):
-    name = "%s - %s" % (nodeid, module)
+def initlogging(logger_name, module, level="debug"):
+    name = "%s - %s" % (logger_name, module)
 
     # TODO: perhaps this can be done in a more elegant way?
     logger = loggers.get(name)

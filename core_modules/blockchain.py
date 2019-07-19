@@ -20,7 +20,7 @@ class BlockChain:
     def __init__(self, user, password, ip, rpcport):
         self.url = "http://%s:%s@%s:%s" % (user, password, ip, rpcport)
         self.__reconnect()
-        self.__logger = initlogging(0, __name__)
+        self.__logger = initlogging('', __name__)
 
     def __reconnect(self):
         while True:
