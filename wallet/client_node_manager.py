@@ -3,7 +3,6 @@ import base64
 from core_modules.http_rpc import RPCClient
 from core_modules.helpers import get_nodeid_from_pubkey
 from core_modules.logger import initlogging
-from wallet.database import MasternodeDB
 
 
 class ClientNodeManager:
@@ -13,7 +12,7 @@ class ClientNodeManager:
         self.__pubkey = pubkey
         self.__blockchain = blockchain
 
-    def get_masternode_ordering(self, blocknum):
+    def get_masternode_ordering(self, blocknum=None):
         mn_rpc_clients = []
         workers = self.__blockchain.masternode_workers(blocknum)
         for node in workers:
