@@ -3,6 +3,7 @@ cp -a masternode_prototype for_dist/StoVaCore/
 cp -a core_modules for_dist/StoVaCore/
 cp -a PastelCommon for_dist/StoVaCore/
 cp -a utils for_dist/StoVaCore/
+cp -a pynode for_dist/StoVaCore/
 # model is heavy - so it's copied from previous version
 # if model should be updated - uncomment the following line
 #cp -a misc for_dist/StoVaCore/
