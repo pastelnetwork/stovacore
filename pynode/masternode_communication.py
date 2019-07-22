@@ -39,22 +39,22 @@ class NodeManager:
         mn_rpc_clients = []
         workers = self.__blockchain.masternode_workers(blocknum)
         for node in workers:
-            py_pub_key = node['pyPubKey']
+            py_pub_key = node['extKey']
             pubkey = base64.b64decode(py_pub_key)
 
             node_id = get_nodeid_from_pubkey(pubkey)
-            ip, py_rpc_port = node['pyAddress'].split(':')
+            ip, py_rpc_port = node['extAddress'].split(':')
             rpc_client = RPCClient(self.__nodenum, self.__privkey, self.__pubkey,
                                    node_id, ip, py_rpc_port, pubkey)
             mn_rpc_clients.append(rpc_client)
         return mn_rpc_clients
 
     def get_rpc_client_for_masternode(self, masternode):
-        py_pub_key = masternode['pyPubKey']
+        py_pub_key = masternode['extKey']
         pubkey = base64.b64decode(py_pub_key)
 
         node_id = get_nodeid_from_pubkey(pubkey)
-        ip, py_rpc_port = masternode['pyAddress'].split(':')
+        ip, py_rpc_port = masternode['extAddress'].split(':')
         rpc_client = RPCClient(self.__nodenum, self.__privkey, self.__pubkey,
                                node_id, ip, py_rpc_port, pubkey)
         return rpc_client
@@ -69,7 +69,7 @@ class NodeManager:
             pubkey = base64.b64decode(py_pub_key)
             if not pubkey:
                 continue
-            ip, py_rpc_port = node['pyAddress'].split(':')
+            ip, py_rpc_port = node['extAddress'].split(':')
             node_id = get_nodeid_from_pubkey(pubkey)
             new_mn_list[node_id] = RPCClient(self.__nodenum, self.__privkey, self.__pubkey,
                                              node_id, ip, py_rpc_port, pubkey)

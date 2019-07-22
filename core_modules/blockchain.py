@@ -147,34 +147,6 @@ class BlockChain:
         # cNode returns data with the following format:
         # {<block_number>: [{node_data1, node_data2, node_data3}]}
         return list(result.values())[0]
-        # return [{
-        #     "mnAddress": "18.224.19.143:19933",
-        #     "mnPrivKey": "922s2UewLSPFKfbU59RR3h4d7sRvK2SENGn9wfavKniXPE9t5UN",
-        #     "outIndex": "1",
-        #     "pyAddress": "18.224.19.143:4444",
-        #     "pyCfg": None,
-        #     "pyPubKey": "xmLR5XkvzsSIA+3q6nVSpOjuNoILvt2v+JJNNRccdUI3cA0Z1GId5SQ7zfN1Y5LNjkaPUKaoHFO/yDxXEg2YfxaA",
-        #     "txid": "a97dcbecdeb237f6055ea0ef7325d449e71756227deb1a90b0f1697efac066b7"
-        # },
-        #     {
-        #         "mnAddress": "3.16.43.43:19933",
-        #         "mnPrivKey": "92ktJU7mB1umq8nCgXgXFvNoN3Te91HxkhJ9SXz3oJsCcWvMYWS",
-        #         "outIndex": "0",
-        #         "pyAddress": "3.16.43.43:4444",
-        #         "pyCfg": None,
-        #         "pyPubKey": "C1cvrlDBd7H5WNUOTH4Dkh1EoCUpov6ronjtUq7kAv4HGf09hBEYxXHXlup7KKvK1q9n0z+tfNeWkCt9UhnPHzsB",
-        #         "txid": "5d337a835bb61102e35d8011cfe0707618d02182db3f0213a514257e4f009a33"
-        #     },
-        #     {
-        #         "mnAddress": "18.216.28.255:19933",
-        #         "mnPrivKey": "93Fbxfr1FBjYRV1AbbBLEWuc4RS7J1Es3PUYj6g44EoTGE6EEwu",
-        #         "outIndex": "1",
-        #         "pyAddress": "18.216.28.255:4444",
-        #         "pyCfg": None,
-        #         "pyPubKey": "H62rxYbqmNyW+C+TdjfmsTwlDa3/wEfvNjaiScw2Hu5brlgR3ZvmjdSGwg7pDZJQYOCEGRfHYGS4Iye/bF+blywB",
-        #         "txid": "73130f53545e465eacb705b9425439b3c23b45a9b0084c7ec1deb0c9d1225be8"
-        #     }
-        # ]
 
     def search_chain(self, confirmations=NetWorkSettings.REQUIRED_CONFIRMATIONS):
         blockcount = self.getblockcount() - 1
