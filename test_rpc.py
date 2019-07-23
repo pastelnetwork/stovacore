@@ -15,7 +15,7 @@ with open(os.path.join(APP_DIR, KEY_PATH, 'private.key'), "rb") as f:
 with open(os.path.join(APP_DIR, KEY_PATH, 'public.key'), "rb") as f:
     public_key = f.read()
 
-pastel_client = DjangoInterface(private_key, public_key, None, None, None, None)
+pastel_client = DjangoInterface(private_key, public_key, None, None, None)
 
 # mn0, mn1, mn2 = pastel_client._DjangoInterface__nodemanager.get_rpc_client_for_masternode(masternodes)
 

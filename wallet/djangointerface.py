@@ -1,5 +1,7 @@
 import asyncio
 import random
+from decimal import Decimal
+
 import time
 import uuid
 
@@ -17,13 +19,15 @@ from core_modules.logger import initlogging
 from core_modules.helpers import hex_to_chunkid, bytes_from_hex, require_true
 from wallet.art_registration_client import ArtRegistrationClient
 from wallet.client_node_manager import ClientNodeManager
+from wallet.database import RegticketDB
+from wallet.settings import BURN_ADDRESS
 
 
 class DjangoInterface:
     # TODO: privkey, pubkey - they're wallet's PastelID keys.
     # TODO: nodenum - probably we don't need as this code will not be run by node - it will be run only by wallet
     # TODO: all other fields probably not needed - need to review how they're used
-    def __init__(self, privkey, pubkey, artregistry, chunkmanager, aliasmanager, nodemanager):
+    def __init__(self, privkey, pubkey, artregistry, chunkmanager, aliasmanager):
 
         self.__logger = initlogging('Wallet interface', __name__)
 
@@ -218,13 +222,13 @@ class DjangoInterface:
         collateral_utxos = list(self.__artregistry.get_all_collateral_utxo_for_pubkey(pubkey))
         return listunspent, receivingaddress, balance, collateral_utxos
 
-    def __send_to_address(self, address, amount, comment):
+    def __send_to_address(self, address, amount, comment=""):
         try:
-            self.__blockchain.sendtoaddress(address, amount, public_comment=comment)
+            result = self.__blockchain.sendtoaddress(address, amount, public_comment=comment)
         except JSONRPCException as exc:
             return str(exc)
         else:
-            return None
+            return result
 
     async def register_image(self, image_field, image_data):
         # get the registration object
@@ -270,8 +274,13 @@ class DjangoInterface:
         artreg = ArtRegistrationClient(self.__privkey, self.__pubkey, self.__chainwrapper, self.__nodemanager)
 
         result = await artreg.send_regticket_to_mn2_mn3(regticket_id)
-
-        return result
+        regticket_db = RegticketDB.get(RegticketDB.id == regticket_id)
+        amount = "{0:.5f}".format(regticket_db.worker_fee * 0.1)
+        # burn 10% of worker's fee
+        # TODO: current BURN_ADDRESS is taken from MN3. Pick another burn address.
+        self.__logger.warn('Sending to BURN_ADDRESS, amount: {}'.format(amount))
+        burn_10_percent_txid = self.__send_to_address(BURN_ADDRESS, amount)
+        return result, burn_10_percent_txid
 
     def __get_identities(self):
         addresses = []

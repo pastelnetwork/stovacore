@@ -29,7 +29,7 @@ def get_pastel_client():
     global pastel_client
     if pastel_client is None:
         from wallet.djangointerface import DjangoInterface
-        pastel_client = DjangoInterface(private_key, public_key, None, None, None, None)
+        pastel_client = DjangoInterface(private_key, public_key, None, None, None)
     return pastel_client
 
 
@@ -156,19 +156,17 @@ async def image_registration_step_3(request):
     Input {regticket_id: id}
     Returns transaction id, success/fail
     """
-    # TODO: get regticket from local DB by ID, get its first masternode payee address (from DB or from cNode with
-    # TODO: `masternode workers <blocknum>`).
     global pastel_client
     data = await request.json()
     regticket_id = data['regticket_id']
 
-    status = await get_pastel_client().image_registration_step_3(regticket_id)
+    status, txid = await get_pastel_client().image_registration_step_3(regticket_id)
     # TODO: if OK - burn 10% of the fee
     # TODO: send burn txid and upload_code of mn0 to mn0
     # TODO: send burn txid and upload_code of mn1 to mn1
     # TODO: send burn txid and upload_code of mn2 to mn2
     # TODO: all this does not require interaction with user, cause he already accepted to pay fee.
-    return web.json_response({'status': status})
+    return web.json_response({'status': status, 'txid': txid})
 
 
 @routes.post('/image_registration_cancel')
