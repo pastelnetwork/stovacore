@@ -249,7 +249,7 @@ class DjangoInterface:
         final_actticket = self.__chainwrapper.retrieve_ticket(actticket_txid, validate=True)
         return actticket_txid, final_actticket.to_dict()
 
-    async def get_image_registration_fee(self, title, image_data):
+    async def image_registration_step_2(self, title, image_data):
         artreg = ArtRegistrationClient(self.__privkey, self.__pubkey, self.__chainwrapper, self.__nodemanager)
 
         result = await artreg.get_workers_fee(
@@ -263,6 +263,13 @@ class DjangoInterface:
             artwork_keyword_set="example, testing, sample",
             total_copies=10
         )
+
+        return result
+
+    async def image_registration_step_3(self, regticket_id):
+        artreg = ArtRegistrationClient(self.__privkey, self.__pubkey, self.__chainwrapper, self.__nodemanager)
+
+        result = await artreg.send_regticket_to_mn2_mn3(regticket_id)
 
         return result
 

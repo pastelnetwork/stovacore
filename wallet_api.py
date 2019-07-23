@@ -122,11 +122,16 @@ async def verify_signature(request):
     return web.json_response({'method': 'verify_signature'})
 
 
-@routes.post('/get_image_registration_fee')
-async def get_image_registration_fee(request):
+@routes.post('/image_registration_step_2')
+async def image_registration_step_2(request):
     """
+    - Send regticket to MN0
+    - Receive upload_code
+    - Upload image
+    - Receive worker's fee
+    - Store regticket metadata to loca db
     Input {image: path_to_image_file, title: image_title}
-    Returns {fee: workers_fee}
+    Returns {workers_fee, regticket_id}
     """
     global pastel_client
     data = await request.json()
@@ -134,10 +139,36 @@ async def get_image_registration_fee(request):
     title = data['title']
     with open(image_path, 'rb') as f:
         content = f.read()
-    result = await get_pastel_client().get_image_registration_fee(title, content)
-    regticket_db = RegticketDB.get(RegticketDB.id==result['regticket_id'])
+    result = await get_pastel_client().image_registration_step_2(title, content)
+    regticket_db = RegticketDB.get(RegticketDB.id == result['regticket_id'])
+    regticket_db.path_to_image = image_path
+    regticket_db.save()
     print('Fee received: {}'.format(result['worker_fee']))
     return web.json_response({'fee': result['worker_fee'], 'regticket_id': regticket_db.id})
+
+
+@routes.post('/image_registration_step_3')
+async def image_registration_step_3(request):
+    """
+    - Send regticket to mn2, get upload code, upload image to mn2
+    - Send regticket to mn3, get upload code, upload image to mn3
+    - Verify both MNs accepted images - then return success, else return error
+    Input {regticket_id: id}
+    Returns transaction id, success/fail
+    """
+    # TODO: get regticket from local DB by ID, get its first masternode payee address (from DB or from cNode with
+    # TODO: `masternode workers <blocknum>`).
+    global pastel_client
+    data = await request.json()
+    regticket_id = data['regticket_id']
+
+    status = await get_pastel_client().image_registration_step_3(regticket_id)
+    # TODO: if OK - burn 10% of the fee
+    # TODO: send burn txid and upload_code of mn0 to mn0
+    # TODO: send burn txid and upload_code of mn1 to mn1
+    # TODO: send burn txid and upload_code of mn2 to mn2
+    # TODO: all this does not require interaction with user, cause he already accepted to pay fee.
+    return web.json_response({'status': status})
 
 
 @routes.post('/image_registration_cancel')
@@ -149,26 +180,6 @@ async def image_registration_cancel(request):
     data = await request.json()
     RegticketDB.get(RegticketDB.id == data['regticket_id']).delete_instance()
     return web.json_response({})
-
-
-@routes.post('/pay_image_registration_fee')
-async def send_regticket_to_mn2_mn3(request):
-    """
-    Input {regticket_id: id}
-    Returns transaction id, success/fail
-    """
-    # TODO: get regticket from local DB by ID, get its first masternode payee address (from DB or from cNode with
-    # TODO: `masternode workers <blocknum>`).
-    global pastel_client
-    data = await request.json()
-    regticket_id = data['regticket_id']
-    title = data['title']
-    with open(image_path, 'rb') as f:
-        content = f.read()
-
-    workers_fee = await get_pastel_client().get_image_registration_fee(title, content)
-    print('Fee received: {}'.format(workers_fee))
-    return web.json_response({'fee': workers_fee})
 
 
 app = web.Application()

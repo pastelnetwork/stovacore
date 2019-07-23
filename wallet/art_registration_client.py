@@ -1,4 +1,5 @@
 import uuid
+import asyncio
 from datetime import datetime
 from core_modules.ticket_models import RegistrationTicket, Signature, FinalRegistrationTicket, ActivationTicket, \
     FinalActivationTicket, ImageData
@@ -126,16 +127,41 @@ class ArtRegistrationClient:
             "blocknum": blocknum,
             "imagedata_hash": image.get_artwork_hash(),
         })
-        regticket_db = RegticketDB.create(created=datetime.now(), blocknum=blocknum)
+        regticket_db = RegticketDB.create(created=datetime.now(), blocknum=blocknum,
+                                          serialized_regticket=regticket.serialize())
         mn0, mn1, mn2 = self.__nodemanager.get_masternode_ordering()
         upload_code = await mn0.call_masternode("REGTICKET_REQ", "REGTICKET_RESP",
                                                 regticket.serialize())
 
         worker_fee = await mn0.call_masternode("IMAGE_UPLOAD_REQ", "IMAGE_UPLOAD_RESP",
-                                         {'image_data': image_data, 'upload_code': upload_code})
+                                               {'image_data': image_data, 'upload_code': upload_code})
         regticket_db.worker_fee = worker_fee
         regticket_db.save()
         return {'regticket_id': regticket_db.id, 'worker_fee': worker_fee}
+
+    async def send_regticket_to_mn2_mn3(self, regticket_id):
+        regticket_db = RegticketDB.get(RegticketDB.id == regticket_id)
+        with open(regticket_db.path_to_image, 'rb') as f:
+            image_data = f.read()
+
+        mn0, mn1, mn2 = self.__nodemanager.get_masternode_ordering(regticket_db.blocknum)
+
+        async def send_regticket_to_mn(mn, serialized_regticket, img_data):
+            """
+            Here we push ticket to given masternode, receive upload_code, then push image.
+            Masternode will return fee, but we ignore it here.
+            """
+            upload_code = await mn.call_masternode("REGTICKET_REQ", "REGTICKET_RESP",
+                                                   serialized_regticket)
+            worker_fee = await mn.call_masternode("IMAGE_UPLOAD_REQ", "IMAGE_UPLOAD_RESP",
+                                                  {'image_data': img_data, 'upload_code': upload_code})
+
+        await asyncio.gather(
+            send_regticket_to_mn(mn1, regticket_db.serialized_regticket, image_data),
+            send_regticket_to_mn(mn2, regticket_db.serialized_regticket, image_data),
+            return_exceptions=True
+        )
+        return 'OK'
 
     async def register_image(self, image_data, artist_name=None, artist_website=None, artist_written_statement=None,
                              artwork_title=None, artwork_series_name=None, artwork_creation_video_youtube_url=None,
