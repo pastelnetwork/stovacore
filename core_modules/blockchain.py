@@ -1,7 +1,7 @@
 import asyncio
 import time
 
-from http.client import CannotSendRequest
+from http.client import CannotSendRequest, RemoteDisconnected
 from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 
 from core_modules.blackbox_modules.blockchain import store_data_in_utxo, \
@@ -48,7 +48,7 @@ class BlockChain:
                     ret = f()
                 else:
                     ret = f(*params)
-            except (BrokenPipeError, CannotSendRequest) as exc:
+            except (BrokenPipeError, CannotSendRequest, RemoteDisconnected) as exc:
                 print("RECONNECTING %s" % exc)
                 self.__reconnect()
             else:

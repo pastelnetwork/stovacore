@@ -1,6 +1,7 @@
 import uuid
 import asyncio
 from datetime import datetime
+
 from core_modules.ticket_models import RegistrationTicket, Signature, FinalRegistrationTicket, ActivationTicket, \
     FinalActivationTicket, ImageData
 from PastelCommon.signatures import pastel_id_write_signature_on_data_func
