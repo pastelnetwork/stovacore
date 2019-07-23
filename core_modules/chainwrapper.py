@@ -29,6 +29,9 @@ class ChainWrapper:
     def masternode_workers(self, blocknum=None):
         return self.__blockchain.masternode_workers(blocknum)
 
+    def getlocalfee(self):
+        return self.__blockchain.getlocalfee()
+
     def get_tickets_by_type(self, tickettype):
         if tickettype not in ["identity", "regticket", "actticket", "transticket", "tradeticket"]:
             raise ValueError("%s is not a valid ticket type!" % tickettype)

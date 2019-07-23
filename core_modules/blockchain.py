@@ -61,6 +61,9 @@ class BlockChain:
     def addnode(self, node, mode):
         return self.__call_jsonrpc("addnode", node, mode)
 
+    def getlocalfee(self):
+        return self.__call_jsonrpc("masternode", "getlocalfee")
+
     def listunspent(self, minimum=1, maximum=9999999, addresses=[]):
         return self.__call_jsonrpc("listunspent", minimum, maximum, addresses)
 

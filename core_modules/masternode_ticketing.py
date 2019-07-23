@@ -137,7 +137,8 @@ class ArtRegistrationServer:
             raise
         upload_code_db_record.image_data = image_data
         upload_code_db_record.save()
-        fee = 0.01*(len(image_data)/1024)  # PSL # TODO: calculate fee
+        result = self.__chainwrapper.getlocalfee()
+        fee = result['localfee']
         return fee
 
     def masternode_validate_txid_upload_code_image(self, data, *args, **kwargs):
