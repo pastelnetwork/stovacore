@@ -34,6 +34,12 @@ class ArtRegistrationServer:
                                self.masternode_validate_registration_ticket)
         rpcserver.add_callback("IMAGE_UPLOAD_REQ", "IMAGE_UPLOAD_RESP",
                                self.masternode_image_upload_request)
+
+        rpcserver.add_callback("TXID_10_REQ", "TXID_10_RESP",
+                               self.masternode_validate_txid_upload_code_image)
+
+        # callbacks below are not used right now.
+        # TODO: inspect and remove if not needed
         rpcserver.add_callback("SIGNREGTICKET_REQ", "SIGNREGTICKET_RESP",
                                self.masternode_sign_registration_ticket)
         rpcserver.add_callback("SIGNACTTICKET_REQ", "SIGNACTTICKET_RESP",
@@ -133,6 +139,11 @@ class ArtRegistrationServer:
         upload_code_db_record.save()
         fee = 0.01*(len(image_data)/1024)  # PSL # TODO: calculate fee
         return fee
+
+    def masternode_validate_txid_upload_code_image(self, data, *args, **kwargs):
+        # parse inputs
+        # upload_code = data['upload_code']
+        return 'OK'
 
     def masternode_sign_activation_ticket(self, data, *args, **kwargs):
         # parse inputs

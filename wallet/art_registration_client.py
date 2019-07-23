@@ -137,6 +137,7 @@ class ArtRegistrationClient:
         worker_fee = await mn0.call_masternode("IMAGE_UPLOAD_REQ", "IMAGE_UPLOAD_RESP",
                                                {'image_data': image_data, 'upload_code': upload_code})
         regticket_db.worker_fee = worker_fee
+        regticket_db.upload_code_mn0 = upload_code
         regticket_db.save()
         return {'regticket_id': regticket_db.id, 'worker_fee': worker_fee}
 
@@ -156,12 +157,16 @@ class ArtRegistrationClient:
                                                    serialized_regticket)
             worker_fee = await mn.call_masternode("IMAGE_UPLOAD_REQ", "IMAGE_UPLOAD_RESP",
                                                   {'image_data': img_data, 'upload_code': upload_code})
+            return upload_code
 
-        await asyncio.gather(
+        upload_code_mn1, upload_code_mn2 = await asyncio.gather(
             send_regticket_to_mn(mn1, regticket_db.serialized_regticket, image_data),
             send_regticket_to_mn(mn2, regticket_db.serialized_regticket, image_data),
             return_exceptions=True
         )
+        regticket_db.upload_code_mn1 = upload_code_mn1
+        regticket_db.upload_code_mn2 = upload_code_mn2
+        regticket_db.save()
         return 'OK'
 
     async def register_image(self, image_data, artist_name=None, artist_website=None, artist_written_statement=None,

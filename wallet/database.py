@@ -12,6 +12,10 @@ class RegticketDB(Model):
     blocknum = IntegerField()
     serialized_regticket = BlobField()
     path_to_image = CharField(null=True)
+    burn_tx_id = CharField(null=True)
+    upload_code_mn0 = BlobField(null=True)
+    upload_code_mn1 = BlobField(null=True)
+    upload_code_mn2 = BlobField(null=True)
 
     class Meta:
         database = db

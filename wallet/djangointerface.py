@@ -280,6 +280,30 @@ class DjangoInterface:
         # TODO: current BURN_ADDRESS is taken from MN3. Pick another burn address.
         self.__logger.warn('Sending to BURN_ADDRESS, amount: {}'.format(amount))
         burn_10_percent_txid = self.__send_to_address(BURN_ADDRESS, amount)
+        self.__logger.warn('Type of received txid is {}'.format(type(burn_10_percent_txid)))
+        # store txid in DB
+        regticket_db.burn_tx_id = burn_10_percent_txid
+        regticket_db.save()
+        # TODO: send burn txid and upload_code of mn0 to mn0
+        # TODO: send burn txid and upload_code of mn1 to mn1
+        # TODO: send burn txid and upload_code of mn2 to mn2
+
+        mn0, mn1, mn2 = self.__nodemanager.get_masternode_ordering(regticket_db.blocknum)
+
+        async def send_txid_10_req_to_mn(mn, data):
+            """
+            Here we push ticket to given masternode, receive upload_code, then push image.
+            Masternode will return fee, but we ignore it here.
+            """
+            return await mn.call_masternode("TXID_10_REQ", "TXID_10_RESP",
+                                            data)
+        mn0_confirmed, mn1_confirmed, mn2_confirmed = await asyncio.gather(
+            send_txid_10_req_to_mn(mn0, [burn_10_percent_txid, regticket_db.upload_code_mn0]),
+            send_txid_10_req_to_mn(mn1, [burn_10_percent_txid, regticket_db.upload_code_mn1]),
+            send_txid_10_req_to_mn(mn2, [burn_10_percent_txid, regticket_db.upload_code_mn2]),
+            return_exceptions=True
+        )
+
         return result, burn_10_percent_txid
 
     def __get_identities(self):
