@@ -280,7 +280,7 @@ class DjangoInterface:
         # TODO: current BURN_ADDRESS is taken from MN3. Pick another burn address.
         self.__logger.warn('Sending to BURN_ADDRESS, amount: {}'.format(amount))
         burn_10_percent_txid = self.__send_to_address(BURN_ADDRESS, amount)
-        self.__logger.warn('Type of received txid is {}'.format(type(burn_10_percent_txid)))
+        self.__logger.warn('Burn txid is {}'.format(burn_10_percent_txid))
         # store txid in DB
         regticket_db.burn_tx_id = burn_10_percent_txid
         regticket_db.save()

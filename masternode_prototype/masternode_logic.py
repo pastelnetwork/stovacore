@@ -56,7 +56,7 @@ class MasterNodeLogic:
 
         # art registration server
         self.__artregistrationserver = ArtRegistrationServer(self.__nodenum, self.__privkey, self.__pubkey,
-                                                             self.__chainwrapper, self.__chunkmanager)
+                                                             self.__chainwrapper, self.__chunkmanager, self.__blockchain)
 
         # django interface
         # replace RPC interface to http

@@ -1,4 +1,4 @@
-from peewee import Model, SqliteDatabase, BlobField, DateTimeField
+from peewee import Model, SqliteDatabase, BlobField, DateTimeField, DecimalField
 
 from core_modules.settings import NetWorkSettings
 
@@ -6,10 +6,11 @@ db = SqliteDatabase(NetWorkSettings.MN_DATABASE_FILE)
 
 
 class UploadCode(Model):
-    upload_code = BlobField()
+    upload_code = BlobField(unique=True)
     regticket = BlobField()
     created = DateTimeField()
     image_data = BlobField(null=True)
+    localfee = DecimalField(null=True)
 
     class Meta:
         database = db

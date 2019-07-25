@@ -19,12 +19,13 @@ mn_ticket_logger = initlogging('Logger', __name__)
 
 
 class ArtRegistrationServer:
-    def __init__(self, nodenum, privkey, pubkey, chainwrapper, chunkmanager):
+    def __init__(self, nodenum, privkey, pubkey, chainwrapper, chunkmanager, blockchain):
         self.__nodenum = nodenum
         self.__priv = privkey
         self.__pub = pubkey
         self.__chainwrapper = chainwrapper
         self.__chunkmanager = chunkmanager
+        self.__blockchain = blockchain
 
         # this is to aid testing
         self.pubkey = self.__pub
@@ -142,9 +143,59 @@ class ArtRegistrationServer:
         return fee
 
     def masternode_validate_txid_upload_code_image(self, data, *args, **kwargs):
-        # parse inputs
-        # upload_code = data['upload_code']
-        return 'OK'
+        burn_10_txid, upload_code = data
+        # TODO: validate that given upload code was issues by this masternode (we should have it in local db)
+        try:
+            upload_code_db = UploadCode.get(upload_code=upload_code)
+        except DoesNotExist:
+            return {
+                'status': 'error',
+                'msg': 'Given upload code issues by someone else..'
+            }
+        tx_data = self.__blockchain.gettransaction(burn_10_txid)
+        tx_amount = abs(tx_data['amount'])  # it's negative
+        tx_time = tx_data['time']
+        regticket = RegistrationTicket(serialized=upload_code_db.regticket)
+
+        if tx_data['expiryheight'] < regticket.blocknum:
+            return {
+                'status': 'error',
+                'msg': 'Fee transaction is older then regticket.'
+            }
+
+        networkfee_result = self.__blockchain.getnetworkfee()
+        networkfee = networkfee_result['localfee']
+
+        if upload_code_db.localfee is not None:
+            # we're main masternode (MN0)
+            if tx_amount != upload_code_db.localfee:
+                return {
+                    'status': 'error',
+                    'msg': 'Wrong fee amount'
+                }
+        else:
+            # we're MN1 or MN2
+            # we don't know exact MN0 fee, but it should be almost equal to the networkfee
+            if tx_amount <= networkfee*0.09 or tx_amount >= networkfee*0.11:
+                upload_code_db.delete()  # to avoid futher attempts
+                return {
+                    'status': 'error',
+                    'msg': 'Payment amount differs with 10% of fee size'
+                }
+
+        if not tx_data:
+            return {
+                'status': 'error',
+                'msg': 'Burn 10% txid is invalid'
+            }
+
+        # TODO: ***
+        # TODO: perform duplication and nsfw check if image (image should be stored locally)
+        
+        return {
+            'status': 'OK',
+            'msg': 'Validation passed'
+        }
 
     def masternode_sign_activation_ticket(self, data, *args, **kwargs):
         # parse inputs
@@ -203,7 +254,6 @@ class ArtRegistrationServer:
         for chunkhash, chunkdata in zip(imagedata.get_luby_hashes(), imagedata.lubychunks):
             chunkhash_int = bytes_to_chunkid(chunkhash)
             self.__chunkmanager.store_chunk_in_temp_storage(chunkhash_int, chunkdata)
-
 
 
 class IDRegistrationClient:

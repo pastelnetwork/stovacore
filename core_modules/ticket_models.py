@@ -221,6 +221,7 @@ class RegistrationTicket(TicketModelBase):
     methods = {
         # mandatory fields for Final Ticket
         "author": PubkeyField(),
+        # "author_wallet": BlockChainAddressField(),
         "order_block_txid": TXIDField(),
         "blocknum": IntegerField(minsize=0, maxsize=9999999999999),
         "imagedata_hash": SHA3512Field(),
