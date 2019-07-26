@@ -152,19 +152,17 @@ class ArtRegistrationServer:
                 'status': 'error',
                 'msg': 'Given upload code issues by someone else..'
             }
-        tx_data = self.__blockchain.gettransaction(burn_10_txid)
-        tx_amount = abs(tx_data['amount'])  # it's negative
-        tx_time = tx_data['time']
         regticket = RegistrationTicket(serialized=upload_code_db.regticket)
-
-        if tx_data['expiryheight'] < regticket.blocknum:
+        raw_tx_data = self.__blockchain.getrawtransaction(burn_10_txid, verbose=1)
+        tx_amount = abs(raw_tx_data['vout'][0]['value'])
+        if raw_tx_data['expiryheight'] < regticket.blocknum:
             return {
                 'status': 'error',
                 'msg': 'Fee transaction is older then regticket.'
             }
 
         networkfee_result = self.__blockchain.getnetworkfee()
-        networkfee = networkfee_result['localfee']
+        networkfee = networkfee_result['networkfee']
 
         if upload_code_db.localfee is not None:
             # we're main masternode (MN0)
@@ -191,7 +189,7 @@ class ArtRegistrationServer:
 
         # TODO: ***
         # TODO: perform duplication and nsfw check if image (image should be stored locally)
-        
+
         return {
             'status': 'OK',
             'msg': 'Validation passed'
