@@ -134,7 +134,7 @@ class ArtRegistrationClient:
         upload_code = await mn0.call_masternode("REGTICKET_REQ", "REGTICKET_RESP",
                                                 regticket.serialize())
 
-        worker_fee = await mn0.call_masternode("IMAGE_UPLOAD_REQ", "IMAGE_UPLOAD_RESP",
+        worker_fee = await mn0.call_masternode("IMAGE_UPLOAD_MN0_REQ", "IMAGE_UPLOAD_MN0_RESP",
                                                {'image_data': image_data, 'upload_code': upload_code})
         regticket_db.worker_fee = worker_fee
         regticket_db.upload_code_mn0 = upload_code

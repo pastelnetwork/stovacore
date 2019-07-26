@@ -303,7 +303,9 @@ class DjangoInterface:
             send_txid_10_req_to_mn(mn2, [burn_10_percent_txid, regticket_db.upload_code_mn2]),
             return_exceptions=True
         )
-
+        self.__logger.warn('MN0: {}'.format(mn0_confirmed))
+        self.__logger.warn('MN1: {}'.format(mn1_confirmed))
+        self.__logger.warn('MN2: {}'.format(mn2_confirmed))
         return result, burn_10_percent_txid
 
     def __get_identities(self):

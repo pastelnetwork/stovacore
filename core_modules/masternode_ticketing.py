@@ -1,4 +1,6 @@
 import uuid
+from decimal import Decimal
+
 import time
 
 from datetime import datetime
@@ -33,6 +35,8 @@ class ArtRegistrationServer:
     def register_rpcs(self, rpcserver):
         rpcserver.add_callback("REGTICKET_REQ", "REGTICKET_RESP",
                                self.masternode_validate_registration_ticket)
+        rpcserver.add_callback("IMAGE_UPLOAD_MN0_REQ", "IMAGE_UPLOAD_MN0_RESP",
+                               self.masternode_image_upload_request_mn0)
         rpcserver.add_callback("IMAGE_UPLOAD_REQ", "IMAGE_UPLOAD_RESP",
                                self.masternode_image_upload_request)
 
@@ -138,8 +142,28 @@ class ArtRegistrationServer:
             raise
         upload_code_db_record.image_data = image_data
         upload_code_db_record.save()
+
+    def masternode_image_upload_request_mn0(self, data, *args, **kwargs):
+        # parse inputs
+        upload_code = data['upload_code']
+        image_data = data['image_data']
+        mn_ticket_logger.info('Masternode image upload received, upload_code: {}'.format(upload_code))
+        sender_id = kwargs.get('sender_id')
+        db.connect(reuse_if_open=True)
+        try:
+            upload_code_db_record = UploadCode.get(upload_code=upload_code)
+            regticket = RegistrationTicket(serialized=upload_code_db_record.regticket)
+            if regticket.author != sender_id:
+                raise Exception('Given upload code was created by other public key')
+            mn_ticket_logger.info('Given upload code exists with required public key')
+        except DoesNotExist:
+            mn_ticket_logger.warn('Given upload code DOES NOT exists with required public key')
+            raise
         result = self.__chainwrapper.getlocalfee()
         fee = result['localfee']
+        upload_code_db_record.image_data = image_data
+        upload_code_db_record.localfee = fee
+        upload_code_db_record.save()
         return fee
 
     def masternode_validate_txid_upload_code_image(self, data, *args, **kwargs):
@@ -155,6 +179,12 @@ class ArtRegistrationServer:
         regticket = RegistrationTicket(serialized=upload_code_db.regticket)
         raw_tx_data = self.__blockchain.getrawtransaction(burn_10_txid, verbose=1)
         tx_amount = abs(raw_tx_data['vout'][0]['value'])
+        if not raw_tx_data:
+            return {
+                'status': 'error',
+                'msg': 'Burn 10% txid is invalid'
+            }
+
         if raw_tx_data['expiryheight'] < regticket.blocknum:
             return {
                 'status': 'error',
@@ -166,26 +196,22 @@ class ArtRegistrationServer:
 
         if upload_code_db.localfee is not None:
             # we're main masternode (MN0)
-            if tx_amount != upload_code_db.localfee:
+            if tx_amount <= upload_code_db.localfee * Decimal(
+                    '0.099') or tx_amount >= upload_code_db.localfee * Decimal('0.101'):
                 return {
                     'status': 'error',
-                    'msg': 'Wrong fee amount'
+                    'msg': 'Wrong fee amount: {} instead of {}'.format(tx_amount, upload_code_db.localfee)
                 }
         else:
             # we're MN1 or MN2
             # we don't know exact MN0 fee, but it should be almost equal to the networkfee
-            if tx_amount <= networkfee*0.09 or tx_amount >= networkfee*0.11:
+            if tx_amount <= networkfee * 0.09 or tx_amount >= networkfee * 0.11:
                 upload_code_db.delete()  # to avoid futher attempts
                 return {
                     'status': 'error',
-                    'msg': 'Payment amount differs with 10% of fee size'
+                    'msg': 'Payment amount differs with 10% of fee size. tx_amount: {}, networkfee: {}'.format(
+                        tx_amount, networkfee)
                 }
-
-        if not tx_data:
-            return {
-                'status': 'error',
-                'msg': 'Burn 10% txid is invalid'
-            }
 
         # TODO: ***
         # TODO: perform duplication and nsfw check if image (image should be stored locally)
