@@ -87,7 +87,7 @@ NetWorkSettings.MAX_LUBY_CHUNKS = math.ceil((NetWorkSettings.IMAGE_MAX_SIZE / Ne
 if NetWorkSettings.DEBUG:
     NetWorkSettings.NSFW_THRESHOLD = 1
 else:
-    NetWorkSettings.NSFW_THRESHOLD = 0.7
+    NetWorkSettings.NSFW_THRESHOLD = 0.96
 
 if NetWorkSettings.DEBUG:
     NetWorkSettings.DUPE_DETECTION_ENABLED = False

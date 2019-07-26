@@ -7,6 +7,7 @@ from datetime import datetime
 
 from peewee import DoesNotExist
 
+from core_modules.blackbox_modules.nsfw import NSFWDetector
 from core_modules.database import UploadCode, db
 from .ticket_models import RegistrationTicket, Signature, FinalRegistrationTicket, ActivationTicket, \
     FinalActivationTicket, ImageData, IDTicket, FinalIDTicket, TransferTicket, FinalTransferTicket, TradeTicket, \
@@ -168,17 +169,19 @@ class ArtRegistrationServer:
 
     def masternode_validate_txid_upload_code_image(self, data, *args, **kwargs):
         burn_10_txid, upload_code = data
-        # TODO: validate that given upload code was issues by this masternode (we should have it in local db)
         try:
             upload_code_db = UploadCode.get(upload_code=upload_code)
         except DoesNotExist:
+            mn_ticket_logger.error('Upload code {} not found in DB'.format(upload_code))
             return {
                 'status': 'error',
-                'msg': 'Given upload code issues by someone else..'
+                'msg': 'Given upload code was issued by someone else...'
             }
         regticket = RegistrationTicket(serialized=upload_code_db.regticket)
         raw_tx_data = self.__blockchain.getrawtransaction(burn_10_txid, verbose=1)
-        tx_amount = abs(raw_tx_data['vout'][0]['value'])
+        tx_amounts = []
+        for vout in raw_tx_data['vout']:
+            tx_amounts.append(vout['value'])
         if not raw_tx_data:
             return {
                 'status': 'error',
@@ -196,25 +199,37 @@ class ArtRegistrationServer:
 
         if upload_code_db.localfee is not None:
             # we're main masternode (MN0)
-            if tx_amount <= upload_code_db.localfee * Decimal(
-                    '0.099') or tx_amount >= upload_code_db.localfee * Decimal('0.101'):
+            valid = False
+            for tx_amount in tx_amounts:
+                if upload_code_db.localfee * Decimal(
+                        '0.099') <= tx_amount <= upload_code_db.localfee * Decimal('0.101'):
+                    valid = True
+                    break
+            if not valid:
                 return {
                     'status': 'error',
-                    'msg': 'Wrong fee amount: {} instead of {}'.format(tx_amount, upload_code_db.localfee)
+                    'msg': 'Wrong fee amount'
                 }
         else:
             # we're MN1 or MN2
             # we don't know exact MN0 fee, but it should be almost equal to the networkfee
-            if tx_amount <= networkfee * 0.09 or tx_amount >= networkfee * 0.11:
+            valid = False
+            for tx_amount in tx_amounts:
+                if networkfee * 0.09 <= tx_amount <= networkfee * 0.11:
+                    valid = True
+                    break
+            if not valid:
                 upload_code_db.delete()  # to avoid futher attempts
                 return {
                     'status': 'error',
-                    'msg': 'Payment amount differs with 10% of fee size. tx_amount: {}, networkfee: {}'.format(
-                        tx_amount, networkfee)
+                    'msg': 'Payment amount differs with 10% of fee size.'
                 }
 
         # TODO: ***
         # TODO: perform duplication and nsfw check if image (image should be stored locally)
+        # FIXME: for dupe detection we should iterate over all chain on every check. It's not very efficient
+        if NSFWDetector.is_nsfw(upload_code_db.image_data):
+            raise ValueError("Image is NSFW, score: %s" % NSFWDetector.get_score(upload_code_db.image_data))
 
         return {
             'status': 'OK',

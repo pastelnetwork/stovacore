@@ -164,6 +164,8 @@ class ArtRegistrationClient:
             send_regticket_to_mn(mn2, regticket_db.serialized_regticket, image_data),
             return_exceptions=True
         )
+        art_reg_client_logger.warn('Upload code1: {}'.format(upload_code_mn1))
+        art_reg_client_logger.warn('Upload code2: {}'.format(upload_code_mn2))
         regticket_db.upload_code_mn1 = upload_code_mn1
         regticket_db.upload_code_mn2 = upload_code_mn2
         regticket_db.save()
