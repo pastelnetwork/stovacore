@@ -8,6 +8,7 @@ db = SqliteDatabase(NetWorkSettings.MN_DATABASE_FILE)
 class UploadCode(Model):
     upload_code = BlobField(unique=True)
     regticket = BlobField()
+    artists_signature_ticket = BlobField()
     created = DateTimeField()
     image_data = BlobField(null=True)
     localfee = DecimalField(null=True)

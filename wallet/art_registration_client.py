@@ -130,9 +130,11 @@ class ArtRegistrationClient:
         })
         regticket_db = RegticketDB.create(created=datetime.now(), blocknum=blocknum,
                                           serialized_regticket=regticket.serialize())
+        regticket_signature = self.__generate_signed_ticket(regticket)
+
         mn0, mn1, mn2 = self.__nodemanager.get_masternode_ordering()
         upload_code = await mn0.call_masternode("REGTICKET_REQ", "REGTICKET_RESP",
-                                                regticket.serialize())
+                                                [regticket.serialize(), regticket_signature.serialize()])
 
         worker_fee = await mn0.call_masternode("IMAGE_UPLOAD_MN0_REQ", "IMAGE_UPLOAD_MN0_RESP",
                                                {'image_data': image_data, 'upload_code': upload_code})
@@ -221,7 +223,7 @@ class ArtRegistrationClient:
         # sign ticket
         # FIXME: No need to sign ticket here, cause every message sent to MN is signed in `pack_and_sign` method.
         # mn_ticket_logger.info('Sign ticket')
-        # signature_regticket = self.__generate_signed_ticket(regticket)
+        signature_regticket = self.__generate_signed_ticket(regticket)
         # mn_ticket_logger.info('Sign ticket .... done')
 
         art_reg_client_logger.info('Initially sending regticket to the first masternode')

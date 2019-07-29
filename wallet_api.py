@@ -25,6 +25,7 @@ def ordered_json_string_from_dict(data):
     ordered = OrderedDict(sorted_data)
     return json.dumps(ordered)
 
+
 def get_pastel_client():
     global pastel_client
     if pastel_client is None:

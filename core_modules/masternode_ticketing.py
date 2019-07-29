@@ -77,9 +77,12 @@ class ArtRegistrationServer:
 
     def masternode_validate_registration_ticket(self, data, *args, **kwargs):
         # parse inputs
-        regticket_serialized = data
+        regticket_serialized, regticket_signature_serialized = data
         mn_ticket_logger.info('Masternode validate regticket, data: {}'.format(data))
         regticket = RegistrationTicket(serialized=regticket_serialized)
+        signed_regticket = Signature(serialized=regticket_signature_serialized)
+        require_true(signed_regticket.pubkey == regticket.author)
+        signed_regticket.validate(regticket)
 
         # validate registration ticket
         regticket.validate(self.__chainwrapper)
@@ -88,8 +91,8 @@ class ArtRegistrationServer:
         # TODO: clean upload code and regticket from local db when ticket was placed on the blockchain
         # TODO: clean upload code and regticket from local db if they're old enough
         db.connect(reuse_if_open=True)
-        UploadCode.create(regticket=regticket_serialized, upload_code=upload_code, created=datetime.now())
-
+        UploadCode.create(regticket=regticket_serialized, upload_code=upload_code, created=datetime.now(),
+                          artists_signature_ticket=regticket_signature_serialized)
         return upload_code
 
     def validate_image(self, image_data):
