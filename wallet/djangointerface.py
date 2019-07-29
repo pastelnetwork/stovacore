@@ -284,9 +284,6 @@ class DjangoInterface:
         # store txid in DB
         regticket_db.burn_tx_id = burn_10_percent_txid
         regticket_db.save()
-        # TODO: send burn txid and upload_code of mn0 to mn0
-        # TODO: send burn txid and upload_code of mn1 to mn1
-        # TODO: send burn txid and upload_code of mn2 to mn2
 
         mn0, mn1, mn2 = self.__nodemanager.get_masternode_ordering(regticket_db.blocknum)
 
@@ -297,16 +294,20 @@ class DjangoInterface:
             """
             return await mn.call_masternode("TXID_10_REQ", "TXID_10_RESP",
                                             data)
-        mn0_confirmed, mn1_confirmed, mn2_confirmed = await asyncio.gather(
+        mn0_response, mn1_response, mn2_response = await asyncio.gather(
             send_txid_10_req_to_mn(mn0, [burn_10_percent_txid, regticket_db.upload_code_mn0]),
             send_txid_10_req_to_mn(mn1, [burn_10_percent_txid, regticket_db.upload_code_mn1]),
             send_txid_10_req_to_mn(mn2, [burn_10_percent_txid, regticket_db.upload_code_mn2]),
             return_exceptions=True
         )
-        self.__logger.warn('MN0: {}'.format(mn0_confirmed))
-        self.__logger.warn('MN1: {}'.format(mn1_confirmed))
-        self.__logger.warn('MN2: {}'.format(mn2_confirmed))
-        return result, burn_10_percent_txid
+        self.__logger.warn('MN0: {}'.format(mn0_response))
+        self.__logger.warn('MN1: {}'.format(mn1_response))
+        self.__logger.warn('MN2: {}'.format(mn2_response))
+        return {
+            'mn0': mn0_response,
+            'mn1': mn1_response,
+            'mn2': mn2_response
+        }
 
     def __get_identities(self):
         addresses = []

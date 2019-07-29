@@ -228,9 +228,7 @@ class ArtRegistrationServer:
                     'msg': 'Payment amount differs with 10% of fee size.'
                 }
 
-        # TODO: ***
-        # TODO: perform duplication and nsfw check if image (image should be stored locally)
-        # FIXME: for dupe detection we should iterate over all chain on every check. It's not very efficient
+        # TODO: perform duplication and check of image
         if NSFWDetector.is_nsfw(upload_code_db.image_data):
             raise ValueError("Image is NSFW, score: %s" % NSFWDetector.get_score(upload_code_db.image_data))
 
