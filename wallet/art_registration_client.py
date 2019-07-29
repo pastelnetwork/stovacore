@@ -128,9 +128,10 @@ class ArtRegistrationClient:
             "blocknum": blocknum,
             "imagedata_hash": image.get_artwork_hash(),
         })
-        regticket_db = RegticketDB.create(created=datetime.now(), blocknum=blocknum,
-                                          serialized_regticket=regticket.serialize())
         regticket_signature = self.__generate_signed_ticket(regticket)
+        regticket_db = RegticketDB.create(created=datetime.now(), blocknum=blocknum,
+                                          serialized_regticket=regticket.serialize(),
+                                          serialized_signature=regticket_signature.serialize())
 
         mn0, mn1, mn2 = self.__nodemanager.get_masternode_ordering()
         upload_code = await mn0.call_masternode("REGTICKET_REQ", "REGTICKET_RESP",
@@ -150,20 +151,20 @@ class ArtRegistrationClient:
 
         mn0, mn1, mn2 = self.__nodemanager.get_masternode_ordering(regticket_db.blocknum)
 
-        async def send_regticket_to_mn(mn, serialized_regticket, img_data):
+        async def send_regticket_to_mn(mn, serialized_regticket, serialized_signature, img_data):
             """
             Here we push ticket to given masternode, receive upload_code, then push image.
             Masternode will return fee, but we ignore it here.
             """
             upload_code = await mn.call_masternode("REGTICKET_REQ", "REGTICKET_RESP",
-                                                   serialized_regticket)
+                                                   [serialized_regticket, serialized_signature])
             worker_fee = await mn.call_masternode("IMAGE_UPLOAD_REQ", "IMAGE_UPLOAD_RESP",
                                                   {'image_data': img_data, 'upload_code': upload_code})
             return upload_code
 
         upload_code_mn1, upload_code_mn2 = await asyncio.gather(
-            send_regticket_to_mn(mn1, regticket_db.serialized_regticket, image_data),
-            send_regticket_to_mn(mn2, regticket_db.serialized_regticket, image_data),
+            send_regticket_to_mn(mn1, regticket_db.serialized_regticket, regticket_db.serialized_signature, image_data),
+            send_regticket_to_mn(mn2, regticket_db.serialized_regticket, regticket_db.serialized_signature, image_data),
             return_exceptions=True
         )
         art_reg_client_logger.warn('Upload code1: {}'.format(upload_code_mn1))

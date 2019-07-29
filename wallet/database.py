@@ -11,6 +11,7 @@ class RegticketDB(Model):
     created = DateTimeField()
     blocknum = IntegerField()
     serialized_regticket = BlobField()
+    serialized_signature = BlobField()
     path_to_image = CharField(null=True)
     burn_tx_id = CharField(null=True)
     upload_code_mn0 = BlobField(null=True)

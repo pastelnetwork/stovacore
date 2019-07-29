@@ -77,8 +77,8 @@ class ArtRegistrationServer:
 
     def masternode_validate_registration_ticket(self, data, *args, **kwargs):
         # parse inputs
-        regticket_serialized, regticket_signature_serialized = data
         mn_ticket_logger.info('Masternode validate regticket, data: {}'.format(data))
+        regticket_serialized, regticket_signature_serialized = data
         regticket = RegistrationTicket(serialized=regticket_serialized)
         signed_regticket = Signature(serialized=regticket_signature_serialized)
         require_true(signed_regticket.pubkey == regticket.author)
