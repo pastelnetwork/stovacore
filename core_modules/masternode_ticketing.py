@@ -9,11 +9,11 @@ from peewee import DoesNotExist
 
 from core_modules.blackbox_modules.nsfw import NSFWDetector
 from core_modules.database import UploadCode, db
+from pynode.utils import get_masternode_ordering
 from .ticket_models import RegistrationTicket, Signature, FinalRegistrationTicket, ActivationTicket, \
     FinalActivationTicket, ImageData, IDTicket, FinalIDTicket, TransferTicket, FinalTransferTicket, TradeTicket, \
     FinalTradeTicket
 from PastelCommon.signatures import pastel_id_write_signature_on_data_func
-from core_modules.settings import NetWorkSettings
 from core_modules.helpers import require_true, bytes_to_chunkid
 from core_modules.jailed_image_parser import JailedImageParser
 from core_modules.logger import initlogging
@@ -43,6 +43,8 @@ class ArtRegistrationServer:
 
         rpcserver.add_callback("TXID_10_REQ", "TXID_10_RESP",
                                self.masternode_validate_txid_upload_code_image)
+        rpcserver.add_callback("REGTICKET_MN0_CONFIRM_REQ", "REGTICKET_MN0_CONFIRM_RESP",
+                               self.masternode_mn0_confirm)
 
         # callbacks below are not used right now.
         # TODO: inspect and remove if not needed
@@ -77,6 +79,7 @@ class ArtRegistrationServer:
 
     def masternode_validate_registration_ticket(self, data, *args, **kwargs):
         # parse inputs
+        artist_pk = kwargs.get('sender_id')
         mn_ticket_logger.info('Masternode validate regticket, data: {}'.format(data))
         regticket_serialized, regticket_signature_serialized = data
         regticket = RegistrationTicket(serialized=regticket_serialized)
@@ -92,7 +95,8 @@ class ArtRegistrationServer:
         # TODO: clean upload code and regticket from local db if they're old enough
         db.connect(reuse_if_open=True)
         UploadCode.create(regticket=regticket_serialized, upload_code=upload_code, created=datetime.now(),
-                          artists_signature_ticket=regticket_signature_serialized)
+                          artists_signature_ticket=regticket_signature_serialized, artist_pk=artist_pk,
+                          image_hash=regticket.imagedata_hash)
         return upload_code
 
     def validate_image(self, image_data):
@@ -170,7 +174,33 @@ class ArtRegistrationServer:
         upload_code_db_record.save()
         return fee
 
-    def masternode_validate_txid_upload_code_image(self, data, *args, **kwargs):
+    def masternode_mn0_confirm(self, data, *args, **kwargs):
+        # parse inputs
+        artist_pk, image_hash = data
+        sender_id = kwargs.get('sender_id')
+        db.connect(reuse_if_open=True)
+        try:
+            # Verify that given upload_code exists
+            upload_code_db = UploadCode.get(artist_pk=artist_pk, image_hash=image_hash)
+            if upload_code_db.is_valid_mn1 is None:
+                upload_code_db.is_valid_mn1 = True
+                upload_code_db.mn1_pk = sender_id
+                upload_code_db.save()
+            else:
+                if upload_code_db.is_valid_mn2 is None:
+                    if upload_code_db.mn1_pk == sender_id:
+                        raise Exception('I already have confirmation from this masternode')
+                    upload_code_db.is_valid_mn2 = True
+                    upload_code_db.mn2_pk = sender_id
+                    upload_code_db.save()
+                else:
+                    raise Exception('All 2 confirmations received for a given ticket')
+        except DoesNotExist:
+            mn_ticket_logger.warn('Given upload code DOES NOT exists with required public key')
+            raise Exception('Given upload code DOES NOT exists with required public key')
+        return 'Ok'
+
+    async def masternode_validate_txid_upload_code_image(self, data, *args, **kwargs):
         burn_10_txid, upload_code = data
         try:
             upload_code_db = UploadCode.get(upload_code=upload_code)
@@ -213,6 +243,8 @@ class ArtRegistrationServer:
                     'status': 'error',
                     'msg': 'Wrong fee amount'
                 }
+            upload_code_db.is_valid = True;
+            upload_code_db.save()
         else:
             # we're MN1 or MN2
             # we don't know exact MN0 fee, but it should be almost equal to the networkfee
@@ -227,6 +259,10 @@ class ArtRegistrationServer:
                     'status': 'error',
                     'msg': 'Payment amount differs with 10% of fee size.'
                 }
+            mn0, mn1, mn2 = get_masternode_ordering(self.__blockchain, regticket.blocknum, self.__priv, self.__pub)
+            # Send confirmation to MN0
+            response = await mn0.call_masternode("REGTICKET_MN0_CONFIRM_REQ", "REGTICKET_MN0_CONFIRM_RESP",
+                                                 [regticket.author, regticket.image_hash])
 
         # TODO: perform duplication and check of image
         if NSFWDetector.is_nsfw(upload_code_db.image_data):
