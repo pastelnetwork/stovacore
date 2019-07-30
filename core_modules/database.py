@@ -16,8 +16,10 @@ class UploadCode(Model):
     localfee = DecimalField(null=True)
     is_valid_mn0 = BooleanField(null=True)
     mn1_pk = BlobField(null=True)
+    mn1_serialized_signature = BlobField(null=True)
     is_valid_mn1 = BooleanField(null=True)
     mn2_pk = BlobField(null=True)
+    mn2_serialized_signature = BlobField(null=True)
     is_valid_mn2 = BooleanField(null=True)
 
     class Meta:

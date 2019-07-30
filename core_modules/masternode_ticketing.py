@@ -33,6 +33,16 @@ class ArtRegistrationServer:
         # this is to aid testing
         self.pubkey = self.__pub
 
+    def __generate_signed_ticket(self, ticket):
+        signed_ticket = Signature(dictionary={
+            "signature": pastel_id_write_signature_on_data_func(ticket.serialize(), self.__priv, self.__pub),
+            "pubkey": self.__pub,
+        })
+
+        # make sure we validate correctly
+        signed_ticket.validate(ticket)
+        return signed_ticket
+
     def register_rpcs(self, rpcserver):
         rpcserver.add_callback("REGTICKET_REQ", "REGTICKET_RESP",
                                self.masternode_validate_registration_ticket)
@@ -42,7 +52,8 @@ class ArtRegistrationServer:
                                self.masternode_image_upload_request)
 
         rpcserver.add_callback("TXID_10_REQ", "TXID_10_RESP",
-                               self.masternode_validate_txid_upload_code_image)
+                               self.masternode_validate_txid_upload_code_image,
+                               coroutine=True)
         rpcserver.add_callback("REGTICKET_MN0_CONFIRM_REQ", "REGTICKET_MN0_CONFIRM_RESP",
                                self.masternode_mn0_confirm)
 
@@ -176,7 +187,7 @@ class ArtRegistrationServer:
 
     def masternode_mn0_confirm(self, data, *args, **kwargs):
         # parse inputs
-        artist_pk, image_hash = data
+        artist_pk, image_hash, serialized_signature = data
         sender_id = kwargs.get('sender_id')
         db.connect(reuse_if_open=True)
         try:
@@ -185,6 +196,7 @@ class ArtRegistrationServer:
             if upload_code_db.is_valid_mn1 is None:
                 upload_code_db.is_valid_mn1 = True
                 upload_code_db.mn1_pk = sender_id
+                upload_code_db.mn1_serialized_signature = serialized_signature
                 upload_code_db.save()
             else:
                 if upload_code_db.is_valid_mn2 is None:
@@ -192,12 +204,14 @@ class ArtRegistrationServer:
                         raise Exception('I already have confirmation from this masternode')
                     upload_code_db.is_valid_mn2 = True
                     upload_code_db.mn2_pk = sender_id
+                    upload_code_db.mn2_serialized_signature = serialized_signature
                     upload_code_db.save()
                 else:
                     raise Exception('All 2 confirmations received for a given ticket')
         except DoesNotExist:
             mn_ticket_logger.warn('Given upload code DOES NOT exists with required public key')
             raise Exception('Given upload code DOES NOT exists with required public key')
+        mn_ticket_logger.info('Confirmation from MN received')
         return 'Ok'
 
     async def masternode_validate_txid_upload_code_image(self, data, *args, **kwargs):
@@ -261,8 +275,11 @@ class ArtRegistrationServer:
                 }
             mn0, mn1, mn2 = get_masternode_ordering(self.__blockchain, regticket.blocknum, self.__priv, self.__pub)
             # Send confirmation to MN0
+            # TODO: sign regticket and send signature
+            mn_signed_regticket = self.__generate_signed_ticket(regticket)
             response = await mn0.call_masternode("REGTICKET_MN0_CONFIRM_REQ", "REGTICKET_MN0_CONFIRM_RESP",
-                                                 [regticket.author, regticket.image_hash])
+                                                 [regticket.author, regticket.imagedata_hash,
+                                                  mn_signed_regticket.serialize()])
 
         # TODO: perform duplication and check of image
         if NSFWDetector.is_nsfw(upload_code_db.image_data):
