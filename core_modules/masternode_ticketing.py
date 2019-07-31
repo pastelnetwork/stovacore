@@ -8,7 +8,7 @@ from datetime import datetime
 from peewee import DoesNotExist
 
 from core_modules.blackbox_modules.nsfw import NSFWDetector
-from core_modules.database import UploadCode, db
+from core_modules.database import UploadCode, db, REGTICKET_STATUS_ERROR
 from pynode.utils import get_masternode_ordering
 from .ticket_models import RegistrationTicket, Signature, FinalRegistrationTicket, ActivationTicket, \
     FinalActivationTicket, ImageData, IDTicket, FinalIDTicket, TransferTicket, FinalTransferTicket, TradeTicket, \
@@ -19,6 +19,19 @@ from core_modules.jailed_image_parser import JailedImageParser
 from core_modules.logger import initlogging
 
 mn_ticket_logger = initlogging('Logger', __name__)
+
+
+def generate_final_regticket(ticket, signature, mn_signatures):
+    # create combined registration ticket
+    final_ticket = FinalRegistrationTicket(dictionary={
+        "ticket": ticket.to_dict(),
+        "signature_author": signature.to_dict(),
+        "signature_1": mn_signatures[0].to_dict(),
+        "signature_2": mn_signatures[1].to_dict(),
+        "signature_3": mn_signatures[2].to_dict(),
+        "nonce": str(uuid.uuid4()),
+    })
+    return final_ticket
 
 
 class ArtRegistrationServer:
@@ -194,6 +207,7 @@ class ArtRegistrationServer:
             # Verify that given upload_code exists
             upload_code_db = UploadCode.get(artist_pk=artist_pk, image_hash=image_hash)
             if upload_code_db.is_valid_mn1 is None:
+                # first confirmation has came
                 upload_code_db.is_valid_mn1 = True
                 upload_code_db.mn1_pk = sender_id
                 upload_code_db.mn1_serialized_signature = serialized_signature
@@ -202,10 +216,34 @@ class ArtRegistrationServer:
                 if upload_code_db.is_valid_mn2 is None:
                     if upload_code_db.mn1_pk == sender_id:
                         raise Exception('I already have confirmation from this masternode')
+                    # second confirmation has came
                     upload_code_db.is_valid_mn2 = True
                     upload_code_db.mn2_pk = sender_id
                     upload_code_db.mn2_serialized_signature = serialized_signature
                     upload_code_db.save()
+                    regticket = RegistrationTicket(serialized=upload_code_db.regticket)
+                    current_block = self.__chainwrapper.get_last_block_number()
+                    # verify if confirmation receive for 5 blocks or less from regticket creation.
+                    if current_block - regticket.blocknum > 5:
+                        upload_code_db.status = REGTICKET_STATUS_ERROR
+                        error_msg = 'Second confirmation received too late - current block {}, regticket block: {}'. \
+                            format(current_block, regticket.blocknum)
+                        upload_code_db.error = error_msg
+                        raise Exception(error_msg)
+                    # Tcreate final ticket
+                    final_ticket = generate_final_regticket(regticket, Signature(
+                        serialized=upload_code_db.artists_signature_ticket), (Signature(dictionary={
+                        "signature": pastel_id_write_signature_on_data_func(upload_code_db.regticket, self.__priv,
+                                                                            self.__pub),
+                        "pubkey": self.__pub
+                    }), Signature(serialized=upload_code_db.mn1_serialized_signature), Signature(
+                        serialized=upload_code_db.mn2_serialized_signature)))
+                    # write final ticket into blockchain
+                    txid = self.__chainwrapper.store_ticket(final_ticket)
+                    mn_ticket_logger.warn('Final ticket is stored, txid: {}'.format(txid))
+                    return txid
+                    # TODO: store image into chunkstorage - later, when activation happens
+                    # TODO: extract all this into separate function
                 else:
                     raise Exception('All 2 confirmations received for a given ticket')
         except DoesNotExist:
@@ -275,7 +313,6 @@ class ArtRegistrationServer:
                 }
             mn0, mn1, mn2 = get_masternode_ordering(self.__blockchain, regticket.blocknum, self.__priv, self.__pub)
             # Send confirmation to MN0
-            # TODO: sign regticket and send signature
             mn_signed_regticket = self.__generate_signed_ticket(regticket)
             response = await mn0.call_masternode("REGTICKET_MN0_CONFIRM_REQ", "REGTICKET_MN0_CONFIRM_RESP",
                                                  [regticket.author, regticket.imagedata_hash,

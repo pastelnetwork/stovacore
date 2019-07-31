@@ -26,6 +26,7 @@ class RPCClient:
         # variables of the server (the MN)
         self.__server_nodeid = nodeid
         self.__server_ip = server_ip
+        self.server_ip = server_ip
         self.__server_port = server_port
         self.__server_pubkey = mnpubkey
 
@@ -67,6 +68,7 @@ class RPCClient:
         sender_id, response_msg = verify_and_unpack(response_packet, self.__pubkey)
 
         rpcname, success, response_data = response_msg
+        self.__logger.warn('RPC {} from {} success: {}, data: {}'.format(rpcname, self.__server_ip, success, response_data))
 
         if rpcname != response_name:
             raise ValueError("Spotcheck response has rpc name: %s" % rpcname)

@@ -169,6 +169,10 @@ class ArtRegistrationClient:
         )
         art_reg_client_logger.warn('Upload code1: {}'.format(upload_code_mn1))
         art_reg_client_logger.warn('Upload code2: {}'.format(upload_code_mn2))
+        if not upload_code_mn1:
+            raise Exception('Masternode MN ({}) error'.format(mn1.server_ip))
+        if not upload_code_mn2:
+            raise Exception('Masternode MN ({}) error'.format(mn2.server_ip))
         regticket_db.upload_code_mn1 = upload_code_mn1
         regticket_db.upload_code_mn2 = upload_code_mn2
         regticket_db.save()
