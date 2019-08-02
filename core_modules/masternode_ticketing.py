@@ -8,7 +8,7 @@ from datetime import datetime
 from peewee import DoesNotExist
 
 from core_modules.blackbox_modules.nsfw import NSFWDetector
-from core_modules.database import UploadCode, db, REGTICKET_STATUS_ERROR
+from core_modules.database import Regticket, db, REGTICKET_STATUS_ERROR
 from pynode.utils import get_masternode_ordering
 from .ticket_models import RegistrationTicket, Signature, FinalRegistrationTicket, ActivationTicket, \
     FinalActivationTicket, ImageData, IDTicket, FinalIDTicket, TransferTicket, FinalTransferTicket, TradeTicket, \
@@ -70,6 +70,9 @@ class ArtRegistrationServer:
         rpcserver.add_callback("REGTICKET_MN0_CONFIRM_REQ", "REGTICKET_MN0_CONFIRM_RESP",
                                self.masternode_mn0_confirm)
 
+        rpcserver.add_callback("REGTICKET_STATUS_REQ", "REGTICKET_STATUS_RESP",
+                               self.regticket_status)
+
         # callbacks below are not used right now.
         # TODO: inspect and remove if not needed
         rpcserver.add_callback("SIGNREGTICKET_REQ", "SIGNREGTICKET_RESP",
@@ -118,9 +121,9 @@ class ArtRegistrationServer:
         # TODO: clean upload code and regticket from local db when ticket was placed on the blockchain
         # TODO: clean upload code and regticket from local db if they're old enough
         db.connect(reuse_if_open=True)
-        UploadCode.create(regticket=regticket_serialized, upload_code=upload_code, created=datetime.now(),
-                          artists_signature_ticket=regticket_signature_serialized, artist_pk=artist_pk,
-                          image_hash=regticket.imagedata_hash)
+        Regticket.create(regticket=regticket_serialized, upload_code=upload_code, created=datetime.now(),
+                         artists_signature_ticket=regticket_signature_serialized, artist_pk=artist_pk,
+                         image_hash=regticket.imagedata_hash)
         return upload_code
 
     def validate_image(self, image_data):
@@ -164,16 +167,16 @@ class ArtRegistrationServer:
         sender_id = kwargs.get('sender_id')
         db.connect(reuse_if_open=True)
         try:
-            upload_code_db_record = UploadCode.get(upload_code=upload_code)
-            regticket = RegistrationTicket(serialized=upload_code_db_record.regticket)
+            regticket_db = Regticket.get(upload_code=upload_code)
+            regticket = RegistrationTicket(serialized=regticket_db.regticket)
             if regticket.author != sender_id:
                 raise Exception('Given upload code was created by other public key')
             mn_ticket_logger.info('Given upload code exists with required public key')
         except DoesNotExist:
             mn_ticket_logger.warn('Given upload code DOES NOT exists with required public key')
             raise
-        upload_code_db_record.image_data = image_data
-        upload_code_db_record.save()
+        regticket_db.image_data = image_data
+        regticket_db.save()
 
     def masternode_image_upload_request_mn0(self, data, *args, **kwargs):
         # parse inputs
@@ -183,8 +186,8 @@ class ArtRegistrationServer:
         sender_id = kwargs.get('sender_id')
         db.connect(reuse_if_open=True)
         try:
-            upload_code_db_record = UploadCode.get(upload_code=upload_code)
-            regticket = RegistrationTicket(serialized=upload_code_db_record.regticket)
+            regticket_db = Regticket.get(upload_code=upload_code)
+            regticket = RegistrationTicket(serialized=regticket_db.regticket)
             if regticket.author != sender_id:
                 raise Exception('Given upload code was created by other public key')
             mn_ticket_logger.info('Given upload code exists with required public key')
@@ -193,10 +196,21 @@ class ArtRegistrationServer:
             raise
         result = self.__chainwrapper.getlocalfee()
         fee = result['localfee']
-        upload_code_db_record.image_data = image_data
-        upload_code_db_record.localfee = fee
-        upload_code_db_record.save()
+        regticket_db.image_data = image_data
+        regticket_db.localfee = fee
+        regticket_db.save()
         return fee
+
+    def regticket_status(self, data, *args, **kwargs):
+        # verify identity - return status only to regticket creator
+        sender_id = kwargs.get('sender_id')
+        upload_code = data.get('upload_code')
+        db.connect(reuse_if_open=True)
+        try:
+            regticket_db = Regticket.get(artist_pk=sender_id, upload_code=upload_code)
+        except DoesNotExist:
+            raise Exception('Given upload code DOES NOT exists with required public key')
+        return {'status': regticket_db.status, 'error': regticket_db.error}
 
     def masternode_mn0_confirm(self, data, *args, **kwargs):
         # parse inputs
@@ -205,7 +219,7 @@ class ArtRegistrationServer:
         db.connect(reuse_if_open=True)
         try:
             # Verify that given upload_code exists
-            upload_code_db = UploadCode.get(artist_pk=artist_pk, image_hash=image_hash)
+            upload_code_db = Regticket.get(artist_pk=artist_pk, image_hash=image_hash)
             if upload_code_db.is_valid_mn1 is None:
                 # first confirmation has came
                 upload_code_db.is_valid_mn1 = True
@@ -239,6 +253,7 @@ class ArtRegistrationServer:
                     }), Signature(serialized=upload_code_db.mn1_serialized_signature), Signature(
                         serialized=upload_code_db.mn2_serialized_signature)))
                     # write final ticket into blockchain
+                    # TODO: process errors
                     txid = self.__chainwrapper.store_ticket(final_ticket)
                     mn_ticket_logger.warn('Final ticket is stored, txid: {}'.format(txid))
                     return txid
@@ -255,77 +270,43 @@ class ArtRegistrationServer:
     async def masternode_validate_txid_upload_code_image(self, data, *args, **kwargs):
         burn_10_txid, upload_code = data
         try:
-            upload_code_db = UploadCode.get(upload_code=upload_code)
+            regticket = Regticket.get(upload_code=upload_code)
         except DoesNotExist:
             mn_ticket_logger.error('Upload code {} not found in DB'.format(upload_code))
             return {
                 'status': 'error',
                 'msg': 'Given upload code was issued by someone else...'
             }
-        regticket = RegistrationTicket(serialized=upload_code_db.regticket)
-        raw_tx_data = self.__blockchain.getrawtransaction(burn_10_txid, verbose=1)
-        tx_amounts = []
-        for vout in raw_tx_data['vout']:
-            tx_amounts.append(vout['value'])
-        if not raw_tx_data:
+        is_valid, errors = regticket.is_burn_tx_valid(burn_10_txid)
+        if not is_valid:
             return {
                 'status': 'error',
-                'msg': 'Burn 10% txid is invalid'
+                'msg': errors
             }
+        # TODO: perform duplication and check of image
+        if NSFWDetector.is_nsfw(regticket.image_data):
+            raise ValueError("Image is NSFW, score: %s" % NSFWDetector.get_score(regticket.image_data))
 
-        if raw_tx_data['expiryheight'] < regticket.blocknum:
-            return {
-                'status': 'error',
-                'msg': 'Fee transaction is older then regticket.'
-            }
-
-        networkfee_result = self.__blockchain.getnetworkfee()
-        networkfee = networkfee_result['networkfee']
-
-        if upload_code_db.localfee is not None:
-            # we're main masternode (MN0)
-            valid = False
-            for tx_amount in tx_amounts:
-                if upload_code_db.localfee * Decimal(
-                        '0.099') <= tx_amount <= upload_code_db.localfee * Decimal('0.101'):
-                    valid = True
-                    break
-            if not valid:
-                return {
-                    'status': 'error',
-                    'msg': 'Wrong fee amount'
-                }
-            upload_code_db.is_valid = True;
-            upload_code_db.save()
-        else:
-            # we're MN1 or MN2
-            # we don't know exact MN0 fee, but it should be almost equal to the networkfee
-            valid = False
-            for tx_amount in tx_amounts:
-                if networkfee * 0.09 <= tx_amount <= networkfee * 0.11:
-                    valid = True
-                    break
-            if not valid:
-                upload_code_db.delete()  # to avoid futher attempts
-                return {
-                    'status': 'error',
-                    'msg': 'Payment amount differs with 10% of fee size.'
-                }
+        # if we're on mn1 or mn2:
+        if regticket.localfee is not None:
             mn0, mn1, mn2 = get_masternode_ordering(self.__blockchain, regticket.blocknum, self.__priv, self.__pub)
             # Send confirmation to MN0
             mn_signed_regticket = self.__generate_signed_ticket(regticket)
+            # TODO: run task and return without waiting for result (as if it was in Celery)
             response = await mn0.call_masternode("REGTICKET_MN0_CONFIRM_REQ", "REGTICKET_MN0_CONFIRM_RESP",
                                                  [regticket.author, regticket.imagedata_hash,
                                                   mn_signed_regticket.serialize()])
-
-        # TODO: perform duplication and check of image
-        if NSFWDetector.is_nsfw(upload_code_db.image_data):
-            raise ValueError("Image is NSFW, score: %s" % NSFWDetector.get_score(upload_code_db.image_data))
-
-        return {
-            'status': 'OK',
-            'msg': 'Validation passed'
-        }
+            # We return success status cause validation on this node has passed. However exception may happen when
+            # calling mn0 - need to handle it somehow (or better - schedule async task).
+            return {
+                'status': 'OK',
+                'msg': 'Validation passed'
+            }
+        else:
+            return {
+                'status': 'OK',
+                'msg': 'Validation passed'
+            }
 
     def masternode_sign_activation_ticket(self, data, *args, **kwargs):
         # parse inputs
