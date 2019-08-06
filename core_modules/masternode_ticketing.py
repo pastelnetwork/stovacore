@@ -326,27 +326,29 @@ class ArtRegistrationServer:
     async def masternode_validate_txid_upload_code_image(self, data, *args, **kwargs):
         burn_10_txid, upload_code = data
         try:
-            regticket = Regticket.get(upload_code=upload_code)
+            regticket_db = Regticket.get(upload_code=upload_code)
         except DoesNotExist:
             mn_ticket_logger.error('Upload code {} not found in DB'.format(upload_code))
             raise ValueError('Given upload code was issued by someone else...')
-        is_valid, errors = is_burn_tx_valid(regticket, burn_10_txid, self.__blockchain)
+        is_valid, errors = is_burn_tx_valid(regticket_db, burn_10_txid, self.__blockchain)
         if not is_valid:
             raise ValueError(errors)
+        regticket = RegistrationTicket(serialized=regticket_db.regticket)
         # TODO: perform duplication check
-        if NSFWDetector.is_nsfw(regticket.image_data):
-            raise ValueError("Image is NSFW, score: %s" % NSFWDetector.get_score(regticket.image_data))
+        if NSFWDetector.is_nsfw(regticket_db.image_data):
+            raise ValueError("Image is NSFW, score: %s" % NSFWDetector.get_score(regticket_db.image_data))
 
         # if we're on mn1 or mn2:
-        if regticket.localfee is not None:
+        if regticket_db.localfee is not None:
             mn0, mn1, mn2 = get_masternode_ordering(self.__blockchain, regticket.blocknum, self.__priv, self.__pub)
             # Send confirmation to MN0
             mn_signed_regticket = self.__generate_signed_ticket(regticket)
             # TODO: run task and return without waiting for result (as if it was in Celery)
-            response_name, status, msg = await mn0.call_masternode("REGTICKET_MN0_CONFIRM_REQ",
-                                                                   "REGTICKET_MN0_CONFIRM_RESP",
-                                                                   [regticket.author, regticket.imagedata_hash,
-                                                                    mn_signed_regticket.serialize()])
+            # TODO: handle errors/exceptions
+            await mn0.call_masternode("REGTICKET_MN0_CONFIRM_REQ",
+                                      "REGTICKET_MN0_CONFIRM_RESP",
+                                      [regticket.author, regticket.imagedata_hash,
+                                       mn_signed_regticket.serialize()])
             # We return success status cause validation on this node has passed. However exception may happen when
             # calling mn0 - need to handle it somehow (or better - schedule async task).
             return 'Validation passed'
