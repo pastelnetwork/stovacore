@@ -2,6 +2,8 @@ import uuid
 import asyncio
 from datetime import datetime
 
+from aiohttp import ClientConnectorError
+
 from core_modules.ticket_models import RegistrationTicket, Signature, FinalRegistrationTicket, ActivationTicket, \
     FinalActivationTicket, ImageData
 from PastelCommon.signatures import pastel_id_write_signature_on_data_func
@@ -136,7 +138,6 @@ class ArtRegistrationClient:
         mn0, mn1, mn2 = self.__nodemanager.get_masternode_ordering()
         upload_code = await mn0.call_masternode("REGTICKET_REQ", "REGTICKET_RESP",
                                                 [regticket.serialize(), regticket_signature.serialize()])
-
         worker_fee = await mn0.call_masternode("IMAGE_UPLOAD_MN0_REQ", "IMAGE_UPLOAD_MN0_RESP",
                                                {'image_data': image_data, 'upload_code': upload_code})
         regticket_db.worker_fee = worker_fee

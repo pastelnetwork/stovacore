@@ -304,9 +304,12 @@ class DjangoInterface:
         self.__logger.warn('MN1: {}'.format(mn1_response))
         self.__logger.warn('MN2: {}'.format(mn2_response))
         return {
-            'mn0': mn0_response,
-            'mn1': mn1_response,
-            'mn2': mn2_response
+            'mn0': {'status': mn0_response[1],
+                    'msg': mn0_response[2]},
+            'mn1': {'status': mn1_response[1],
+                    'msg': mn1_response[2]},
+            'mn2': {'status': mn2_response[1],
+                    'msg': mn2_response[2]}
         }
 
     def __get_identities(self):

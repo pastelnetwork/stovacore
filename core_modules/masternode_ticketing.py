@@ -283,7 +283,7 @@ class ArtRegistrationServer:
                 'status': 'error',
                 'msg': errors
             }
-        # TODO: perform duplication and check of image
+        # TODO: perform duplication check
         if NSFWDetector.is_nsfw(regticket.image_data):
             raise ValueError("Image is NSFW, score: %s" % NSFWDetector.get_score(regticket.image_data))
 
@@ -293,9 +293,10 @@ class ArtRegistrationServer:
             # Send confirmation to MN0
             mn_signed_regticket = self.__generate_signed_ticket(regticket)
             # TODO: run task and return without waiting for result (as if it was in Celery)
-            response = await mn0.call_masternode("REGTICKET_MN0_CONFIRM_REQ", "REGTICKET_MN0_CONFIRM_RESP",
-                                                 [regticket.author, regticket.imagedata_hash,
-                                                  mn_signed_regticket.serialize()])
+            response_name, status, msg = await mn0.call_masternode("REGTICKET_MN0_CONFIRM_REQ",
+                                                                   "REGTICKET_MN0_CONFIRM_RESP",
+                                                                   [regticket.author, regticket.imagedata_hash,
+                                                                    mn_signed_regticket.serialize()])
             # We return success status cause validation on this node has passed. However exception may happen when
             # calling mn0 - need to handle it somehow (or better - schedule async task).
             return {

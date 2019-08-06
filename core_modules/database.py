@@ -16,7 +16,6 @@ REGTICKET_STATUS_CHOICES = ((REGTICKET_STATUS_CREATED, 'Created'),
                             (REGTICKET_STATUS_PLACED_ON_BLOCKCHAIN, 'Placed on blockchain'),)
 
 
-# TODO: rename to `Regticket`
 class Regticket(Model):
     upload_code = BlobField(unique=True)
     regticket = BlobField()
