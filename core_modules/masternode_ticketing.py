@@ -34,6 +34,62 @@ def generate_final_regticket(ticket, signature, mn_signatures):
     return final_ticket
 
 
+def is_burn_10_tx_height_valid(regticket, txid, blockchain):
+    regticket = RegistrationTicket(serialized=regticket.regticket)
+    raw_tx_data = blockchain.getrawtransaction(txid, verbose=1)
+    if not raw_tx_data:
+        return False, 'Burn 10% txid is invalid'
+
+    if raw_tx_data['expiryheight'] < regticket.blocknum:
+        return False, 'Fee transaction is older then regticket.'
+    return True, None
+
+
+def is_burn_10_tx_amount_valid(regticket, txid, blockchain):
+    networkfee_result = blockchain.getnetworkfee()
+    networkfee = networkfee_result['networkfee']
+    tx_amounts = []
+    raw_tx_data = blockchain.getrawtransaction(txid, verbose=1)
+    for vout in raw_tx_data['vout']:
+        tx_amounts.append(vout['value'])
+
+    if regticket.localfee is not None:
+        # we're main masternode (MN0)
+        valid = False
+        for tx_amount in tx_amounts:
+            if regticket.localfee * Decimal(
+                    '0.099') <= tx_amount <= regticket.localfee * Decimal('0.101'):
+                valid = True
+                break
+        if not valid:
+            return False, 'Wrong fee amount'
+        regticket.is_valid_mn0 = True
+        regticket.save()
+        return True, None
+    else:
+        # we're MN1 or MN2
+        # we don't know exact MN0 fee, but it should be almost equal to the networkfee
+        valid = False
+        for tx_amount in tx_amounts:
+            if networkfee * 0.09 <= tx_amount <= networkfee * 0.11:
+                valid = True
+                break
+        if not valid:
+            return False, 'Payment amount differs with 10% of fee size.'
+        else:
+            return True, None
+
+
+def is_burn_tx_valid(regticket, txid, blockchain):
+    is_valid_height, height_err = is_burn_10_tx_height_valid(regticket, txid, blockchain)
+    is_valid_amount, amount_err = is_burn_10_tx_amount_valid(regticket, txid, blockchain)
+    if is_valid_height and is_valid_amount:
+        return True, None
+    else:
+        regticket.delete()
+        return False, (height_err, amount_err)
+
+
 class ArtRegistrationServer:
     def __init__(self, nodenum, privkey, pubkey, chainwrapper, chunkmanager, blockchain):
         self.__nodenum = nodenum
@@ -273,16 +329,10 @@ class ArtRegistrationServer:
             regticket = Regticket.get(upload_code=upload_code)
         except DoesNotExist:
             mn_ticket_logger.error('Upload code {} not found in DB'.format(upload_code))
-            return {
-                'status': 'error',
-                'msg': 'Given upload code was issued by someone else...'
-            }
-        is_valid, errors = regticket.is_burn_tx_valid(burn_10_txid)
+            raise ValueError('Given upload code was issued by someone else...')
+        is_valid, errors = is_burn_tx_valid(regticket, burn_10_txid, self.__blockchain)
         if not is_valid:
-            return {
-                'status': 'error',
-                'msg': errors
-            }
+            raise ValueError(errors)
         # TODO: perform duplication check
         if NSFWDetector.is_nsfw(regticket.image_data):
             raise ValueError("Image is NSFW, score: %s" % NSFWDetector.get_score(regticket.image_data))
@@ -299,15 +349,9 @@ class ArtRegistrationServer:
                                                                     mn_signed_regticket.serialize()])
             # We return success status cause validation on this node has passed. However exception may happen when
             # calling mn0 - need to handle it somehow (or better - schedule async task).
-            return {
-                'status': 'OK',
-                'msg': 'Validation passed'
-            }
+            return 'Validation passed'
         else:
-            return {
-                'status': 'OK',
-                'msg': 'Validation passed'
-            }
+            return 'Validation passed'
 
     def masternode_sign_activation_ticket(self, data, *args, **kwargs):
         # parse inputs

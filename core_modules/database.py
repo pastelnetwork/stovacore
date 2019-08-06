@@ -41,7 +41,7 @@ class Regticket(Model):
 
     def __is_burn_10_tx_height_valid(self, txid):
         regticket = RegistrationTicket(serialized=self.regticket)
-        raw_tx_data = self.__blockchain.getrawtransaction(txid, verbose=1)
+        raw_tx_data = mnd.blockchain.getrawtransaction(txid, verbose=1)
         if not raw_tx_data:
             self.__errors.append('Burn 10% txid is invalid')
             return False
@@ -51,10 +51,10 @@ class Regticket(Model):
             return False
 
     def __is_burn_10_tx_amount_valid(self, txid):
-        networkfee_result = self.__blockchain.getnetworkfee()
+        networkfee_result = mnd.blockchain.getnetworkfee()
         networkfee = networkfee_result['networkfee']
         tx_amounts = []
-        raw_tx_data = self.__blockchain.getrawtransaction(txid, verbose=1)
+        raw_tx_data = mnd.blockchain.getrawtransaction(txid, verbose=1)
         for vout in raw_tx_data['vout']:
             tx_amounts.append(vout['value'])
 

@@ -11,6 +11,7 @@ from bitcoinrpc.authproxy import JSONRPCException
 from core_modules.blackbox_modules.luby import decode as luby_decode, NotEnoughChunks
 from core_modules.blockchain import BlockChain
 from core_modules.chainwrapper import ChainWrapper
+from core_modules.http_rpc import RPCException
 from core_modules.masternode_ticketing import IDRegistrationClient, TransferRegistrationClient, \
     TradeRegistrationClient
 from core_modules.masternode_ticketing import FinalIDTicket, FinalTradeTicket, FinalTransferTicket, \
@@ -273,7 +274,9 @@ class DjangoInterface:
     async def image_registration_step_3(self, regticket_id):
         artreg = ArtRegistrationClient(self.__privkey, self.__pubkey, self.__chainwrapper, self.__nodemanager)
 
-        result = await artreg.send_regticket_to_mn2_mn3(regticket_id)
+        success, err = await artreg.send_regticket_to_mn2_mn3(regticket_id)
+        if not success:
+            return {'status': 'ERROR', 'msg': err}
         regticket_db = RegticketDB.get(RegticketDB.id == regticket_id)
         amount = "{0:.5f}".format(regticket_db.worker_fee * 0.1)
         # burn 10% of worker's fee
@@ -291,9 +294,15 @@ class DjangoInterface:
             """
             Here we push ticket to given masternode, receive upload_code, then push image.
             Masternode will return fee, but we ignore it here.
+            :return (result, status)
             """
-            return await mn.call_masternode("TXID_10_REQ", "TXID_10_RESP",
-                                            data)
+            try:
+                result = await mn.call_masternode("TXID_10_REQ", "TXID_10_RESP",
+                                                  data)
+                return result, True
+            except RPCException as ex:
+                return str(ex), False
+
         mn0_response, mn1_response, mn2_response = await asyncio.gather(
             send_txid_10_req_to_mn(mn0, [burn_10_percent_txid, regticket_db.upload_code_mn0]),
             send_txid_10_req_to_mn(mn1, [burn_10_percent_txid, regticket_db.upload_code_mn1]),
@@ -304,12 +313,15 @@ class DjangoInterface:
         self.__logger.warn('MN1: {}'.format(mn1_response))
         self.__logger.warn('MN2: {}'.format(mn2_response))
         return {
-            'mn0': {'status': mn0_response[1],
-                    'msg': mn0_response[2]},
-            'mn1': {'status': mn1_response[1],
-                    'msg': mn1_response[2]},
-            'mn2': {'status': mn2_response[1],
-                    'msg': mn2_response[2]}
+            'status': 'SUCCESS',
+            'mn_data': {
+                'mn0': {'status': 'SUCCESS' if mn0_response[1] else 'ERROR',
+                        'msg': mn0_response[0]},
+                'mn1': {'status': 'SUCCESS' if mn0_response[1] else 'ERROR',
+                        'msg': mn1_response[0]},
+                'mn2': {'status': 'SUCCESS' if mn0_response[1] else 'ERROR',
+                        'msg': mn2_response[0]}
+            }
         }
 
     def __get_identities(self):

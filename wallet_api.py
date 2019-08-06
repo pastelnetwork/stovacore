@@ -164,7 +164,7 @@ async def image_registration_step_3(request):
     data = await request.json()
     regticket_id = data['regticket_id']
 
-    response, s = await get_pastel_client().image_registration_step_3(regticket_id)
+    response = await get_pastel_client().image_registration_step_3(regticket_id)
     print('Img registration step 3 response: {}'.format(response))
     return web.json_response(response)
 

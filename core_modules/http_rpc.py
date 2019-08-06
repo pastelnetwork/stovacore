@@ -75,7 +75,7 @@ class RPCClient:
 
         if success != "SUCCESS":
             self.__logger.warn('Error from masternode {}'.format(self.__server_ip))
-            raise RPCException(response_msg)
+            raise RPCException(response_data)
 
         return response_data
 

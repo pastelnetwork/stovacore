@@ -14,7 +14,7 @@ class ClientNodeManager:
 
     def get_masternode_ordering(self, blocknum=None):
         if settings.DEBUG:
-            workers = [MASTERNODES['mn2'], MASTERNODES['mn3'], MASTERNODES['mn4']]
+            workers = [MASTERNODES['mn3'], MASTERNODES['mn4'], MASTERNODES['mn2']]
         else:
             workers = self.__blockchain.masternode_workers(blocknum)
         mn_rpc_clients = []

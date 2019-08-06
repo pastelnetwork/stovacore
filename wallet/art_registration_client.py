@@ -157,27 +157,32 @@ class ArtRegistrationClient:
             Here we push ticket to given masternode, receive upload_code, then push image.
             Masternode will return fee, but we ignore it here.
             """
-            upload_code = await mn.call_masternode("REGTICKET_REQ", "REGTICKET_RESP",
-                                                   [serialized_regticket, serialized_signature])
-            worker_fee = await mn.call_masternode("IMAGE_UPLOAD_REQ", "IMAGE_UPLOAD_RESP",
-                                                  {'image_data': img_data, 'upload_code': upload_code})
-            return upload_code
+            try:
+                upload_code = await mn.call_masternode("REGTICKET_REQ", "REGTICKET_RESP",
+                                                       [serialized_regticket, serialized_signature])
+                worker_fee = await mn.call_masternode("IMAGE_UPLOAD_REQ", "IMAGE_UPLOAD_RESP",
+                                                      {'image_data': img_data, 'upload_code': upload_code})
+            except Exception as ex:
+                return None, str(ex)
+            return upload_code, None
 
-        upload_code_mn1, upload_code_mn2 = await asyncio.gather(
+        result_mn1, result_mn2 = await asyncio.gather(
             send_regticket_to_mn(mn1, regticket_db.serialized_regticket, regticket_db.serialized_signature, image_data),
             send_regticket_to_mn(mn2, regticket_db.serialized_regticket, regticket_db.serialized_signature, image_data),
             return_exceptions=True
         )
+        upload_code_mn1, err_mn1 = result_mn1
+        upload_code_mn2, err_mn2 = result_mn2
         art_reg_client_logger.warn('Upload code1: {}'.format(upload_code_mn1))
         art_reg_client_logger.warn('Upload code2: {}'.format(upload_code_mn2))
         if not upload_code_mn1:
-            raise Exception('Masternode MN ({}) error'.format(mn1.server_ip))
+            return False, err_mn1
         if not upload_code_mn2:
-            raise Exception('Masternode MN ({}) error'.format(mn2.server_ip))
+            return False, err_mn2
         regticket_db.upload_code_mn1 = upload_code_mn1
         regticket_db.upload_code_mn2 = upload_code_mn2
         regticket_db.save()
-        return 'OK'
+        return True, None
 
     async def register_image(self, image_data, artist_name=None, artist_website=None, artist_written_statement=None,
                              artwork_title=None, artwork_series_name=None, artwork_creation_video_youtube_url=None,
