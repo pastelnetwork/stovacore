@@ -180,6 +180,12 @@ async def image_registration_cancel(request):
     return web.json_response({})
 
 
+@routes.post('/ping')
+async def ping(request):
+    get_pastel_client()
+    return web.json_response({})
+
+
 app = web.Application()
 app.add_routes(routes)
 

@@ -1,5 +1,6 @@
 import base64
 import io
+import os
 import msgpack
 
 from PIL import Image
@@ -14,8 +15,7 @@ from PastelCommon.dupe_detection import DupeDetector
 from core_modules.blackbox_modules.dupe_detection_utils import measure_similarity, assemble_fingerprints_for_pandas
 from core_modules.settings import NetWorkSettings
 
-if not NetWorkSettings.FROZEN:
-    from core_modules.blackbox_modules.nsfw import NSFWDetector
+from core_modules.blackbox_modules.nsfw import NSFWDetector
 
 from core_modules.blackbox_modules import luby
 
