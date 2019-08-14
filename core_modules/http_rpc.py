@@ -6,6 +6,7 @@ from core_modules.logger import initlogging
 from core_modules.rpc_serialization import pack_and_sign, verify_and_unpack
 from core_modules.helpers import chunkid_to_hex
 from core_modules.settings import NetWorkSettings
+from debug.masternode_conf import MASTERNODE_NAMES
 
 
 class RPCException(Exception):
@@ -33,7 +34,7 @@ class RPCClient:
         # pubkey and nodeid should be public for convenience, so that we can identify which server this is
         self.pubkey = self.__server_pubkey
         self.nodeid = nodeid
-
+        self.__name = MASTERNODE_NAMES.get(server_ip)
         # TODO
         self.__reputation = None
 
@@ -52,29 +53,28 @@ class RPCClient:
 
     async def __send_rpc_and_wait_for_response(self, msg):
         url = 'https://{}:{}/'.format(self.__server_ip, self.__server_port)
-        self.__logger.info('Sending RPC message to {}'.format(url))
         async with ClientSession() as session:
             async with session.post(url, data=msg, ssl=False) as resp:
-                self.__logger.info('RPC request sent, waiting for response')
                 msg = await resp.read()
-                self.__logger.info('RPC response received')
                 return msg
 
     async def __send_rpc_to_mn(self, response_name, request_packet):
+        node_name = self.__name if self.__name else self.__server_ip
         await asyncio.sleep(0)
+        msg = 'Sending RPC message to {}'.format(node_name)
+        self.__logger.info(msg)
 
         response_packet = await self.__send_rpc_and_wait_for_response(request_packet)
 
         sender_id, response_msg = verify_and_unpack(response_packet, self.__pubkey)
-
         rpcname, success, response_data = response_msg
-        self.__logger.warn('RPC {} from {} success: {}, data: {}'.format(rpcname, self.__server_ip, success, response_data))
+        self.__logger.info('RPC {} from {} success: {}, data: {}'.format(rpcname, node_name, success, response_data))
 
         if rpcname != response_name:
             raise ValueError("Spotcheck response has rpc name: %s" % rpcname)
 
         if success != "SUCCESS":
-            self.__logger.warn('Error from masternode {}'.format(self.__server_ip))
+            self.__logger.warn('Error from masternode {}'.format(node_name))
             raise RPCException(response_data)
 
         return response_data
@@ -149,7 +149,6 @@ class RPCClient:
     async def __send_mn_ticket_rpc(self, rpcreq, rpcresp, data):
         await asyncio.sleep(0)
         request_packet = self.__return_rpc_packet(self.__server_pubkey, [rpcreq, data])
-        self.__logger.info('Sending mn ticket to RPC')
         returned_data = await self.__send_rpc_to_mn(rpcresp, request_packet)
         return returned_data
 

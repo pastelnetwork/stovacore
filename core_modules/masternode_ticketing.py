@@ -273,6 +273,7 @@ class ArtRegistrationServer:
         artist_pk, image_hash, serialized_signature = data
         sender_id = kwargs.get('sender_id')
         db.connect(reuse_if_open=True)
+        mn_ticket_logger.info('masternode_mn0_confirm: received confirmation from {}'.format(sender_id))
         try:
             # Verify that given upload_code exists
             upload_code_db = Regticket.get(artist_pk=artist_pk, image_hash=image_hash)

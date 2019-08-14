@@ -1,17 +1,12 @@
-# -*- mode: python ; coding: utf-8 -*-
-
-# work-around for https://github.com/pyinstaller/pyinstaller/issues/4064
-import distutils
-if distutils.distutils_path.endswith('__init__.py'):
-    distutils.distutils_path = os.path.dirname(distutils.distutils_path)
+# -*- mode: python -*-
 
 block_cipher = None
 
 
 a = Analysis(['wallet_api.py'],
-             pathex=['/home/alex/PycharmProjects/PastelWallet/src/StoVaCore'],
+             pathex=['/Users/alex/PycharmProjects/spa/src/StoVaCore'],
              binaries=[],
-             datas=[('/home/alex/PycharmProjects/PastelWallet/src/StoVaCore/misc/nsfw_trained_model.pb', 'misc')],
+             datas=[('/Users/alex/PycharmProjects/spa/src/StoVaCore/misc', 'misc')],
              hiddenimports=[],
              hookspath=[],
              runtime_hooks=[],
@@ -33,6 +28,5 @@ exe = EXE(pyz,
           bootloader_ignore_signals=False,
           strip=False,
           upx=True,
-          upx_exclude=[],
           runtime_tmpdir=None,
           console=True )
