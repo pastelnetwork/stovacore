@@ -276,39 +276,50 @@ class ArtRegistrationServer:
         mn_ticket_logger.info('masternode_mn0_confirm: received confirmation from {}'.format(sender_id))
         try:
             # Verify that given upload_code exists
-            upload_code_db = Regticket.get(artist_pk=artist_pk, image_hash=image_hash)
-            if upload_code_db.is_valid_mn1 is None:
-                # first confirmation has came
-                upload_code_db.is_valid_mn1 = True
-                upload_code_db.mn1_pk = sender_id
-                upload_code_db.mn1_serialized_signature = serialized_signature
-                upload_code_db.save()
+            # !!!! - regticket with same artists_pk and image_hash may already exists
+            regticket_db_set = Regticket.select().where(Regticket.artist_pk == artist_pk,
+                                                    Regticket.image_hash == image_hash)
+            if len(regticket_db_set) == 0:
+                raise Exception('Regticket not found for given artist ID and image hash')
+
+            if len(regticket_db_set) > 2:
+                regticket_db = regticket_db_set[-1]
+                Regticket.delete().where(Regticket.id < regticket_db.id)
             else:
-                if upload_code_db.is_valid_mn2 is None:
-                    if upload_code_db.mn1_pk == sender_id:
+                regticket_db = regticket_db_set[0]
+
+            if regticket_db.is_valid_mn1 is None:
+                # first confirmation has came
+                regticket_db.is_valid_mn1 = True
+                regticket_db.mn1_pk = sender_id
+                regticket_db.mn1_serialized_signature = serialized_signature
+                regticket_db.save()
+            else:
+                if regticket_db.is_valid_mn2 is None:
+                    if regticket_db.mn1_pk == sender_id:
                         raise Exception('I already have confirmation from this masternode')
                     # second confirmation has came
-                    upload_code_db.is_valid_mn2 = True
-                    upload_code_db.mn2_pk = sender_id
-                    upload_code_db.mn2_serialized_signature = serialized_signature
-                    upload_code_db.save()
-                    regticket = RegistrationTicket(serialized=upload_code_db.regticket)
+                    regticket_db.is_valid_mn2 = True
+                    regticket_db.mn2_pk = sender_id
+                    regticket_db.mn2_serialized_signature = serialized_signature
+                    regticket_db.save()
+                    regticket = RegistrationTicket(serialized=regticket_db.regticket)
                     current_block = self.__chainwrapper.get_last_block_number()
                     # verify if confirmation receive for 5 blocks or less from regticket creation.
                     if current_block - regticket.blocknum > 5:
-                        upload_code_db.status = REGTICKET_STATUS_ERROR
+                        regticket_db.status = REGTICKET_STATUS_ERROR
                         error_msg = 'Second confirmation received too late - current block {}, regticket block: {}'. \
                             format(current_block, regticket.blocknum)
-                        upload_code_db.error = error_msg
+                        regticket_db.error = error_msg
                         raise Exception(error_msg)
                     # Tcreate final ticket
                     final_ticket = generate_final_regticket(regticket, Signature(
-                        serialized=upload_code_db.artists_signature_ticket), (Signature(dictionary={
-                        "signature": pastel_id_write_signature_on_data_func(upload_code_db.regticket, self.__priv,
+                        serialized=regticket_db.artists_signature_ticket), (Signature(dictionary={
+                        "signature": pastel_id_write_signature_on_data_func(regticket_db.regticket, self.__priv,
                                                                             self.__pub),
                         "pubkey": self.__pub
-                    }), Signature(serialized=upload_code_db.mn1_serialized_signature), Signature(
-                        serialized=upload_code_db.mn2_serialized_signature)))
+                    }), Signature(serialized=regticket_db.mn1_serialized_signature), Signature(
+                        serialized=regticket_db.mn2_serialized_signature)))
                     # write final ticket into blockchain
                     # TODO: process errors
                     txid = self.__chainwrapper.store_ticket(final_ticket)

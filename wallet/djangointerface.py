@@ -317,9 +317,9 @@ class DjangoInterface:
             'mn_data': {
                 'mn0': {'status': 'SUCCESS' if mn0_response[1] else 'ERROR',
                         'msg': mn0_response[0]},
-                'mn1': {'status': 'SUCCESS' if mn0_response[1] else 'ERROR',
+                'mn1': {'status': 'SUCCESS' if mn1_response[1] else 'ERROR',
                         'msg': mn1_response[0]},
-                'mn2': {'status': 'SUCCESS' if mn0_response[1] else 'ERROR',
+                'mn2': {'status': 'SUCCESS' if mn2_response[1] else 'ERROR',
                         'msg': mn2_response[0]}
             }
         }
