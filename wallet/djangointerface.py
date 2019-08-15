@@ -313,7 +313,7 @@ class DjangoInterface:
         self.__logger.warn('MN1: {}'.format(mn1_response))
         self.__logger.warn('MN2: {}'.format(mn2_response))
         return {
-            'status': 'SUCCESS',
+            'status': 'SUCCESS' if mn0_response[1] and mn1_response[1] and mn2_response[1] else 'ERROR',
             'mn_data': {
                 'mn0': {'status': 'SUCCESS' if mn0_response[1] else 'ERROR',
                         'msg': mn0_response[0]},
