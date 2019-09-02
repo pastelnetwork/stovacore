@@ -19,6 +19,7 @@ OP_PUSHDATA1 = b'\x4c'
 OP_DUP = b'\x76'
 OP_HASH160 = b'\xa9'
 OP_EQUALVERIFY = b'\x88'
+OP_RETURN = b'\x6a'
 
 
 def unhexstr(str):
@@ -165,7 +166,7 @@ def store_data_in_utxo(jsonrpc, input_data):
     require_true(signed_tx['complete'])
     hex_signed_transaction = signed_tx['hex']
     print('Sending data transaction to address: ' + receiving_blockchain_address)
-    print('Size: %d  Fee: %2.8f' % (len(hex_signed_transaction) / 2, fee), file=sys.stderr)
+    print('Size: %d  Fee: %2.8f' % (len(hex_signed_transaction) / 2, fee))
     print('store_data_in_utxo input_data: {}'.format(input_data))
     print('store_data_in_utxo hex_signed_transaction: {}'.format(hex_signed_transaction))
     
