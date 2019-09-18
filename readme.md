@@ -46,7 +46,6 @@ Recommended instance setup:
  - Unpack: `tar -xzvf StoVaCore.tar.gz`
  - `cd StoVaCore`
  - Install pip: `sudo apt install -y python3-pip`
- - Install python dependencies: `pip3 install -r PastelCommon/requirements.txt`
  - `pip3 install -r requirements.txt`
 
 Generate certificate for python masternode https

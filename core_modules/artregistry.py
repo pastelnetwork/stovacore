@@ -332,13 +332,15 @@ class ArtRegistry:
                     artworks.append((artid, copies))
         return artworks
 
-    def get_trades_for_automatic_consummation(self, pubkey):
+    def get_trades_for_automatic_consummation(self, pastelid):
         ret = []
         for match in self.__matches:
             # find matches that are in the locked state
             if match.ask.status == "locked":
                 # if the bid belongs to us
-                if match.bid.ticket.public_key == pubkey:
+                # FIXME: probably match.bid.ticket.public_key need to be replaced with match.bid.ticket.pastelid,
+                # FIXME: and pastelid should be added to the ticket
+                if match.bid.ticket.public_key == pastelid:
                     # return the wallet address and total price
                     ret.append((match.ask.ticket.watched_address, match.ask.ticket.price * match.ask.ticket.copies))
         return ret

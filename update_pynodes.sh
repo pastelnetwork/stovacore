@@ -1,7 +1,6 @@
 mkdir -p for_dist/StoVaCore/keys
 cp -a masternode_prototype for_dist/StoVaCore/
 cp -a core_modules for_dist/StoVaCore/
-cp -a PastelCommon for_dist/StoVaCore/
 cp -a utils for_dist/StoVaCore/
 cp -a debug for_dist/StoVaCore/
 cp -a pynode for_dist/StoVaCore/
@@ -9,10 +8,6 @@ cp -a pynode for_dist/StoVaCore/
 # if model should be updated - uncomment the following line
 #cp -a misc for_dist/StoVaCore/
 cp * for_dist/StoVaCore/
-
-rm -rf for_dist/StoVaCore/PastelCommon/__pycache__
-rm -rf for_dist/StoVaCore/PastelCommon/.git
-rm -rf for_dist/StoVaCore/PastelCommon/.gitignore
 
 rm -rf for_dist/StoVaCore/core_modules/__pycache__
 rm -rf for_dist/StoVaCore/core_modules/blackbox_modules/__pycache__

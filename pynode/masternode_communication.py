@@ -7,12 +7,10 @@ from core_modules.logger import initlogging
 
 
 class NodeManager:
-    def __init__(self, nodenum, privkey, pubkey, blockchain):
+    def __init__(self, nodenum, blockchain):
         self.__masternodes = {}
         self.__nodenum = nodenum
         self.__logger = initlogging('', __name__)
-        self.__privkey = privkey
-        self.__pubkey = pubkey
         self.__blockchain = blockchain
 
     def get(self, nodeid):

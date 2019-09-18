@@ -3,13 +3,12 @@ import asyncio
 import signal
 import time
 import os
-import subprocess
 
 import bitcoinrpc
 
 from core_modules.logger import initlogging
-from PastelCommon.keys import id_keypair_generation_func
 from core_modules.blockchain import BlockChain
+from core_modules.settings import NetWorkSettings
 
 from masternode_prototype.masternode_logic import MasterNodeLogic
 
@@ -20,48 +19,25 @@ class MasterNodeDaemon:
         self.__logger = initlogging(int(0), __name__)
         self.__logger.debug("Started logger")
         self.basedir = os.getcwd()
-        # load or generate keys
-        daemon_keys = self.__load_or_create_keys(basedir=os.path.join(os.getcwd(), "keys"),
-                                                 privname="private.key", pubname="public.key")
-        self.__privkey, self.__pubkey = daemon_keys
 
         # set up BlockChain object
         self.blockchain = self.__connect_to_daemon()
 
-        # spawn logic
+        pastelid_list = self.blockchain.pastelid_list()
+
+        if not len(pastelid_list):
+            result = self.blockchain.pastelid_newkey(NetWorkSettings.PASTEL_ID_PASSPHRASE)
+            self.pastel_id = result['pastelid']
+        else:
+            self.pastel_id = pastelid_list[0]['PastelID']
+
+        # self.pastel_id contains bitcoin-address-encoded PastelID public key.
+        # It is used in sign/verify interactions with cNode exactly in a given format
+
         self.logic = MasterNodeLogic(nodenum=0,
                                      blockchain=self.blockchain,
                                      basedir=self.basedir,
-                                     privkey=self.__privkey,
-                                     pubkey=self.__pubkey)
-
-    def __load_or_create_keys(self, basedir, privname, pubname):
-        # TODO: rethink key generation and audit storage process
-        privkeypath = os.path.join(basedir, privname)
-        pubkeypath = os.path.join(basedir, pubname)
-
-        # if we need to generate keys, do this now
-        if not os.path.isfile(privkeypath) or not os.path.isfile(pubkeypath):
-            self.__logger.debug("Key pair for %s and %s does not exist, creating..." % (privname, pubname))
-            self.__gen_keys(privkeypath, pubkeypath)
-
-        # open keys
-        with open(privkeypath, "rb") as f:
-            priv = f.read()
-        with open(pubkeypath, "rb") as f:
-            pub = f.read()
-        return priv, pub
-
-    def __gen_keys(self, privpath, pubpath):
-        self.__logger.debug("Generated keys -> private: %s, public: %s" % (privpath, pubpath))
-
-        self.__privkey, self.__pubkey = id_keypair_generation_func()
-        with open(privpath, "wb") as f:
-            f.write(self.__privkey)
-        os.chmod(privpath, 0o0700)
-        with open(pubpath, "wb") as f:
-            f.write(self.__pubkey)
-        os.chmod(pubpath, 0o0700)
+                                     pastelid=self.pastel_id)
 
     def __connect_to_daemon(self):
         while True:

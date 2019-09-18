@@ -154,11 +154,25 @@ class BlockChain:
         # {<block_number>: [{node_data1, node_data2, node_data3}]}
         return list(result.values())[0]
 
+    def pastelid_list(self):
+        # response example:
+        # [{'PastelID': 'jXZghafefxPUfkWesi4qUKrpkPfAsG9QiGDBYUcdTxuyg1XpwbZrzYQrjdJSLPwL8BGGdriLk3azkBiMcSHhw6'}]
+        return self.__call_jsonrpc("pastelid", "list")
+
+    def pastelid_newkey(self, passphrase):
+        return self.__call_jsonrpc("pastelid", "newkey", passphrase)
+
     def search_chain(self, confirmations=NetWorkSettings.REQUIRED_CONFIRMATIONS):
         blockcount = self.getblockcount() - 1
         for blocknum in range(1, blockcount + 1):
             for txid in self.get_txids_for_block(blocknum, confirmations=confirmations):
                 yield txid
+
+    def pastelid_sign(self, pastelid, base64data, passphrase):
+        return self.__call_jsonrpc("pastelid", "sign", base64data, pastelid, passphrase)
+
+    def pastelid_verify(self, base64data, signature, pastelid):
+        return self.__call_jsonrpc("pastelid", "verify", base64data, signature,pastelid)
 
     def get_txids_for_block(self, blocknum, confirmations):
         try:

@@ -6,7 +6,6 @@ from aiohttp import ClientConnectorError
 
 from core_modules.ticket_models import RegistrationTicket, Signature, FinalRegistrationTicket, ActivationTicket, \
     FinalActivationTicket, ImageData
-from PastelCommon.signatures import pastel_id_write_signature_on_data_func
 from core_modules.settings import NetWorkSettings
 from core_modules.helpers import require_true
 from core_modules.logger import initlogging

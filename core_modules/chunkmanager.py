@@ -26,14 +26,14 @@ class Chunk:
 
 
 class ChunkManager:
-    def __init__(self, nodenum, nodeid, basedir, aliasmanager):
+    def __init__(self, pastelid, basedir, aliasmanager):
         # initialize logger
         # IMPORTANT: we must ALWAYS use self.__logger.* for logging and not logging.*,
         # since we need instance-level logging
         self.__logger = initlogging('', __name__)
 
         # our node id
-        self.__nodeid = nodeid
+        self.__pastelid = pastelid
 
         # the actual storage layer
         self.__storagedir = os.path.join(basedir, "chunkdata")
@@ -54,7 +54,7 @@ class ChunkManager:
         self.__initialize()
 
     def __str__(self):
-        return "%s" % self.__nodeid
+        return "%s" % self.__pastelid
 
     def __initialize(self):
         self.__logger.debug("Initializing")
@@ -221,9 +221,9 @@ class ChunkManager:
 
     def update_mn_list(self, added, removed):
         if len(added) + len(removed) > 0:
-            if self.__nodeid in removed:
+            if self.__pastelid in removed:
                 # TODO: figure out what to do here
-                self.__logger.warning("I am removed from the MN list, aborting %s" % self.__nodeid)
+                self.__logger.warning("I am removed from the MN list, aborting %s" % self.__pastelid)
                 # return
 
             self.__logger.info("MN list has changed -> added: %s, removed: %s" % (added, removed))

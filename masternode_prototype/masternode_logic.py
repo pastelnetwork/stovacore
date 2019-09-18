@@ -17,13 +17,11 @@ from core_modules.helpers import get_pynode_digest_int, get_nodeid_from_pubkey, 
 
 
 class MasterNodeLogic:
-    def __init__(self, nodenum, blockchain, basedir, privkey, pubkey):
+    def __init__(self, nodenum, blockchain, basedir, pastelid):
         self.__name = "node%s" % nodenum
         self.__nodenum = nodenum
-        self.__nodeid = get_nodeid_from_pubkey(pubkey)
+        self.__pastelid = pastelid
         self.__basedir = basedir
-        self.__privkey = privkey
-        self.__pubkey = pubkey
         self.__ip = '0.0.0.0'
         self.__port = 4444
 
@@ -37,16 +35,16 @@ class MasterNodeLogic:
         self.__chainwrapper = ChainWrapper(self.__nodenum, self.__blockchain, self.__artregistry)
 
         # the automatic trader
-        self.__autotrader = AutoTrader(self.__nodenum, self.__pubkey, self.__artregistry, self.__blockchain)
+        self.__autotrader = AutoTrader(self.__artregistry, self.__blockchain, pastelid)
 
         # masternode manager
-        self.__mn_manager = NodeManager(self.__nodenum, self.__privkey, self.__pubkey, blockchain)
+        self.__mn_manager = NodeManager(self.__nodenum, blockchain)
 
         # alias manager
-        self.__aliasmanager = AliasManager(self.__nodenum, self.__nodeid, self.__mn_manager)
+        self.__aliasmanager = AliasManager(self.__pastelid, self.__mn_manager)
 
         # chunk manager
-        self.__chunkmanager = ChunkManager(self.__nodenum, self.__nodeid, basedir, self.__aliasmanager)
+        self.__chunkmanager = ChunkManager(self.__pastelid, basedir, self.__aliasmanager)
 
         # refresh masternode list
         self.__refresh_masternode_list()
@@ -55,8 +53,8 @@ class MasterNodeLogic:
                                                   self.__aliasmanager)
 
         # art registration server
-        self.__artregistrationserver = ArtRegistrationServer(self.__nodenum, self.__privkey, self.__pubkey,
-                                                             self.__chainwrapper, self.__chunkmanager, self.__blockchain)
+        self.__artregistrationserver = ArtRegistrationServer(self.__nodenum, self.__chainwrapper,
+                                                             self.__chunkmanager, self.__blockchain, self.__pastelid)
 
         # django interface
         # replace RPC interface to http

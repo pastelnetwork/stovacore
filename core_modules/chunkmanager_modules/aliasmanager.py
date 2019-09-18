@@ -4,9 +4,9 @@ from core_modules.logger import initlogging
 
 
 class AliasManager:
-    def __init__(self, nodenum, nodeid, mn_manager):
+    def __init__(self, pastelid, mn_manager):
         self.__logger = initlogging('', __name__)
-        self.__nodeid = nodeid
+        self.__pastelid = pastelid
         self.__mn_manager = mn_manager
 
         # helper lookup table for alias generation and other nodes
@@ -19,6 +19,7 @@ class AliasManager:
         self.__alias_digests = tuple(aliases)
 
     def __find_owners_for_chunk(self, chunkid):
+        # FIXME: user pastelid instead of nodeid, fix mn_manager appropriate way
         mn_nodeids = tuple(mn.nodeid for mn in self.__mn_manager.get_all())
         owners = set()
         for alias_digest in self.__alias_digests:
@@ -41,7 +42,7 @@ class AliasManager:
 
     def find_other_owners_for_chunk(self, chunkid):
         owners = self.__find_owners_for_chunk(chunkid)
-        return owners - {self.__nodeid}
+        return owners - {self.__pastelid}
 
     def we_own_chunk(self, chunkid):
-        return self.__nodeid in self.__find_owners_for_chunk(chunkid)
+        return self.__pastelid in self.__find_owners_for_chunk(chunkid)

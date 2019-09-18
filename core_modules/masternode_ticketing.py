@@ -9,12 +9,12 @@ from peewee import DoesNotExist
 
 from core_modules.blackbox_modules.nsfw import NSFWDetector
 from core_modules.database import Regticket, db, REGTICKET_STATUS_ERROR
+from core_modules.settings import NetWorkSettings
 from debug.masternode_conf import MASTERNODE_NAMES
 from pynode.utils import get_masternode_ordering
 from .ticket_models import RegistrationTicket, Signature, FinalRegistrationTicket, ActivationTicket, \
     FinalActivationTicket, ImageData, IDTicket, FinalIDTicket, TransferTicket, FinalTransferTicket, TradeTicket, \
     FinalTradeTicket
-from PastelCommon.signatures import pastel_id_write_signature_on_data_func
 from core_modules.helpers import require_true, bytes_to_chunkid
 from core_modules.jailed_image_parser import JailedImageParser
 from core_modules.logger import initlogging
@@ -92,21 +92,19 @@ def is_burn_tx_valid(regticket, txid, blockchain):
 
 
 class ArtRegistrationServer:
-    def __init__(self, nodenum, privkey, pubkey, chainwrapper, chunkmanager, blockchain):
+    def __init__(self, nodenum, chainwrapper, chunkmanager, blockchain, pastelid):
         self.__nodenum = nodenum
-        self.__priv = privkey
-        self.__pub = pubkey
         self.__chainwrapper = chainwrapper
         self.__chunkmanager = chunkmanager
         self.__blockchain = blockchain
-
-        # this is to aid testing
-        self.pubkey = self.__pub
+        self.__pastelid = pastelid
 
     def __generate_signed_ticket(self, ticket):
+
+        signature = self.__blockchain.pastelid_sign(ticket.serialize_base64(), self.__pastelid, NetWorkSettings.PASTEL_ID_PASSPHRASE)
         signed_ticket = Signature(dictionary={
-            "signature": pastel_id_write_signature_on_data_func(ticket.serialize(), self.__priv, self.__pub),
-            "pubkey": self.__pub,
+            "signature": signature,
+            "pastelid": self.__pastelid,
         })
 
         # make sure we validate correctly
@@ -182,39 +180,6 @@ class ArtRegistrationServer:
                          artists_signature_ticket=regticket_signature_serialized, artist_pk=artist_pk,
                          image_hash=regticket.imagedata_hash)
         return upload_code
-
-    def validate_image(self, image_data):
-        # TODO: we should validate image only after 10% burn fee is payed by the wallet
-        # validate image
-        image.validate()
-
-        # get registration ticket
-        final_regticket = chainwrapper.retrieve_ticket(self.registration_ticket_txid)
-
-        # validate final ticket
-        final_regticket.validate(chainwrapper)
-
-        # validate registration ticket
-        regticket = final_regticket.ticket
-
-        # validate that the authors match
-        require_true(regticket.author == self.author)
-
-        # validate that imagehash, fingerprints, lubyhashes and thumbnailhash indeed belong to the image
-        require_true(regticket.fingerprints == image.generate_fingerprints())  # TODO: is this deterministic?
-        require_true(regticket.lubyhashes == image.get_luby_hashes())
-        require_true(regticket.lubyseeds == image.get_luby_seeds())
-        require_true(regticket.thumbnailhash == image.get_thumbnail_hash())
-
-        # validate that MN order matches between registration ticket and activation ticket
-        require_true(regticket.order_block_txid == self.order_block_txid)
-
-        # image hash matches regticket hash
-        require_true(regticket.imagedata_hash == image.get_artwork_hash())
-
-        # run nsfw check
-        if NSFWDetector.is_nsfw(image.image):
-            raise ValueError("Image is NSFW, score: %s" % NSFWDetector.get_score(image.image))
 
     def masternode_image_upload_request(self, data, *args, **kwargs):
         # parse inputs

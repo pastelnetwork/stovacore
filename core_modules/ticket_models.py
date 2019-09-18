@@ -1,17 +1,15 @@
 import base64
 import io
-import os
 import msgpack
 
 from PIL import Image
 
 from core_modules.helpers import get_pynode_digest_bytes, require_true
-from PastelCommon.signatures import pastel_id_verify_signature_with_public_key_func
 from core_modules.logger import initlogging
 from core_modules.model_validators import FieldValidator, StringField, IntegerField, FingerprintField, SHA3512Field, \
     LubyChunkHashField, LubyChunkField, ImageField, ThumbnailField, TXIDField, UUIDField, SignatureField, PubkeyField, \
     LubySeedField, BlockChainAddressField, UnixTimeField, StringChoiceField
-from PastelCommon.dupe_detection import DupeDetector
+from utils.dupe_detection import DupeDetector
 from core_modules.blackbox_modules.dupe_detection_utils import measure_similarity, assemble_fingerprints_for_pandas
 from core_modules.settings import NetWorkSettings
 
@@ -139,8 +137,14 @@ class TicketModelBase:
     def serialize(self):
         return msgpack.packb(self.to_dict(), use_bin_type=True)
 
+    def serialize_base64(self):
+        return base64.b64encode(self.serialize())
+
     def unserialize(self, packed):
         return msgpack.unpackb(packed, raw=False)
+
+    def unserialize_base64(self, b64_packed):
+        return self.unserialize(base64.b64decode(b64_packed))
 
     def get_hash(self):
         return get_pynode_digest_bytes(self.serialize())
