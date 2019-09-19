@@ -22,8 +22,6 @@ class MasterNodeLogic:
         self.__name = "node%s" % nodenum
         self.__nodenum = nodenum
         self.__basedir = basedir
-        self.__ip = '0.0.0.0'
-        self.__port = 4444
 
         self.__logger = initlogging('', __name__)
 
@@ -62,8 +60,7 @@ class MasterNodeLogic:
         # self.load_full_chunks = self.__chunkmanager.load_full_chunks
 
         # start rpc server
-        self.__rpcserver = RPCServer(self.__nodenum, self.__ip, self.__port,
-                                     self.__privkey, self.__pubkey)
+        self.__rpcserver = RPCServer(self.__nodenum)
 
         # TODO: the are blocking calls. We should turn them into coroutines if possible!
         # TODO: we should ACL who can access these RPCs, chunk related RPC is only for MNs!

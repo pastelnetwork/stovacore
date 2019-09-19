@@ -1,3 +1,5 @@
+import base64
+
 import nacl.utils
 import time
 import msgpack
@@ -9,6 +11,7 @@ from core_modules.helpers import get_pynode_digest_bytes
 from core_modules.helpers_type import ensure_type, ensure_type_of_field
 from core_modules.helpers import require_true
 from core_modules.settings import NetWorkSettings
+from start_single_masternode import pastelid, blockchain
 
 MAX_SUPPORTED_VERSION = 1
 NONCE_LENGTH = 32
@@ -45,7 +48,7 @@ def ensure_types_for_v1(container):
     return sender_id, receiver_id, data, nonce, timestamp, signature
 
 
-def verify_and_unpack(raw_message_contents, expected_receiver_id):
+def verify_and_unpack(raw_message_contents):
     # validate raw_message_contents
     ensure_type(raw_message_contents, bytes)
     if len(raw_message_contents) > NetWorkSettings.RPC_MSG_SIZELIMIT:
@@ -73,8 +76,8 @@ def verify_and_unpack(raw_message_contents, expected_receiver_id):
         # typecheck all the fields
         sender_id, receiver_id, data, nonce, timestamp, signature = ensure_types_for_v1(container)
 
-        if receiver_id != expected_receiver_id:
-            raise ValueError("receiver_id is not us (%s != %s)" % (receiver_id, expected_receiver_id))
+        if receiver_id != pastelid:
+            raise ValueError("receiver_id is not us (%s != %s)" % (receiver_id, pastelid))
 
         # TODO: validate timestamp - is this enough?
         require_true(timestamp > time.time() - 60)
@@ -87,7 +90,7 @@ def verify_and_unpack(raw_message_contents, expected_receiver_id):
         tmp["signature"] = b''
         sleep_rand()
         raw_hash = get_pynode_digest_bytes(msgpack.packb(tmp, default=default, use_bin_type=True))
-        verified = pastel_id_verify_signature_with_public_key_func(raw_hash, signature, sender_id)
+        verified = blockchain.pastelid_verify(base64.b64encode(raw_hash), signature, sender_id)
         sleep_rand()
 
         if not verified:
@@ -99,7 +102,7 @@ def verify_and_unpack(raw_message_contents, expected_receiver_id):
         raise NotImplementedError("version %s not implemented" % version)
 
 
-def pack_and_sign(privkey, pubkey, receiver_id, message_body, version=MAX_SUPPORTED_VERSION):
+def pack_and_sign(receiver_id, message_body, version=MAX_SUPPORTED_VERSION):
     if version > MAX_SUPPORTED_VERSION:
         raise NotImplementedError("Version %s not supported, latest is :%s" % (version, MAX_SUPPORTED_VERSION))
 
@@ -109,12 +112,12 @@ def pack_and_sign(privkey, pubkey, receiver_id, message_body, version=MAX_SUPPOR
         # pack container
         container = {
             "version": version,
-            "sender_id": pubkey,
+            "sender_id": pastelid,
             "receiver_id": receiver_id,
             "data": message_body,  # here message_body is already serialized with msgpack
             "nonce": nacl.utils.random(NONCE_LENGTH),
             "timestamp": time.time(),
-            "signature": b'',
+            "signature": '',
         }
 
         # make sure types are valid
@@ -123,8 +126,7 @@ def pack_and_sign(privkey, pubkey, receiver_id, message_body, version=MAX_SUPPOR
         # serialize container, calculate hash and sign with private key
         # signature is None as this point as we can't know the signature without calculating it
         container_serialized = msgpack.packb(container, default=default, use_bin_type=True)
-        signature = pastel_id_write_signature_on_data_func(get_pynode_digest_bytes(container_serialized), privkey,
-                                                           pubkey)
+        signature = blockchain.pastelid_sign(base64.b64encode(get_pynode_digest_bytes(container_serialized)))
 
         # TODO: serializing twice is not the best solution if we want to work with large messages
 

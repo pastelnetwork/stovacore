@@ -46,9 +46,7 @@ class RPCClient:
 
     # TODO: unify this with the other one in MasterNodeLogic
     def __return_rpc_packet(self, sender_id, msg):
-        response_packet = pack_and_sign(self.__privkey,
-                                        self.__pubkey,
-                                        sender_id, msg)
+        response_packet = pack_and_sign(sender_id, msg)
         return response_packet
 
     async def __send_rpc_and_wait_for_response(self, msg):
@@ -66,7 +64,7 @@ class RPCClient:
 
         response_packet = await self.__send_rpc_and_wait_for_response(request_packet)
 
-        sender_id, response_msg = verify_and_unpack(response_packet, self.__pubkey)
+        sender_id, response_msg = verify_and_unpack(response_packet)
         rpcname, success, response_data = response_msg
         self.__logger.info('RPC {} from {} success: {}, data: {}'.format(rpcname, node_name, success, response_data))
 
@@ -157,14 +155,11 @@ class RPCClient:
 
 
 class RPCServer:
-    def __init__(self, nodenum, ip, port, privkey, pubkey):
+    def __init__(self, nodenum):
         self.__logger = initlogging('', __name__)
 
         self.__nodenum = nodenum
-        self.__ip = ip
-        self.__port = port
-        self.__privkey = privkey
-        self.__pubkey = pubkey
+        self.port = 4444
         self.runner = None
         self.site = None
 
@@ -174,7 +169,7 @@ class RPCServer:
         self.app.add_routes([web.post('/', self.__http_proccess)])
         # self.app.on_shutdown.append(self.stop_server)
 
-        self.__logger.debug("RPC listening on {}".format(self.__port))
+        self.__logger.debug("RPC listening on {}".format(self.port))
 
         # add our only call
         self.add_callback("PING_REQ", "PING_RESP", self.__receive_rpc_ping)
@@ -190,9 +185,7 @@ class RPCServer:
         return {"data": data}
 
     def __return_rpc_packet(self, sender_id, msg):
-        response_packet = pack_and_sign(self.__privkey,
-                                        self.__pubkey,
-                                        sender_id, msg)
+        response_packet = pack_and_sign(sender_id, msg)
         return response_packet
 
     async def __process_local_rpc(self, sender_id, rpcname, data):
@@ -231,7 +224,7 @@ class RPCServer:
 
     async def __http_proccess(self, request):
         msg = await request.content.read()
-        sender_id, received_msg = verify_and_unpack(msg, self.__pubkey)
+        sender_id, received_msg = verify_and_unpack(msg)
         rpcname, data = received_msg
         reply_packet = await self.__process_local_rpc(sender_id, rpcname, data)
 
@@ -244,7 +237,7 @@ class RPCServer:
         ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
         ssl_context.load_cert_chain(NetWorkSettings.HTTPS_CERTIFICATE_FILE,
                                     NetWorkSettings.HTTPS_KEY_FILE)
-        self.site = web.TCPSite(self.runner, port=self.__port, ssl_context=ssl_context)
+        self.site = web.TCPSite(self.runner, port=self.port, ssl_context=ssl_context)
         await self.site.start()
 
     async def stop_server(self, *args, **kwargs):
