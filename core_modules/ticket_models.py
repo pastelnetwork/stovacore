@@ -9,6 +9,7 @@ from core_modules.logger import initlogging
 from core_modules.model_validators import FieldValidator, StringField, IntegerField, FingerprintField, SHA3512Field, \
     LubyChunkHashField, LubyChunkField, ImageField, ThumbnailField, TXIDField, UUIDField, SignatureField, PubkeyField, \
     LubySeedField, BlockChainAddressField, UnixTimeField, StringChoiceField
+from start_single_masternode import blockchain
 from utils.dupe_detection import DupeDetector
 from core_modules.blackbox_modules.dupe_detection_utils import measure_similarity, assemble_fingerprints_for_pandas
 from core_modules.settings import NetWorkSettings
@@ -361,7 +362,7 @@ class TradeTicket(TicketModelBase):
         "expiration": IntegerField(minsize=0, maxsize=1000),  # x==0 means never expire, x > 0 mean X blocks
     }
 
-    def validate(self, blockchain, chainwrapper, artregistry):
+    def validate(self, chainwrapper, artregistry):
         # make sure artwork is properly registered
         artregistry.get_ticket_for_artwork(self.imagedata_hash)
 

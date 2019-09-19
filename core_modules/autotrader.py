@@ -1,11 +1,11 @@
 from core_modules.logger import initlogging
+from start_single_masternode import blockchain
 
 
 class AutoTrader:
-    def __init__(self, artregistry, blockchain, pastelid):
+    def __init__(self, artregistry, pastelid):
         self.__logger = initlogging('', __name__)
         self.__artregistry = artregistry
-        self.__blockchain = blockchain
         self.__pastelid = pastelid
         self.__enabled = False
 
@@ -15,8 +15,8 @@ class AutoTrader:
 
         # collect all transaction currently in the mempool
         mempool_transactions = set()
-        for txid in self.__blockchain.getrawmempool(verbose=False):
-            transaction = self.__blockchain.getrawtransaction(txid, 1)
+        for txid in blockchain.getrawmempool(verbose=False):
+            transaction = blockchain.getrawtransaction(txid, 1)
             for vout in transaction["vout"]:
                 if "addresses" not in vout["scriptPubKey"]:
                     continue
@@ -38,7 +38,7 @@ class AutoTrader:
                 continue
 
             # consummate
-            self.__blockchain.sendtoaddress(watched_address, total_price)
+            blockchain.sendtoaddress(watched_address, total_price)
             self.__logger.debug("Consummating transaction: %s, price: %s" % (watched_address, total_price))
 
     def enable(self):

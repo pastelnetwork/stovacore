@@ -21,8 +21,6 @@ class MasterNodeDaemon:
         self.basedir = os.getcwd()
 
         # set up BlockChain object
-        self.blockchain = self.__connect_to_daemon()
-
         pastelid_list = self.blockchain.pastelid_list()
 
         if not len(pastelid_list):
@@ -35,25 +33,8 @@ class MasterNodeDaemon:
         # It is used in sign/verify interactions with cNode exactly in a given format
 
         self.logic = MasterNodeLogic(nodenum=0,
-                                     blockchain=self.blockchain,
                                      basedir=self.basedir,
                                      pastelid=self.pastel_id)
-
-    def __connect_to_daemon(self):
-        while True:
-            blockchain = BlockChain(user='rt',
-                                    password='rt',
-                                    ip='127.0.0.1',
-                                    rpcport=19932)
-            try:
-                blockchain.getwalletinfo()
-            except (ConnectionRefusedError, bitcoinrpc.authproxy.JSONRPCException) as exc:
-                self.__logger.debug("Exception %s while getting wallet info, retrying..." % exc)
-                time.sleep(0.5)
-            else:
-                self.__logger.debug("Successfully connected to daemon!")
-                break
-        return blockchain
 
     def run_event_loop(self):
         # start async loops

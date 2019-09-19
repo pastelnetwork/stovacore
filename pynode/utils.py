@@ -2,9 +2,10 @@ import base64
 
 from core_modules.helpers import get_nodeid_from_pubkey
 from core_modules.http_rpc import RPCClient
+from start_single_masternode import blockchain
 
 
-def get_masternode_ordering(blockchain, blocknum, pastel_privkey, pastel_pubkey):
+def get_masternode_ordering(blocknum, pastel_privkey, pastel_pubkey):
     mn_rpc_clients = []
     workers = blockchain.masternode_workers(blocknum)
     for node in workers:

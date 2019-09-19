@@ -14,10 +14,11 @@ from pynode.masternode_communication import NodeManager
 from core_modules.masternode_ticketing import ArtRegistrationServer
 from core_modules.settings import NetWorkSettings
 from core_modules.helpers import get_pynode_digest_int, get_nodeid_from_pubkey, bytes_to_chunkid, chunkid_to_hex
+from start_single_masternode import blockchain
 
 
 class MasterNodeLogic:
-    def __init__(self, nodenum, blockchain, basedir, pastelid):
+    def __init__(self, nodenum, basedir, pastelid):
         self.__name = "node%s" % nodenum
         self.__nodenum = nodenum
         self.__pastelid = pastelid
@@ -26,19 +27,18 @@ class MasterNodeLogic:
         self.__port = 4444
 
         self.__logger = initlogging('', __name__)
-        self.__blockchain = blockchain
 
         # the art registry
         self.__artregistry = ArtRegistry(self.__nodenum)
 
         # set up ChainWrapper
-        self.__chainwrapper = ChainWrapper(self.__nodenum, self.__blockchain, self.__artregistry)
+        self.__chainwrapper = ChainWrapper(self.__artregistry)
 
         # the automatic trader
-        self.__autotrader = AutoTrader(self.__artregistry, self.__blockchain, pastelid)
+        self.__autotrader = AutoTrader(self.__artregistry, pastelid)
 
         # masternode manager
-        self.__mn_manager = NodeManager(self.__nodenum, blockchain)
+        self.__mn_manager = NodeManager(self.__nodenum)
 
         # alias manager
         self.__aliasmanager = AliasManager(self.__pastelid, self.__mn_manager)
@@ -54,7 +54,7 @@ class MasterNodeLogic:
 
         # art registration server
         self.__artregistrationserver = ArtRegistrationServer(self.__nodenum, self.__chainwrapper,
-                                                             self.__chunkmanager, self.__blockchain, self.__pastelid)
+                                                             self.__chunkmanager, self.__pastelid)
 
         # django interface
         # replace RPC interface to http
@@ -95,12 +95,12 @@ class MasterNodeLogic:
         while True:
             try:
                 # get the block count to be used later
-                blockcount = self.__blockchain.getblockcount()
+                blockcount = blockchain.getblockcount()
 
                 # try to get block - will raise NotEnoughConfirmations if block is not mature
                 # we do this so that it's guaranteed that we don't update artregistry with a bad block
-                self.__blockchain.get_txids_for_block(current_block,
-                                                      confirmations=NetWorkSettings.REQUIRED_CONFIRMATIONS)
+                blockchain.get_txids_for_block(current_block,
+                                               confirmations=NetWorkSettings.REQUIRED_CONFIRMATIONS)
 
                 # update current block height in artregistry - this purges old tickets / matches
                 self.__artregistry.update_current_block_height(current_block)
@@ -146,7 +146,7 @@ class MasterNodeLogic:
                         elif type(ticket) == FinalTradeTicket:
                             # get the transfer ticket
                             trade_ticket = ticket.ticket
-                            trade_ticket.validate(self.__blockchain, self.__chainwrapper, self.__artregistry)
+                            trade_ticket.validate(self.__chainwrapper, self.__artregistry)
 
                             # add ticket to artregistry
                             self.__artregistry.add_trade_ticket(txid, trade_ticket)

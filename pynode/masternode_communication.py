@@ -4,14 +4,14 @@ import random
 from core_modules.http_rpc import RPCClient
 from core_modules.helpers import get_nodeid_from_pubkey
 from core_modules.logger import initlogging
+from start_single_masternode import blockchain
 
 
 class NodeManager:
-    def __init__(self, nodenum, blockchain):
+    def __init__(self, nodenum):
         self.__masternodes = {}
         self.__nodenum = nodenum
         self.__logger = initlogging('', __name__)
-        self.__blockchain = blockchain
 
     def get(self, nodeid):
         return self.__masternodes[nodeid]
@@ -35,7 +35,7 @@ class NodeManager:
 
     def get_masternode_ordering(self, blocknum):
         mn_rpc_clients = []
-        workers = self.__blockchain.masternode_workers(blocknum)
+        workers = blockchain.masternode_workers(blocknum)
         for node in workers:
             py_pub_key = node['extKey']
             pubkey = base64.b64decode(py_pub_key)
@@ -58,7 +58,7 @@ class NodeManager:
         return rpc_client
 
     def update_masternode_list(self):
-        workers_list = self.__blockchain.masternode_workers()
+        workers_list = blockchain.masternode_workers()
 
         # parse new list
         new_mn_list = {}

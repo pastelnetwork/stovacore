@@ -12,6 +12,7 @@ from core_modules.database import Regticket, db, REGTICKET_STATUS_ERROR
 from core_modules.settings import NetWorkSettings
 from debug.masternode_conf import MASTERNODE_NAMES
 from pynode.utils import get_masternode_ordering
+from start_single_masternode import blockchain
 from .ticket_models import RegistrationTicket, Signature, FinalRegistrationTicket, ActivationTicket, \
     FinalActivationTicket, ImageData, IDTicket, FinalIDTicket, TransferTicket, FinalTransferTicket, TradeTicket, \
     FinalTradeTicket
@@ -35,7 +36,7 @@ def generate_final_regticket(ticket, signature, mn_signatures):
     return final_ticket
 
 
-def is_burn_10_tx_height_valid(regticket, txid, blockchain):
+def is_burn_10_tx_height_valid(regticket, txid):
     regticket = RegistrationTicket(serialized=regticket.regticket)
     raw_tx_data = blockchain.getrawtransaction(txid, verbose=1)
     if not raw_tx_data:
@@ -46,7 +47,7 @@ def is_burn_10_tx_height_valid(regticket, txid, blockchain):
     return True, None
 
 
-def is_burn_10_tx_amount_valid(regticket, txid, blockchain):
+def is_burn_10_tx_amount_valid(regticket, txid):
     networkfee_result = blockchain.getnetworkfee()
     networkfee = networkfee_result['networkfee']
     tx_amounts = []
@@ -81,9 +82,9 @@ def is_burn_10_tx_amount_valid(regticket, txid, blockchain):
             return True, None
 
 
-def is_burn_tx_valid(regticket, txid, blockchain):
-    is_valid_height, height_err = is_burn_10_tx_height_valid(regticket, txid, blockchain)
-    is_valid_amount, amount_err = is_burn_10_tx_amount_valid(regticket, txid, blockchain)
+def is_burn_tx_valid(regticket, txid):
+    is_valid_height, height_err = is_burn_10_tx_height_valid(regticket, txid)
+    is_valid_amount, amount_err = is_burn_10_tx_amount_valid(regticket, txid)
     if is_valid_height and is_valid_amount:
         return True, None
     else:
@@ -92,16 +93,16 @@ def is_burn_tx_valid(regticket, txid, blockchain):
 
 
 class ArtRegistrationServer:
-    def __init__(self, nodenum, chainwrapper, chunkmanager, blockchain, pastelid):
+    def __init__(self, nodenum, chainwrapper, chunkmanager, pastelid):
         self.__nodenum = nodenum
         self.__chainwrapper = chainwrapper
         self.__chunkmanager = chunkmanager
-        self.__blockchain = blockchain
         self.__pastelid = pastelid
 
     def __generate_signed_ticket(self, ticket):
 
-        signature = self.__blockchain.pastelid_sign(ticket.serialize_base64(), self.__pastelid, NetWorkSettings.PASTEL_ID_PASSPHRASE)
+        signature = blockchain.pastelid_sign(ticket.serialize_base64(),
+                                             self.__pastelid, NetWorkSettings.PASTEL_ID_PASSPHRASE)
         signed_ticket = Signature(dictionary={
             "signature": signature,
             "pastelid": self.__pastelid,
@@ -244,7 +245,7 @@ class ArtRegistrationServer:
             # Verify that given upload_code exists
             # !!!! - regticket with same artists_pk and image_hash may already exists
             regticket_db_set = Regticket.select().where(Regticket.artist_pk == artist_pk,
-                                                    Regticket.image_hash == image_hash)
+                                                        Regticket.image_hash == image_hash)
             if len(regticket_db_set) == 0:
                 raise Exception('Regticket not found for given artist ID and image hash')
 
@@ -308,7 +309,7 @@ class ArtRegistrationServer:
         except DoesNotExist:
             mn_ticket_logger.error('Upload code {} not found in DB'.format(upload_code))
             raise ValueError('Given upload code was issued by someone else...')
-        is_valid, errors = is_burn_tx_valid(regticket_db, burn_10_txid, self.__blockchain)
+        is_valid, errors = is_burn_tx_valid(regticket_db, burn_10_txid)
         if not is_valid:
             raise ValueError(errors)
         regticket = RegistrationTicket(serialized=regticket_db.regticket)
@@ -318,7 +319,7 @@ class ArtRegistrationServer:
 
         # if we're on mn1 or mn2:
         if regticket_db.localfee is None:
-            mn0, mn1, mn2 = get_masternode_ordering(self.__blockchain, regticket.blocknum, self.__priv, self.__pub)
+            mn0, mn1, mn2 = get_masternode_ordering(regticket.blocknum, self.__priv, self.__pub)
             mn_ticket_logger.warn('ordering: {}, {}, {}'.format(MASTERNODE_NAMES.get(mn0.server_ip),
                                                                 MASTERNODE_NAMES.get(mn1.server_ip),
                                                                 MASTERNODE_NAMES.get(mn2.server_ip)))
@@ -466,10 +467,9 @@ class TransferRegistrationClient:
 
 
 class TradeRegistrationClient:
-    def __init__(self, privkey, pubkey, blockchain, chainwrapper, artregistry):
+    def __init__(self, privkey, pubkey, chainwrapper, artregistry):
         self.__privkey = privkey
         self.__pubkey = pubkey
-        self.__blockchain = blockchain
         self.__chainwrapper = chainwrapper
         self.__artregistry = artregistry
 
@@ -492,7 +492,7 @@ class TradeRegistrationClient:
             "watched_address": watched_address,
             "collateral_txid": collateral_txid,
         })
-        tradeticket.validate(self.__blockchain, self.__chainwrapper, self.__artregistry)
+        tradeticket.validate(self.__chainwrapper, self.__artregistry)
 
         signature = Signature(dictionary={
             "signature": pastel_id_write_signature_on_data_func(tradeticket.serialize(), self.__privkey, self.__pubkey),
