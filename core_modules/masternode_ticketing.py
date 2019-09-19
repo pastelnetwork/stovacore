@@ -1,3 +1,4 @@
+import base64
 import uuid
 from decimal import Decimal
 
@@ -12,7 +13,7 @@ from core_modules.database import Regticket, db, REGTICKET_STATUS_ERROR
 from core_modules.settings import NetWorkSettings
 from debug.masternode_conf import MASTERNODE_NAMES
 from pynode.utils import get_masternode_ordering
-from start_single_masternode import blockchain
+from start_single_masternode import blockchain, pastelid
 from .ticket_models import RegistrationTicket, Signature, FinalRegistrationTicket, ActivationTicket, \
     FinalActivationTicket, ImageData, IDTicket, FinalIDTicket, TransferTicket, FinalTransferTicket, TradeTicket, \
     FinalTradeTicket
@@ -93,19 +94,17 @@ def is_burn_tx_valid(regticket, txid):
 
 
 class ArtRegistrationServer:
-    def __init__(self, nodenum, chainwrapper, chunkmanager, pastelid):
+    def __init__(self, nodenum, chainwrapper, chunkmanager):
         self.__nodenum = nodenum
         self.__chainwrapper = chainwrapper
         self.__chunkmanager = chunkmanager
-        self.__pastelid = pastelid
 
     def __generate_signed_ticket(self, ticket):
 
-        signature = blockchain.pastelid_sign(ticket.serialize_base64(),
-                                             self.__pastelid, NetWorkSettings.PASTEL_ID_PASSPHRASE)
+        signature = blockchain.pastelid_sign(ticket.serialize_base64())
         signed_ticket = Signature(dictionary={
             "signature": signature,
-            "pastelid": self.__pastelid,
+            "pastelid": pastelid,
         })
 
         # make sure we validate correctly
@@ -154,9 +153,10 @@ class ArtRegistrationServer:
         regticket.validate(self.__chainwrapper)
 
         # sign regticket
+        signature = blockchain.pastelid_sign(regticket.serialize_base64())
         ticket_signed_by_mn = Signature(dictionary={
-            "signature": pastel_id_write_signature_on_data_func(regticket_serialized, self.__priv, self.__pub),
-            "pubkey": self.__pub,
+            "signature": signature,
+            "pubkey": pastelid,
         })
         return ticket_signed_by_mn.serialize()
 
@@ -280,13 +280,18 @@ class ArtRegistrationServer:
                         regticket_db.error = error_msg
                         raise Exception(error_msg)
                     # Tcreate final ticket
-                    final_ticket = generate_final_regticket(regticket, Signature(
-                        serialized=regticket_db.artists_signature_ticket), (Signature(dictionary={
-                        "signature": pastel_id_write_signature_on_data_func(regticket_db.regticket, self.__priv,
-                                                                            self.__pub),
-                        "pubkey": self.__pub
-                    }), Signature(serialized=regticket_db.mn1_serialized_signature), Signature(
-                        serialized=regticket_db.mn2_serialized_signature)))
+                    final_ticket = generate_final_regticket(regticket,
+                                                            Signature(
+                                                                serialized=regticket_db.artists_signature_ticket),
+                                                            (
+                                                                Signature(dictionary={
+                                                                    "signature": blockchain.pastelid_sign(
+                                                                        base64.b64encode(regticket_db.regticket)),
+                                                                    "pubkey": pastelid
+                                                                }), Signature(
+                                                                    serialized=regticket_db.mn1_serialized_signature),
+                                                                Signature(
+                                                                    serialized=regticket_db.mn2_serialized_signature)))
                     # write final ticket into blockchain
                     # TODO: process errors
                     txid = self.__chainwrapper.store_ticket(final_ticket)
@@ -319,7 +324,7 @@ class ArtRegistrationServer:
 
         # if we're on mn1 or mn2:
         if regticket_db.localfee is None:
-            mn0, mn1, mn2 = get_masternode_ordering(regticket.blocknum, self.__priv, self.__pub)
+            mn0, mn1, mn2 = get_masternode_ordering(regticket.blocknum)
             mn_ticket_logger.warn('ordering: {}, {}, {}'.format(MASTERNODE_NAMES.get(mn0.server_ip),
                                                                 MASTERNODE_NAMES.get(mn1.server_ip),
                                                                 MASTERNODE_NAMES.get(mn2.server_ip)))
@@ -357,8 +362,8 @@ class ArtRegistrationServer:
 
         # sign activation ticket
         ticket_signed_by_mn = Signature(dictionary={
-            "signature": pastel_id_write_signature_on_data_func(activationticket_serialized, self.__priv, self.__pub),
-            "pubkey": self.__pub,
+            "signature": blockchain.pastelid_sign(base64.b64encode(activationticket_serialized)),
+            "pubkey": pastelid,
         })
         return ticket_signed_by_mn.serialize()
 

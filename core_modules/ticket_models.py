@@ -439,7 +439,7 @@ class Signature(TicketModelBase):
     }
 
     def validate(self, ticket):
-        if not pastel_id_verify_signature_with_public_key_func(ticket.serialize(), self.signature, self.pubkey):
+        if not blockchain.pastelid_verify(ticket.serialize_base64(), self.signature):
             raise ValueError("Invalid signature")
 
 

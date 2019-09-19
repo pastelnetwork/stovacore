@@ -8,6 +8,7 @@ from core_modules.chunk_storage import ChunkStorage
 from core_modules.helpers import hex_to_chunkid, chunkid_to_hex
 from core_modules.settings import NetWorkSettings
 from core_modules.logger import initlogging
+from start_single_masternode import pastelid
 
 
 class Chunk:
@@ -26,14 +27,11 @@ class Chunk:
 
 
 class ChunkManager:
-    def __init__(self, pastelid, basedir, aliasmanager):
+    def __init__(self, basedir, aliasmanager):
         # initialize logger
         # IMPORTANT: we must ALWAYS use self.__logger.* for logging and not logging.*,
         # since we need instance-level logging
         self.__logger = initlogging('', __name__)
-
-        # our node id
-        self.__pastelid = pastelid
 
         # the actual storage layer
         self.__storagedir = os.path.join(basedir, "chunkdata")
@@ -54,7 +52,7 @@ class ChunkManager:
         self.__initialize()
 
     def __str__(self):
-        return "%s" % self.__pastelid
+        return "%s" % pastelid
 
     def __initialize(self):
         self.__logger.debug("Initializing")
@@ -221,9 +219,9 @@ class ChunkManager:
 
     def update_mn_list(self, added, removed):
         if len(added) + len(removed) > 0:
-            if self.__pastelid in removed:
+            if pastelid in removed:
                 # TODO: figure out what to do here
-                self.__logger.warning("I am removed from the MN list, aborting %s" % self.__pastelid)
+                self.__logger.warning("I am removed from the MN list, aborting %s" % pastelid)
                 # return
 
             self.__logger.info("MN list has changed -> added: %s, removed: %s" % (added, removed))

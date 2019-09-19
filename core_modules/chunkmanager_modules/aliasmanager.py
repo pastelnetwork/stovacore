@@ -1,12 +1,12 @@
 from core_modules.helpers import get_pynode_digest_int
 from core_modules.settings import NetWorkSettings
 from core_modules.logger import initlogging
+from start_single_masternode import pastelid
 
 
 class AliasManager:
-    def __init__(self, pastelid, mn_manager):
+    def __init__(self, mn_manager):
         self.__logger = initlogging('', __name__)
-        self.__pastelid = pastelid
         self.__mn_manager = mn_manager
 
         # helper lookup table for alias generation and other nodes
@@ -42,7 +42,7 @@ class AliasManager:
 
     def find_other_owners_for_chunk(self, chunkid):
         owners = self.__find_owners_for_chunk(chunkid)
-        return owners - {self.__pastelid}
+        return owners - {pastelid}
 
     def we_own_chunk(self, chunkid):
-        return self.__pastelid in self.__find_owners_for_chunk(chunkid)
+        return pastelid in self.__find_owners_for_chunk(chunkid)

@@ -116,5 +116,3 @@ NetWorkSettings.HTTPS_KEY_FILE = '/Users/alex/PycharmProjects/spa/src/StoVaCore/
 NetWorkSettings.HTTPS_CERTIFICATE_FILE = '/Users/alex/PycharmProjects/spa/src/StoVaCore/https_cert/certificate.pem'
 NetWorkSettings.MN_DATABASE_FILE = '/home/animecoinuser/.pastel/masternode.db'
 NetWorkSettings.LONG_REGTICKET_VALIDATION_ENABLED = False
-
-NetWorkSettings.PASTEL_ID_PASSPHRASE = 'todo_replace_to_some_random_generated_on_startup'

@@ -9,7 +9,6 @@ from masternode_prototype.masternode_daemon import MasterNodeDaemon
 # TODO: as this code runs a single instance of masternode - some entities definetely
 # TODO: should be global and instantiated only one.
 # TODO: this entities are:
-# TODO: - blockchain connection
 # TODO: - pastelid
 # TODO: - passphrase for pastelID
 # TODO: - basedir
@@ -20,6 +19,7 @@ from masternode_prototype.masternode_daemon import MasterNodeDaemon
 
 global_logger = initlogging(int(0), __name__)
 global_logger.debug("Started logger")
+PASTEL_ID_PASSPHRASE = 'todo_replace_to_some_random_generated_on_startup'
 
 
 def connect_to_blockchain_daemon():
@@ -39,7 +39,21 @@ def connect_to_blockchain_daemon():
     return blockchain
 
 
+def get_or_create_pastel_id(bc):
+    pastelid_list = bc.pastelid_list()
+
+    if not len(pastelid_list):
+        result = bc.pastelid_newkey(PASTEL_ID_PASSPHRASE)
+        return result['pastelid']
+    else:
+        return pastelid_list[0]['PastelID']
+
+
 blockchain = connect_to_blockchain_daemon()
+
+# pastelid contains bitcoin-address-encoded PastelID public key.
+# It is used in sign/verify interactions with cNode exactly in a given format
+pastelid = get_or_create_pastel_id(blockchain)
 
 if __name__ == "__main__":
     mnd = MasterNodeDaemon()

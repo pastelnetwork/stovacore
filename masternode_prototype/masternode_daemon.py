@@ -20,21 +20,8 @@ class MasterNodeDaemon:
         self.__logger.debug("Started logger")
         self.basedir = os.getcwd()
 
-        # set up BlockChain object
-        pastelid_list = self.blockchain.pastelid_list()
-
-        if not len(pastelid_list):
-            result = self.blockchain.pastelid_newkey(NetWorkSettings.PASTEL_ID_PASSPHRASE)
-            self.pastel_id = result['pastelid']
-        else:
-            self.pastel_id = pastelid_list[0]['PastelID']
-
-        # self.pastel_id contains bitcoin-address-encoded PastelID public key.
-        # It is used in sign/verify interactions with cNode exactly in a given format
-
         self.logic = MasterNodeLogic(nodenum=0,
-                                     basedir=self.basedir,
-                                     pastelid=self.pastel_id)
+                                     basedir=self.basedir)
 
     def run_event_loop(self):
         # start async loops

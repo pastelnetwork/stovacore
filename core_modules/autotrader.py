@@ -3,10 +3,9 @@ from start_single_masternode import blockchain
 
 
 class AutoTrader:
-    def __init__(self, artregistry, pastelid):
+    def __init__(self, artregistry):
         self.__logger = initlogging('', __name__)
         self.__artregistry = artregistry
-        self.__pastelid = pastelid
         self.__enabled = False
 
     def consummate_trades(self):
@@ -30,7 +29,7 @@ class AutoTrader:
                 mempool_transactions.add((address, value))
 
         # check on all tickets requiring consummation from us
-        for watched_address, total_price in self.__artregistry.get_trades_for_automatic_consummation(self.__pastelid):
+        for watched_address, total_price in self.__artregistry.get_trades_for_automatic_consummation():
             # if a valid transaction makes it onto the blockchain the trade will be consummated,
             # so we only need to check mempool here
             if (watched_address, total_price) in mempool_transactions:

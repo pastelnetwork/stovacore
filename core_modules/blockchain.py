@@ -11,6 +11,8 @@ from core_modules.logger import initlogging
 
 
 # TODO: type check all these rpc calls, so that we can rely on it better
+from start_single_masternode import pastelid, PASTEL_ID_PASSPHRASE
+
 
 class NotEnoughConfirmations(Exception):
     pass
@@ -168,11 +170,11 @@ class BlockChain:
             for txid in self.get_txids_for_block(blocknum, confirmations=confirmations):
                 yield txid
 
-    def pastelid_sign(self, pastelid, base64data, passphrase):
-        return self.__call_jsonrpc("pastelid", "sign", base64data, pastelid, passphrase)
+    def pastelid_sign(self, base64data):
+        return self.__call_jsonrpc("pastelid", "sign", base64data, pastelid, PASTEL_ID_PASSPHRASE)
 
-    def pastelid_verify(self, base64data, signature, pastelid):
-        return self.__call_jsonrpc("pastelid", "verify", base64data, signature,pastelid)
+    def pastelid_verify(self, base64data, signature):
+        return self.__call_jsonrpc("pastelid", "verify", base64data, signature, pastelid)
 
     def get_txids_for_block(self, blocknum, confirmations):
         try:

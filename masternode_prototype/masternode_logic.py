@@ -18,10 +18,9 @@ from start_single_masternode import blockchain
 
 
 class MasterNodeLogic:
-    def __init__(self, nodenum, basedir, pastelid):
+    def __init__(self, nodenum, basedir):
         self.__name = "node%s" % nodenum
         self.__nodenum = nodenum
-        self.__pastelid = pastelid
         self.__basedir = basedir
         self.__ip = '0.0.0.0'
         self.__port = 4444
@@ -35,16 +34,16 @@ class MasterNodeLogic:
         self.__chainwrapper = ChainWrapper(self.__artregistry)
 
         # the automatic trader
-        self.__autotrader = AutoTrader(self.__artregistry, pastelid)
+        self.__autotrader = AutoTrader(self.__artregistry)
 
         # masternode manager
         self.__mn_manager = NodeManager(self.__nodenum)
 
         # alias manager
-        self.__aliasmanager = AliasManager(self.__pastelid, self.__mn_manager)
+        self.__aliasmanager = AliasManager(self.__mn_manager)
 
         # chunk manager
-        self.__chunkmanager = ChunkManager(self.__pastelid, basedir, self.__aliasmanager)
+        self.__chunkmanager = ChunkManager(basedir, self.__aliasmanager)
 
         # refresh masternode list
         self.__refresh_masternode_list()
@@ -54,7 +53,7 @@ class MasterNodeLogic:
 
         # art registration server
         self.__artregistrationserver = ArtRegistrationServer(self.__nodenum, self.__chainwrapper,
-                                                             self.__chunkmanager, self.__pastelid)
+                                                             self.__chunkmanager)
 
         # django interface
         # replace RPC interface to http
