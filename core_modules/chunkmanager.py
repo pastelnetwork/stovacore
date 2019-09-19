@@ -1,14 +1,14 @@
 import os
 import random
 
-from datetime import datetime as dt, timedelta as td
+from datetime import datetime as dt
 
 from core_modules.helpers import get_pynode_digest_int
 from core_modules.chunk_storage import ChunkStorage
-from core_modules.helpers import hex_to_chunkid, chunkid_to_hex
+from core_modules.helpers import chunkid_to_hex
 from core_modules.settings import NetWorkSettings
 from core_modules.logger import initlogging
-from start_single_masternode import pastelid
+from start_single_masternode import pastelid, basedir
 
 
 class Chunk:
@@ -27,7 +27,7 @@ class Chunk:
 
 
 class ChunkManager:
-    def __init__(self, basedir, aliasmanager):
+    def __init__(self, aliasmanager):
         # initialize logger
         # IMPORTANT: we must ALWAYS use self.__logger.* for logging and not logging.*,
         # since we need instance-level logging

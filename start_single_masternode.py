@@ -1,3 +1,5 @@
+import os
+
 import time
 
 import bitcoinrpc
@@ -54,6 +56,7 @@ blockchain = connect_to_blockchain_daemon()
 # pastelid contains bitcoin-address-encoded PastelID public key.
 # It is used in sign/verify interactions with cNode exactly in a given format
 pastelid = get_or_create_pastel_id(blockchain)
+basedir = os.getcwd()
 
 if __name__ == "__main__":
     mnd = MasterNodeDaemon()

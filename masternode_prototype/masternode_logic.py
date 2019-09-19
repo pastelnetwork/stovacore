@@ -18,10 +18,9 @@ from start_single_masternode import blockchain
 
 
 class MasterNodeLogic:
-    def __init__(self, nodenum, basedir):
+    def __init__(self, nodenum):
         self.__name = "node%s" % nodenum
         self.__nodenum = nodenum
-        self.__basedir = basedir
 
         self.__logger = initlogging('', __name__)
 
@@ -41,7 +40,7 @@ class MasterNodeLogic:
         self.__aliasmanager = AliasManager(self.__mn_manager)
 
         # chunk manager
-        self.__chunkmanager = ChunkManager(basedir, self.__aliasmanager)
+        self.__chunkmanager = ChunkManager(self.__aliasmanager)
 
         # refresh masternode list
         self.__refresh_masternode_list()

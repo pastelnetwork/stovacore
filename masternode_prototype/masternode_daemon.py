@@ -18,10 +18,8 @@ class MasterNodeDaemon:
         # initialize logging
         self.__logger = initlogging(int(0), __name__)
         self.__logger.debug("Started logger")
-        self.basedir = os.getcwd()
 
-        self.logic = MasterNodeLogic(nodenum=0,
-                                     basedir=self.basedir)
+        self.logic = MasterNodeLogic(nodenum=0)
 
     def run_event_loop(self):
         # start async loops
