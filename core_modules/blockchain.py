@@ -1,4 +1,3 @@
-import asyncio
 import time
 
 from http.client import CannotSendRequest, RemoteDisconnected
@@ -8,10 +7,6 @@ from core_modules.blackbox_modules.blockchain import store_data_in_utxo, \
     retrieve_data_from_utxo
 from core_modules.settings import NetWorkSettings
 from core_modules.logger import initlogging
-
-
-# TODO: type check all these rpc calls, so that we can rely on it better
-from start_single_masternode import pastelid, PASTEL_ID_PASSPHRASE
 
 
 class NotEnoughConfirmations(Exception):
@@ -171,9 +166,11 @@ class BlockChain:
                 yield txid
 
     def pastelid_sign(self, base64data):
+        from start_single_masternode import pastelid, PASTEL_ID_PASSPHRASE
         return self.__call_jsonrpc("pastelid", "sign", base64data, pastelid, PASTEL_ID_PASSPHRASE)
 
     def pastelid_verify(self, base64data, signature):
+        from start_single_masternode import pastelid
         return self.__call_jsonrpc("pastelid", "verify", base64data, signature, pastelid)
 
     def get_txids_for_block(self, blocknum, confirmations):

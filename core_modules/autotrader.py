@@ -1,5 +1,4 @@
 from core_modules.logger import initlogging
-from start_single_masternode import blockchain
 
 
 class AutoTrader:
@@ -9,6 +8,7 @@ class AutoTrader:
         self.__enabled = False
 
     def consummate_trades(self):
+        from start_single_masternode import blockchain
         if not self.__enabled:
             return
 

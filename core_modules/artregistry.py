@@ -1,7 +1,6 @@
 from core_modules.logger import initlogging
 from core_modules.helpers import require_true
 from core_modules.settings import NetWorkSettings
-from start_single_masternode import pastelid
 
 
 class ArtWork:
@@ -334,6 +333,7 @@ class ArtRegistry:
         return artworks
 
     def get_trades_for_automatic_consummation(self):
+        from start_single_masternode import pastelid
         ret = []
         for match in self.__matches:
             # find matches that are in the locked state
