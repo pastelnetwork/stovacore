@@ -14,32 +14,21 @@ class RPCException(Exception):
 
 
 class RPCClient:
-    def __init__(self, privkey, pubkey, nodeid, server_ip, server_port, mnpubkey):
-        if type(nodeid) is not int:
-            raise TypeError("nodeid must be int!")
-
+    def __init__(self, remote_pastelid, server_ip, server_port):
         self.__logger = initlogging('', __name__, level="debug")
 
-        # variables of the client
-        self.__privkey = privkey
-        self.__pubkey = pubkey
-
         # variables of the server (the MN)
-        self.__server_nodeid = nodeid
         self.__server_ip = server_ip
         self.server_ip = server_ip
         self.__server_port = server_port
-        self.__server_pubkey = mnpubkey
+        self.remote_pastelid = remote_pastelid
 
-        # pubkey and nodeid should be public for convenience, so that we can identify which server this is
-        self.pubkey = self.__server_pubkey
-        self.nodeid = nodeid
         self.__name = MASTERNODE_NAMES.get(server_ip)
         # TODO
         self.__reputation = None
 
     def __str__(self):
-        return str(self.__server_nodeid)
+        return 'RPC Client for node with pastelID: {}'.format(self.remote_pastelid)
 
     def __eq__(self, other):
         return self.__dict__ == other.__dict__
@@ -80,7 +69,7 @@ class RPCClient:
     async def send_rpc_ping(self, data):
         await asyncio.sleep(0)
 
-        request_packet = self.__return_rpc_packet(self.__server_pubkey, ["PING_REQ", data])
+        request_packet = self.__return_rpc_packet(self.remote_pastelid, ["PING_REQ", data])
 
         try:
             returned_data = await self.__send_rpc_to_mn("PING_RESP", request_packet)
@@ -105,7 +94,7 @@ class RPCClient:
 
         # chunkid is bignum so we need to serialize it
         chunkid_str = chunkid_to_hex(chunkid)
-        request_packet = self.__return_rpc_packet(self.__server_pubkey, ["SPOTCHECK_REQ", {"chunkid": chunkid_str,
+        request_packet = self.__return_rpc_packet(self.remote_pastelid, ["SPOTCHECK_REQ", {"chunkid": chunkid_str,
                                                                                            "start": start,
                                                                                            "end": end}])
 
@@ -130,7 +119,7 @@ class RPCClient:
 
         # chunkid is bignum so we need to serialize it
         chunkid_str = chunkid_to_hex(chunkid)
-        request_packet = self.__return_rpc_packet(self.__server_pubkey, ["FETCHCHUNK_REQ", {"chunkid": chunkid_str}])
+        request_packet = self.__return_rpc_packet(self.remote_pastelid, ["FETCHCHUNK_REQ", {"chunkid": chunkid_str}])
 
         response_data = await self.__send_rpc_to_mn("FETCHCHUNK_RESP", request_packet)
 
@@ -146,7 +135,7 @@ class RPCClient:
 
     async def __send_mn_ticket_rpc(self, rpcreq, rpcresp, data):
         await asyncio.sleep(0)
-        request_packet = self.__return_rpc_packet(self.__server_pubkey, [rpcreq, data])
+        request_packet = self.__return_rpc_packet(self.remote_pastelid, [rpcreq, data])
         returned_data = await self.__send_rpc_to_mn(rpcresp, request_packet)
         return returned_data
 

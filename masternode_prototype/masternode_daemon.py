@@ -1,14 +1,7 @@
-import base64
 import asyncio
 import signal
-import time
-import os
-
-import bitcoinrpc
 
 from core_modules.logger import initlogging
-from core_modules.blockchain import BlockChain
-from core_modules.settings import NetWorkSettings
 
 from masternode_prototype.masternode_logic import MasterNodeLogic
 

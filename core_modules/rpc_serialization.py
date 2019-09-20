@@ -102,7 +102,7 @@ def verify_and_unpack(raw_message_contents):
         raise NotImplementedError("version %s not implemented" % version)
 
 
-def pack_and_sign(receiver_id, message_body, version=MAX_SUPPORTED_VERSION):
+def pack_and_sign(receiver_pastel_id, message_body, version=MAX_SUPPORTED_VERSION):
     if version > MAX_SUPPORTED_VERSION:
         raise NotImplementedError("Version %s not supported, latest is :%s" % (version, MAX_SUPPORTED_VERSION))
 
@@ -113,7 +113,7 @@ def pack_and_sign(receiver_id, message_body, version=MAX_SUPPORTED_VERSION):
         container = {
             "version": version,
             "sender_id": pastelid,
-            "receiver_id": receiver_id,
+            "receiver_id": receiver_pastel_id,
             "data": message_body,  # here message_body is already serialized with msgpack
             "nonce": nacl.utils.random(NONCE_LENGTH),
             "timestamp": time.time(),
