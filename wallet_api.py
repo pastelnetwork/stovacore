@@ -2,9 +2,6 @@ import os
 import random
 import signal
 import sys
-import base64
-import json
-from collections import OrderedDict
 from aiohttp import web
 
 from utils.create_wallet_tables import create_tables
@@ -16,17 +13,11 @@ routes = web.RouteTableDef()
 pastel_client = None
 
 
-def ordered_json_string_from_dict(data):
-    sorted_data = sorted(data.items(), key=lambda x: x[0])
-    ordered = OrderedDict(sorted_data)
-    return json.dumps(ordered)
-
-
 def get_pastel_client():
     global pastel_client
     if pastel_client is None:
         from wallet.djangointerface import DjangoInterface
-        pastel_client = DjangoInterface(private_key, public_key, None, None, None)
+        pastel_client = DjangoInterface(pastelid, passphrase)
     return pastel_client
 
 
@@ -87,12 +78,6 @@ async def image_registration_cancel(request):
     return web.json_response({})
 
 
-@routes.post('/ping')
-async def ping(request):
-    get_pastel_client()
-    return web.json_response({})
-
-
 app = web.Application()
 app.add_routes(routes)
 
@@ -100,11 +85,7 @@ if __name__ == '__main__':
     if len(sys.argv) < 2:
         raise Exception('Usage: ./wallet_api <wallet_dir>')
     APP_DIR = sys.argv[1]
-    with open(os.path.join(APP_DIR, KEY_PATH, 'private.key'), "rb") as f:
-        private_key = f.read()
 
-    with open(os.path.join(APP_DIR, KEY_PATH, 'public.key'), "rb") as f:
-        public_key = f.read()
     db.init(os.path.join(APP_DIR, WALLET_DATABASE_FILE))
     if not os.path.exists(os.path.join(APP_DIR, WALLET_DATABASE_FILE)):
         create_tables()

@@ -8,9 +8,8 @@ from cnode_connection import blockchain
 
 
 class NodeManager:
-    def __init__(self, nodenum):
+    def __init__(self):
         self.__masternodes = {}
-        self.__nodenum = nodenum
         self.__logger = initlogging('', __name__)
 
     def get(self, nodeid):

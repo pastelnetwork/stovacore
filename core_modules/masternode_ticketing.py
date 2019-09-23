@@ -93,8 +93,7 @@ def is_burn_tx_valid(regticket, txid):
 
 
 class ArtRegistrationServer:
-    def __init__(self, nodenum, chainwrapper, chunkmanager):
-        self.__nodenum = nodenum
+    def __init__(self, chainwrapper, chunkmanager):
         self.__chainwrapper = chainwrapper
         self.__chunkmanager = chunkmanager
 
@@ -349,7 +348,7 @@ class ArtRegistrationServer:
         activation_ticket = ActivationTicket(serialized=activationticket_serialized)
 
         # test image data for validity in a jailed environment
-        converter = JailedImageParser(self.__nodenum, image.image)
+        converter = JailedImageParser(image.image)
         converter.parse()
 
         # validate client's signature on the ticket - so only original client can activate

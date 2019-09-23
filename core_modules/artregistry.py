@@ -91,7 +91,7 @@ class Match:
 
 
 class ArtRegistry:
-    def __init__(self, nodenum):
+    def __init__(self):
         self.__logger = initlogging('', __name__)
         self.__artworks = {}
         self.__tickets = {}

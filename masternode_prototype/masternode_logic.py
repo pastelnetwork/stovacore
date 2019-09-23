@@ -18,14 +18,12 @@ from cnode_connection import blockchain
 
 
 class MasterNodeLogic:
-    def __init__(self, nodenum):
-        self.__name = "node%s" % nodenum
-        self.__nodenum = nodenum
+    def __init__(self):
 
         self.__logger = initlogging('', __name__)
 
         # the art registry
-        self.__artregistry = ArtRegistry(self.__nodenum)
+        self.__artregistry = ArtRegistry()
 
         # set up ChainWrapper
         self.__chainwrapper = ChainWrapper(self.__artregistry)
@@ -34,7 +32,7 @@ class MasterNodeLogic:
         self.__autotrader = AutoTrader(self.__artregistry)
 
         # masternode manager
-        self.__mn_manager = NodeManager(self.__nodenum)
+        self.__mn_manager = NodeManager()
 
         # alias manager
         self.__aliasmanager = AliasManager(self.__mn_manager)
@@ -45,21 +43,15 @@ class MasterNodeLogic:
         # refresh masternode list
         self.__refresh_masternode_list()
 
-        self.__chunkmanager_rpc = ChunkManagerRPC(self.__nodenum, self.__chunkmanager, self.__mn_manager,
+        self.__chunkmanager_rpc = ChunkManagerRPC(self.__chunkmanager, self.__mn_manager,
                                                   self.__aliasmanager)
 
         # art registration server
-        self.__artregistrationserver = ArtRegistrationServer(self.__nodenum, self.__chainwrapper,
+        self.__artregistrationserver = ArtRegistrationServer(self.__chainwrapper,
                                                              self.__chunkmanager)
 
-        # django interface
-        # replace RPC interface to http
-
-        # functions exposed from chunkmanager
-        # self.load_full_chunks = self.__chunkmanager.load_full_chunks
-
         # start rpc server
-        self.__rpcserver = RPCServer(self.__nodenum)
+        self.__rpcserver = RPCServer()
 
         # TODO: the are blocking calls. We should turn them into coroutines if possible!
         # TODO: we should ACL who can access these RPCs, chunk related RPC is only for MNs!

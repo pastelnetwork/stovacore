@@ -144,10 +144,9 @@ class RPCClient:
 
 
 class RPCServer:
-    def __init__(self, nodenum):
+    def __init__(self):
         self.__logger = initlogging('', __name__)
 
-        self.__nodenum = nodenum
         self.port = 4444
         self.runner = None
         self.site = None

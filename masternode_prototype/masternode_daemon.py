@@ -12,7 +12,7 @@ class MasterNodeDaemon:
         self.__logger = initlogging(int(0), __name__)
         self.__logger.debug("Started logger")
 
-        self.logic = MasterNodeLogic(nodenum=0)
+        self.logic = MasterNodeLogic()
 
     def run_event_loop(self):
         # start async loops

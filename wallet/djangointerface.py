@@ -25,21 +25,15 @@ from wallet.settings import BURN_ADDRESS
 
 
 class DjangoInterface:
-    # TODO: privkey, pubkey - they're wallet's PastelID keys.
-    # TODO: nodenum - probably we don't need as this code will not be run by node - it will be run only by wallet
-    # TODO: all other fields probably not needed - need to review how they're used
-    def __init__(self, privkey, pubkey, artregistry, chunkmanager, aliasmanager):
+    def __init__(self, pastelid, passphrase):
 
         self.__logger = initlogging('Wallet interface', __name__)
 
-        self.__privkey = privkey
-        self.__pubkey = pubkey
+        self.pastelid = pastelid
+        self.passphrase = passphrase
 
-        self.__artregistry = artregistry
-        self.__chunkmanager = chunkmanager
         self.__blockchain = self.__connect_to_daemon()
         self.__chainwrapper = ChainWrapper(None, self.__blockchain, self.__artregistry)
-        self.__aliasmanager = aliasmanager
         self.__nodemanager = ClientNodeManager(self.__privkey, self.__pubkey,
                                                self.__blockchain)
 
@@ -50,7 +44,10 @@ class DjangoInterface:
             blockchain = BlockChain(user='rt',
                                     password='rt',
                                     ip='127.0.0.1',
-                                    rpcport=19932)
+                                    rpcport=19932,
+                                    pastelid=self.pastelid,
+                                    passphrase=self.passphrase
+                                    )
             try:
                 blockchain.getwalletinfo()
             except (ConnectionRefusedError, bitcoinrpc.authproxy.JSONRPCException) as exc:
