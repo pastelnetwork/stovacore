@@ -14,7 +14,7 @@ from pynode.masternode_communication import NodeManager
 from core_modules.masternode_ticketing import ArtRegistrationServer
 from core_modules.settings import NetWorkSettings
 from core_modules.helpers import get_pynode_digest_int, get_nodeid_from_pubkey, bytes_to_chunkid, chunkid_to_hex
-from start_single_masternode import blockchain
+from cnode_connection import blockchain
 
 
 class MasterNodeLogic:

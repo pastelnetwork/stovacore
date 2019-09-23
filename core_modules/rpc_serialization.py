@@ -11,7 +11,7 @@ from core_modules.helpers import get_pynode_digest_bytes
 from core_modules.helpers_type import ensure_type, ensure_type_of_field
 from core_modules.helpers import require_true
 from core_modules.settings import NetWorkSettings
-from start_single_masternode import pastelid, blockchain
+from cnode_connection import blockchain
 
 MAX_SUPPORTED_VERSION = 1
 NONCE_LENGTH = 32
@@ -76,8 +76,8 @@ def verify_and_unpack(raw_message_contents):
         # typecheck all the fields
         sender_id, receiver_id, data, nonce, timestamp, signature = ensure_types_for_v1(container)
 
-        if receiver_id != pastelid:
-            raise ValueError("receiver_id is not us (%s != %s)" % (receiver_id, pastelid))
+        if receiver_id != blockchain.pastelid:
+            raise ValueError("receiver_id is not us (%s != %s)" % (receiver_id, blockchain.pastelid))
 
         # TODO: validate timestamp - is this enough?
         require_true(timestamp > time.time() - 60)
@@ -112,7 +112,7 @@ def pack_and_sign(receiver_pastel_id, message_body, version=MAX_SUPPORTED_VERSIO
         # pack container
         container = {
             "version": version,
-            "sender_id": pastelid,
+            "sender_id": blockchain.pastelid,
             "receiver_id": receiver_pastel_id,
             "data": message_body,  # here message_body is already serialized with msgpack
             "nonce": nacl.utils.random(NONCE_LENGTH),

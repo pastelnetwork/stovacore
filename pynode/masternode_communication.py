@@ -4,7 +4,7 @@ import random
 from core_modules.http_rpc import RPCClient
 from core_modules.helpers import get_nodeid_from_pubkey
 from core_modules.logger import initlogging
-from start_single_masternode import blockchain
+from cnode_connection import blockchain
 
 
 class NodeManager:
@@ -37,24 +37,17 @@ class NodeManager:
         mn_rpc_clients = []
         workers = blockchain.masternode_workers(blocknum)
         for node in workers:
-            py_pub_key = node['extKey']
-            pubkey = base64.b64decode(py_pub_key)
+            remote_pastelid = node['extKey']
 
-            node_id = get_nodeid_from_pubkey(pubkey)
             ip, py_rpc_port = node['extAddress'].split(':')
-            rpc_client = RPCClient(self.__privkey, self.__pubkey,
-                                   node_id, ip, py_rpc_port, pubkey)
+            rpc_client = RPCClient(remote_pastelid, ip, py_rpc_port)
             mn_rpc_clients.append(rpc_client)
         return mn_rpc_clients
 
     def get_rpc_client_for_masternode(self, masternode):
-        py_pub_key = masternode['extKey']
-        pubkey = base64.b64decode(py_pub_key)
-
-        node_id = get_nodeid_from_pubkey(pubkey)
+        remote_pastelid = masternode['extKey']
         ip, py_rpc_port = masternode['extAddress'].split(':')
-        rpc_client = RPCClient(self.__privkey, self.__pubkey,
-                               node_id, ip, py_rpc_port, pubkey)
+        rpc_client = RPCClient(remote_pastelid, ip, py_rpc_port)
         return rpc_client
 
     def update_masternode_list(self):
@@ -63,14 +56,12 @@ class NodeManager:
         # parse new list
         new_mn_list = {}
         for node in workers_list:
-            py_pub_key = node['extKey']
-            pubkey = base64.b64decode(py_pub_key)
-            if not pubkey:
+            # extKey is pastelID of the remote node
+            remote_pastelid = node['extKey']
+            if not remote_pastelid:
                 continue
             ip, py_rpc_port = node['extAddress'].split(':')
-            node_id = get_nodeid_from_pubkey(pubkey)
-            new_mn_list[node_id] = RPCClient(self.__privkey, self.__pubkey,
-                                             node_id, ip, py_rpc_port, pubkey)
+            new_mn_list[remote_pastelid] = RPCClient(remote_pastelid, ip, py_rpc_port)
 
         old = set(self.__masternodes.keys())
         new = set(new_mn_list.keys())

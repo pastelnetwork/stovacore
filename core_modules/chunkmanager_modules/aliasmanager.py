@@ -1,7 +1,7 @@
 from core_modules.helpers import get_pynode_digest_int
 from core_modules.settings import NetWorkSettings
 from core_modules.logger import initlogging
-from start_single_masternode import pastelid
+from cnode_connection import blockchain
 
 
 class AliasManager:
@@ -42,7 +42,7 @@ class AliasManager:
 
     def find_other_owners_for_chunk(self, chunkid):
         owners = self.__find_owners_for_chunk(chunkid)
-        return owners - {pastelid}
+        return owners - {blockchain.pastelid}
 
     def we_own_chunk(self, chunkid):
-        return pastelid in self.__find_owners_for_chunk(chunkid)
+        return blockchain.pastelid in self.__find_owners_for_chunk(chunkid)

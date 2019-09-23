@@ -12,12 +12,38 @@ from core_modules.logger import initlogging
 class NotEnoughConfirmations(Exception):
     pass
 
+DEFAULT_PASTEL_ID_PASSPHRASE = 'putvalidpassphrasehereorreplacewithenvvar'
+
 
 class BlockChain:
-    def __init__(self, user, password, ip, rpcport):
+    def __init__(self, user, password, ip, rpcport, pastelid=None, passphrase=None):
         self.url = "http://%s:%s@%s:%s" % (user, password, ip, rpcport)
         self.__reconnect()
         self.__logger = initlogging('', __name__)
+
+        # for masternode mode - pastelID should be empty and fetched automatically
+        # for wallet API mode - user will change which pastelID use, so wallet_api will create Blockchain object with
+        # predefined pastelid
+        if not pastelid:
+            self.pastelid = self.get_or_create_pastel_id()
+        else:
+            self.pastelid = pastelid
+
+        # passing `passphrase` parameter has the same idea as `pastelid` one.
+        # we pass it for wallet_api and leave blank for masternode
+        if not passphrase:
+            self.passphrase = DEFAULT_PASTEL_ID_PASSPHRASE
+        else:
+            self.passphrase = passphrase
+
+    def get_or_create_pastel_id(self):
+        pastelid_list = self.pastelid_list()
+
+        if not len(pastelid_list):
+            result = self.pastelid_newkey(self.passphrase)
+            return result['pastelid']
+        else:
+            return pastelid_list[0]['PastelID']
 
     def __reconnect(self):
         while True:
@@ -166,12 +192,10 @@ class BlockChain:
                 yield txid
 
     def pastelid_sign(self, base64data):
-        from start_single_masternode import pastelid, PASTEL_ID_PASSPHRASE
-        return self.__call_jsonrpc("pastelid", "sign", base64data, pastelid, PASTEL_ID_PASSPHRASE)
+        return self.__call_jsonrpc("pastelid", "sign", base64data, self.pastelid, self.passphrase)
 
     def pastelid_verify(self, base64data, signature):
-        from start_single_masternode import pastelid
-        return self.__call_jsonrpc("pastelid", "verify", base64data, signature, pastelid)
+        return self.__call_jsonrpc("pastelid", "verify", base64data, signature, self.pastelid)
 
     def get_txids_for_block(self, blocknum, confirmations):
         try:

@@ -4,11 +4,11 @@ from core_modules.http_rpc import RPCClient
 from core_modules.helpers import get_nodeid_from_pubkey
 from core_modules.logger import initlogging
 from debug.masternode_conf import MASTERNODES
-from start_single_masternode import blockchain
+from cnode_connection import blockchain
 
 
 class ClientNodeManager:
-    def __init__(self, privkey, pubkey, blockchain):
+    def __init__(self, privkey, pubkey):
         self.__logger = initlogging('ClientNodeManager', __name__)
         self.__privkey = privkey
         self.__pubkey = pubkey
@@ -21,22 +21,16 @@ class ClientNodeManager:
         mn_rpc_clients = []
 
         for node in workers:
-            py_pub_key = node['extKey']
-            pubkey = base64.b64decode(py_pub_key)
+            remote_pastelid = node['extKey']
 
-            node_id = get_nodeid_from_pubkey(pubkey)
             ip, py_rpc_port = node['extAddress'].split(':')
-            rpc_client = RPCClient(self.__privkey, self.__pubkey,
-                                   node_id, ip, py_rpc_port, pubkey)
+            rpc_client = RPCClient(remote_pastelid, ip, py_rpc_port)
             mn_rpc_clients.append(rpc_client)
         return mn_rpc_clients
 
     def get_rpc_client_for_masternode(self, masternode):
-        py_pub_key = masternode['extAddress']
-        pubkey = base64.b64decode(py_pub_key)
+        remote_pastelid = masternode['extKey']
 
-        node_id = get_nodeid_from_pubkey(pubkey)
         ip, py_rpc_port = masternode['extAddress'].split(':')
-        rpc_client = RPCClient(self.__privkey, self.__pubkey,
-                               node_id, ip, py_rpc_port, pubkey)
+        rpc_client = RPCClient(remote_pastelid, ip, py_rpc_port)
         return rpc_client

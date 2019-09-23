@@ -4,6 +4,7 @@ import msgpack
 
 from PIL import Image
 
+from cnode_connection import blockchain
 from core_modules.helpers import get_pynode_digest_bytes, require_true
 from core_modules.logger import initlogging
 from core_modules.model_validators import FieldValidator, StringField, IntegerField, FingerprintField, SHA3512Field, \
@@ -363,7 +364,6 @@ class TradeTicket(TicketModelBase):
     }
 
     def validate(self, chainwrapper, artregistry):
-        from start_single_masternode import blockchain
         # make sure artwork is properly registered
         artregistry.get_ticket_for_artwork(self.imagedata_hash)
 
@@ -440,7 +440,6 @@ class Signature(TicketModelBase):
     }
 
     def validate(self, ticket):
-        from start_single_masternode import blockchain
         if not blockchain.pastelid_verify(ticket.serialize_base64(), self.signature):
             raise ValueError("Invalid signature")
 

@@ -9,6 +9,7 @@ from core_modules.helpers import bytes_to_hex
 from core_modules.ticket_models import FinalIDTicket, FinalActivationTicket, FinalRegistrationTicket,\
     FinalTransferTicket, FinalTradeTicket
 from core_modules.settings import NetWorkSettings
+from cnode_connection import blockchain
 
 
 class BlockChainTicket:
@@ -53,7 +54,6 @@ class ChainWrapper:
         return None, None
 
     def get_block_distance(self, atxid, btxid):
-        from start_single_masternode import blockchain
         # TODO: clean up this interface
         if type(atxid) == bytes:
             atxid = bytes_to_hex(atxid)
@@ -67,7 +67,6 @@ class ChainWrapper:
         return abs(height_a-height_b)
 
     def store_ticket(self, ticket):
-        from start_single_masternode import blockchain
         if type(ticket) == FinalIDTicket:
             identifier = b'idticket'
         elif type(ticket) == FinalRegistrationTicket:
@@ -86,7 +85,6 @@ class ChainWrapper:
         return blockchain.store_data_in_utxo(encoded_data)
 
     def retrieve_ticket(self, txid, validate=False):
-        from start_single_masternode import blockchain
         try:
             raw_ticket_data = blockchain.retrieve_data_from_utxo(txid)
         except JSONRPCException as exc:
@@ -122,7 +120,6 @@ class ChainWrapper:
         return ticket
 
     def all_ticket_iterator(self):
-        from start_single_masternode import blockchain
         for txid in blockchain.search_chain():
             try:
                 ticket = self.retrieve_ticket(txid)
@@ -136,7 +133,6 @@ class ChainWrapper:
             yield txid, ticket
 
     def get_transactions_for_block(self, blocknum, confirmations=NetWorkSettings.REQUIRED_CONFIRMATIONS):
-        from start_single_masternode import blockchain
         for txid in blockchain.get_txids_for_block(blocknum, confirmations):
             try:
                 ticket = self.retrieve_ticket(txid, validate=False)
@@ -166,7 +162,6 @@ class ChainWrapper:
                 yield ret
 
     async def move_funds_to_new_wallet(self, my_public_key, collateral_address, copies, price):
-        from start_single_masternode import blockchain
         amount_to_send = Decimal(copies) * Decimal(price)
 
         # make sure we sleep
@@ -214,7 +209,6 @@ class ChainWrapper:
         return txid
 
     def __create_raw_transaction(self, eligible_unspent, addresses, change_address):
-        from start_single_masternode import blockchain
         # shuffle eligible utxos
         random.shuffle(eligible_unspent)
 

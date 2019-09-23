@@ -1,6 +1,7 @@
 from core_modules.logger import initlogging
 from core_modules.helpers import require_true
 from core_modules.settings import NetWorkSettings
+from cnode_connection import blockchain
 
 
 class ArtWork:
@@ -333,7 +334,6 @@ class ArtRegistry:
         return artworks
 
     def get_trades_for_automatic_consummation(self):
-        from start_single_masternode import pastelid
         ret = []
         for match in self.__matches:
             # find matches that are in the locked state
@@ -341,7 +341,7 @@ class ArtRegistry:
                 # if the bid belongs to us
                 # FIXME: probably match.bid.ticket.public_key need to be replaced with match.bid.ticket.pastelid,
                 # FIXME: and pastelid should be added to the ticket
-                if match.bid.ticket.public_key == pastelid:
+                if match.bid.ticket.public_key == blockchain.pastelid:
                     # return the wallet address and total price
                     ret.append((match.ask.ticket.watched_address, match.ask.ticket.price * match.ask.ticket.copies))
         return ret

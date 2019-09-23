@@ -10,10 +10,9 @@ from peewee import DoesNotExist
 
 from core_modules.blackbox_modules.nsfw import NSFWDetector
 from core_modules.database import Regticket, db, REGTICKET_STATUS_ERROR
-from core_modules.settings import NetWorkSettings
 from debug.masternode_conf import MASTERNODE_NAMES
 from pynode.utils import get_masternode_ordering
-from start_single_masternode import blockchain, pastelid
+from cnode_connection import blockchain
 from .ticket_models import RegistrationTicket, Signature, FinalRegistrationTicket, ActivationTicket, \
     FinalActivationTicket, ImageData, IDTicket, FinalIDTicket, TransferTicket, FinalTransferTicket, TradeTicket, \
     FinalTradeTicket
@@ -104,7 +103,7 @@ class ArtRegistrationServer:
         signature = blockchain.pastelid_sign(ticket.serialize_base64())
         signed_ticket = Signature(dictionary={
             "signature": signature,
-            "pastelid": pastelid,
+            "pastelid": blockchain.pastelid,
         })
 
         # make sure we validate correctly
@@ -156,7 +155,7 @@ class ArtRegistrationServer:
         signature = blockchain.pastelid_sign(regticket.serialize_base64())
         ticket_signed_by_mn = Signature(dictionary={
             "signature": signature,
-            "pubkey": pastelid,
+            "pubkey": blockchain.pastelid,
         })
         return ticket_signed_by_mn.serialize()
 
@@ -287,7 +286,7 @@ class ArtRegistrationServer:
                                                                 Signature(dictionary={
                                                                     "signature": blockchain.pastelid_sign(
                                                                         base64.b64encode(regticket_db.regticket)),
-                                                                    "pubkey": pastelid
+                                                                    "pubkey": blockchain.pastelid
                                                                 }), Signature(
                                                                     serialized=regticket_db.mn1_serialized_signature),
                                                                 Signature(
@@ -363,7 +362,7 @@ class ArtRegistrationServer:
         # sign activation ticket
         ticket_signed_by_mn = Signature(dictionary={
             "signature": blockchain.pastelid_sign(base64.b64encode(activationticket_serialized)),
-            "pubkey": pastelid,
+            "pubkey": blockchain.pastelid,
         })
         return ticket_signed_by_mn.serialize()
 
