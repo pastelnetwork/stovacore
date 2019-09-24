@@ -6,6 +6,8 @@ from aiohttp import web
 from utils.create_wallet_tables import create_tables
 from wallet.database import db, RegticketDB
 from wallet.settings import WALLET_DATABASE_FILE
+from wallet.pastel_client import PastelClient
+
 
 APP_DIR = None
 routes = web.RouteTableDef()
@@ -15,8 +17,7 @@ pastel_client = None
 def get_pastel_client():
     global pastel_client
     if pastel_client is None:
-        from wallet.djangointerface import DjangoInterface
-        pastel_client = DjangoInterface(pastelid, passphrase)
+        pastel_client = PastelClient(pastelid, passphrase)
     return pastel_client
 
 

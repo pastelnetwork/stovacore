@@ -21,7 +21,7 @@ from wallet.database import RegticketDB
 from wallet.settings import BURN_ADDRESS
 
 
-class DjangoInterface:
+class PastelClient:
     def __init__(self, pastelid, passphrase):
 
         self.__logger = initlogging('Wallet interface', __name__)
@@ -60,37 +60,6 @@ class DjangoInterface:
 
         return chunk_data
 
-    def __browse(self, txid):
-        artworks = self.__artregistry.get_all_artworks()
-
-        tickets, ticket = [], None
-        if txid == "":
-            for txid, ticket in self.__chainwrapper.all_ticket_iterator():
-                if type(ticket) == FinalIDTicket:
-                    tickets.append((txid, "identity", ticket.to_dict()))
-                if type(ticket) == FinalRegistrationTicket:
-                    tickets.append((txid, "regticket", ticket.to_dict()))
-                if type(ticket) == FinalActivationTicket:
-                    tickets.append((txid, "actticket", ticket.to_dict()))
-                if type(ticket) == FinalTransferTicket:
-                    tickets.append((txid, "transticket", ticket.to_dict()))
-                if type(ticket) == FinalTradeTicket:
-                    tickets.append((txid, "tradeticket", ticket.to_dict()))
-        else:
-            # get and process ticket as new node
-            ticket = self.__chainwrapper.retrieve_ticket(txid)
-
-        if ticket is not None:
-            ticket = ticket.to_dict()
-        return artworks, tickets, ticket
-
-    def __get_wallet_info(self, pubkey):
-        listunspent = blockchain.listunspent()
-        receivingaddress = blockchain.getaccountaddress("")
-        balance = blockchain.getbalance()
-        collateral_utxos = list(self.__artregistry.get_all_collateral_utxo_for_pubkey(pubkey))
-        return listunspent, receivingaddress, balance, collateral_utxos
-
     def __send_to_address(self, address, amount, comment=""):
         try:
             result = blockchain.sendtoaddress(address, amount, public_comment=comment)
@@ -99,6 +68,7 @@ class DjangoInterface:
         else:
             return result
 
+# Image registration methods
     async def register_image(self, image_field, image_data):
         # get the registration object
         artreg = ArtRegistrationClient(self.__privkey, self.__pubkey, self.__chainwrapper, self.__nodemanager)
@@ -192,6 +162,7 @@ class DjangoInterface:
             }
         }
 
+# TODO: Methods below are not currently used. Need to inspect and probably remove
     def __get_identities(self):
         addresses = []
         for unspent in blockchain.listunspent():
@@ -207,51 +178,29 @@ class DjangoInterface:
         regclient = IDRegistrationClient(self.__privkey, self.__pubkey, self.__chainwrapper)
         regclient.register_id(address)
 
-    def __execute_console_command(self, cmdname, cmdargs):
-        command_rpc = getattr(blockchain, cmdname)
-        try:
-            result = command_rpc(*cmdargs)
-        except JSONRPCException as exc:
-            return False, "EXCEPTION: %s" % exc
+    def __browse(self, txid):
+        artworks = self.__artregistry.get_all_artworks()
+
+        tickets, ticket = [], None
+        if txid == "":
+            for txid, ticket in self.__chainwrapper.all_ticket_iterator():
+                if type(ticket) == FinalIDTicket:
+                    tickets.append((txid, "identity", ticket.to_dict()))
+                if type(ticket) == FinalRegistrationTicket:
+                    tickets.append((txid, "regticket", ticket.to_dict()))
+                if type(ticket) == FinalActivationTicket:
+                    tickets.append((txid, "actticket", ticket.to_dict()))
+                if type(ticket) == FinalTransferTicket:
+                    tickets.append((txid, "transticket", ticket.to_dict()))
+                if type(ticket) == FinalTradeTicket:
+                    tickets.append((txid, "tradeticket", ticket.to_dict()))
         else:
-            return True, result
+            # get and process ticket as new node
+            ticket = self.__chainwrapper.retrieve_ticket(txid)
 
-    def __explorer_get_chaininfo(self):
-        return blockchain.getblockchaininfo()
-
-    def __explorer_get_block(self, blockid):
-        blockcount, block = None, None
-
-        blockcount = blockchain.getblockcount() - 1
-        if blockid != "":
-            try:
-                block = blockchain.getblock(blockid)
-            except JSONRPCException:
-                block = None
-
-        return blockcount, block
-
-    def __explorer_gettransaction(self, transactionid):
-        transaction = None
-        try:
-            if transactionid == "":
-                transaction = blockchain.listsinceblock()["transactions"][-1]
-            else:
-                transaction = blockchain.gettransaction(transactionid)
-        except JSONRPCException:
-            pass
-        return transaction
-
-    def __explorer_getaddresses(self, addressid):
-        transactions = None
-        try:
-            if addressid != "":
-                transactions = blockchain.listunspent(1, 999999999, [addressid])
-            else:
-                transactions = blockchain.listunspent(1, 999999999)
-        except JSONRPCException:
-            pass
-        return transactions
+        if ticket is not None:
+            ticket = ticket.to_dict()
+        return artworks, tickets, ticket
 
     def __get_artworks_owned_by_me(self):
         return self.__artregistry.get_art_owned_by(self.__pubkey)
@@ -350,3 +299,4 @@ class DjangoInterface:
 
             self.__logger.warning("Could not get enough Luby chunks to reconstruct image!")
             raise RuntimeError("Could not get enough Luby chunks to reconstruct image!")
+

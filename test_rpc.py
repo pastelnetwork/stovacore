@@ -1,7 +1,7 @@
 import os
 import asyncio
 import json
-from wallet.djangointerface import DjangoInterface
+from wallet.pastel_client import DjangoInterface
 
 APP_DIR = '/Users/alex/PycharmProjects/spa'
 KEY_PATH = 'keys'
