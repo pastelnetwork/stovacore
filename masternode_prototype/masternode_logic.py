@@ -13,7 +13,7 @@ from core_modules.http_rpc import RPCException, RPCServer
 from pynode.masternode_communication import NodeManager
 from core_modules.masternode_ticketing import ArtRegistrationServer
 from core_modules.settings import NetWorkSettings
-from core_modules.helpers import get_pynode_digest_int, get_nodeid_from_pubkey, bytes_to_chunkid, chunkid_to_hex
+from core_modules.helpers import get_pynode_digest_int, bytes_to_chunkid, chunkid_to_hex
 from cnode_connection import blockchain
 
 
@@ -53,8 +53,6 @@ class MasterNodeLogic:
         # start rpc server
         self.__rpcserver = RPCServer()
 
-        # TODO: the are blocking calls. We should turn them into coroutines if possible!
-        # TODO: we should ACL who can access these RPCs, chunk related RPC is only for MNs!
         self.__rpcserver.add_callback("SPOTCHECK_REQ", "SPOTCHECK_RESP",
                                       self.__chunkmanager_rpc.receive_rpc_spotcheck)
         self.__rpcserver.add_callback("FETCHCHUNK_REQ", "FETCHCHUNK_RESP",

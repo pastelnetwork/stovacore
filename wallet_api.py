@@ -1,5 +1,4 @@
 import os
-import random
 import signal
 import sys
 from aiohttp import web
@@ -82,10 +81,15 @@ app = web.Application()
 app.add_routes(routes)
 
 if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        raise Exception('Usage: ./wallet_api <wallet_dir>')
+    if len(sys.argv) < 4:
+        raise Exception('Usage: ./wallet_api <wallet_dir> <pastelid> <passphrase>')
     APP_DIR = sys.argv[1]
+    pastelid = sys.argv[2]
+    passphrase = sys.argv[3]
 
+    # env variable will be used by cnode_connection.py to figure out if we running a wallet or node.
+    os.environ['PASTEL_ID'] = pastelid
+    os.environ['PASSPHRASE'] = passphrase
     db.init(os.path.join(APP_DIR, WALLET_DATABASE_FILE))
     if not os.path.exists(os.path.join(APP_DIR, WALLET_DATABASE_FILE)):
         create_tables()

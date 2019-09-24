@@ -1,17 +1,13 @@
-import base64
 import wallet.settings as settings
+from cnode_connection import blockchain
 from core_modules.http_rpc import RPCClient
-from core_modules.helpers import get_nodeid_from_pubkey
 from core_modules.logger import initlogging
 from debug.masternode_conf import MASTERNODES
-from cnode_connection import blockchain
 
 
 class ClientNodeManager:
-    def __init__(self, privkey, pubkey):
+    def __init__(self):
         self.__logger = initlogging('ClientNodeManager', __name__)
-        self.__privkey = privkey
-        self.__pubkey = pubkey
 
     def get_masternode_ordering(self, blocknum=None):
         if settings.DEBUG:

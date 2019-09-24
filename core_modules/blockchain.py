@@ -12,6 +12,7 @@ from core_modules.logger import initlogging
 class NotEnoughConfirmations(Exception):
     pass
 
+
 DEFAULT_PASTEL_ID_PASSPHRASE = 'putvalidpassphrasehereorreplacewithenvvar'
 
 

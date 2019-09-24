@@ -1,15 +1,12 @@
 import asyncio
 import random
-from decimal import Decimal
-
-import time
 import uuid
 
-import bitcoinrpc
 from bitcoinrpc.authproxy import JSONRPCException
 
+from cnode_connection import blockchain
+from core_modules.artregistry import ArtRegistry
 from core_modules.blackbox_modules.luby import decode as luby_decode, NotEnoughChunks
-from core_modules.blockchain import BlockChain
 from core_modules.chainwrapper import ChainWrapper
 from core_modules.http_rpc import RPCException
 from core_modules.masternode_ticketing import IDRegistrationClient, TransferRegistrationClient, \
@@ -32,142 +29,16 @@ class DjangoInterface:
         self.pastelid = pastelid
         self.passphrase = passphrase
 
-        self.__blockchain = self.__connect_to_daemon()
-        self.__chainwrapper = ChainWrapper(None, self.__blockchain, self.__artregistry)
-        self.__nodemanager = ClientNodeManager(self.__privkey, self.__pubkey,
-                                               self.__blockchain)
+        self.__artregistry = ArtRegistry()
+        self.__chainwrapper = ChainWrapper(self.__artregistry)
+        self.__nodemanager = ClientNodeManager()
 
         self.__active_tasks = {}
-
-    def __connect_to_daemon(self):
-        while True:
-            blockchain = BlockChain(user='rt',
-                                    password='rt',
-                                    ip='127.0.0.1',
-                                    rpcport=19932,
-                                    pastelid=self.pastelid,
-                                    passphrase=self.passphrase
-                                    )
-            try:
-                blockchain.getwalletinfo()
-            except (ConnectionRefusedError, bitcoinrpc.authproxy.JSONRPCException) as exc:
-                self.__logger.debug("Exception %s while getting wallet info, retrying..." % exc)
-                time.sleep(0.5)
-            else:
-                self.__logger.debug("Successfully connected to daemon!")
-                break
-        return blockchain
-
-    def register_rpcs(self, rpcserver):
-        rpcserver.add_callback("DJANGO_REQ", "DJANGO_RESP", self.process_django_request, coroutine=True,
-                               allowed_pubkey=self.__django_pubkey)
-
-    async def run_django_tasks_forever(self):
-        while True:
-            await asyncio.sleep(1)
-
-            for future in self.__active_tasks.values():
-                if not future.done():
-                    try:
-                        await future
-                    except Exception as exc:
-                        self.__logger.exception("Exception received in %s" % future)
 
     def __defer_execution(self, future):
         identifier = str(uuid.uuid4())
         self.__active_tasks[identifier] = future
         return identifier
-
-    async def process_django_request(self, data):
-        rpcname = data[0]
-        args = data[1:]
-
-        if rpcname == "get_info":
-            return self.__get_infos()
-        elif rpcname == "ping_masternodes":
-            return await self.__ping_masternodes()
-        elif rpcname == "get_chunk":
-            return await self.__get_chunk_id(args[0])
-        elif rpcname == "browse":
-            return self.__browse(args[0])
-        elif rpcname == "get_wallet_info":
-            return self.__get_wallet_info(args[0])
-        elif rpcname == "send_to_address":
-            return self.__send_to_address(*args)
-        elif rpcname == "register_image":
-            return await self.__register_image(*args)
-        elif rpcname == "get_identities":
-            return self.__get_identities()
-        elif rpcname == "register_identity":
-            return self.__register_identity(args[0])
-        elif rpcname == "execute_console_command":
-            return self.__execute_console_command(args[0], args[1:])
-        elif rpcname == "explorer_get_chaininfo":
-            return self.__explorer_get_chaininfo()
-        elif rpcname == "explorer_get_block":
-            return self.__explorer_get_block(args[0])
-        elif rpcname == "explorer_gettransaction":
-            return self.__explorer_gettransaction(args[0])
-        elif rpcname == "explorer_getaddresses":
-            return self.__explorer_getaddresses(args[0])
-        elif rpcname == "get_artworks_owned_by_me":
-            return self.__get_artworks_owned_by_me()
-        elif rpcname == "get_my_trades_for_artwork":
-            return self.__get_my_trades_for_artwork(args[0])
-        elif rpcname == "register_transfer_ticket":
-            return self.__register_transfer_ticket(*args)
-        elif rpcname == "get_artwork_info":
-            return self.__get_artwork_info(args[0])
-        elif rpcname == "register_trade_ticket":
-            future = asyncio.ensure_future(self.__register_trade_ticket(*args))
-            return self.__defer_execution(future)
-        elif rpcname == "download_image":
-            return await self.__download_image(*args)
-        elif rpcname == "list_background_tasks":
-            tasks = []
-            for identifier, future in self.__active_tasks.items():
-                exception = None
-                if future.done():
-                    exception = future.exception()
-
-                    if exception is not None:
-                        try:
-                            raise exception
-                        except Exception as exc:
-                            self.__logger.exception("A background task has failed: %s" % (exc))
-
-                d = {
-                    "identifier": identifier,
-                    "done": future.done(),
-                    "exception": str(exception),
-                }
-                tasks.append(d)
-            return tasks
-        elif rpcname == "get_future_result":
-            identifier = args[0]
-            future = self.__active_tasks.get(identifier)
-            return future.result()
-        else:
-            raise ValueError("Invalid RPC: %s" % rpcname)
-
-    def __get_infos(self):
-        infos = {}
-        for name in ["getblockchaininfo", "getmempoolinfo", "gettxoutsetinfo", "getmininginfo",
-                     "getnetworkinfo", "getpeerinfo", "getwalletinfo"]:
-            infos[name] = getattr(self.__blockchain, name)()
-
-        infos["mnsync"] = self.__blockchain.mnsync("status")
-        return infos
-
-    async def __ping_masternodes(self):
-        masternodes = self.__nodemanager.get_all()
-
-        tasks = []
-        for mn in masternodes:
-            tasks.append(mn.send_rpc_ping(b'PING'))
-
-        ret = await asyncio.gather(*tasks)
-        return ret
 
     async def __get_chunk_id(self, chunkid_hex):
         await asyncio.sleep(0)
@@ -214,15 +85,15 @@ class DjangoInterface:
         return artworks, tickets, ticket
 
     def __get_wallet_info(self, pubkey):
-        listunspent = self.__blockchain.listunspent()
-        receivingaddress = self.__blockchain.getaccountaddress("")
-        balance = self.__blockchain.getbalance()
+        listunspent = blockchain.listunspent()
+        receivingaddress = blockchain.getaccountaddress("")
+        balance = blockchain.getbalance()
         collateral_utxos = list(self.__artregistry.get_all_collateral_utxo_for_pubkey(pubkey))
         return listunspent, receivingaddress, balance, collateral_utxos
 
     def __send_to_address(self, address, amount, comment=""):
         try:
-            result = self.__blockchain.sendtoaddress(address, amount, public_comment=comment)
+            result = blockchain.sendtoaddress(address, amount, public_comment=comment)
         except JSONRPCException as exc:
             return str(exc)
         else:
@@ -323,7 +194,7 @@ class DjangoInterface:
 
     def __get_identities(self):
         addresses = []
-        for unspent in self.__blockchain.listunspent():
+        for unspent in blockchain.listunspent():
             if unspent["address"] not in addresses:
                 addresses.append(unspent["address"])
 
@@ -337,7 +208,7 @@ class DjangoInterface:
         regclient.register_id(address)
 
     def __execute_console_command(self, cmdname, cmdargs):
-        command_rpc = getattr(self.__blockchain, cmdname)
+        command_rpc = getattr(blockchain, cmdname)
         try:
             result = command_rpc(*cmdargs)
         except JSONRPCException as exc:
@@ -346,15 +217,15 @@ class DjangoInterface:
             return True, result
 
     def __explorer_get_chaininfo(self):
-        return self.__blockchain.getblockchaininfo()
+        return blockchain.getblockchaininfo()
 
     def __explorer_get_block(self, blockid):
         blockcount, block = None, None
 
-        blockcount = self.__blockchain.getblockcount() - 1
+        blockcount = blockchain.getblockcount() - 1
         if blockid != "":
             try:
-                block = self.__blockchain.getblock(blockid)
+                block = blockchain.getblock(blockid)
             except JSONRPCException:
                 block = None
 
@@ -364,9 +235,9 @@ class DjangoInterface:
         transaction = None
         try:
             if transactionid == "":
-                transaction = self.__blockchain.listsinceblock()["transactions"][-1]
+                transaction = blockchain.listsinceblock()["transactions"][-1]
             else:
-                transaction = self.__blockchain.gettransaction(transactionid)
+                transaction = blockchain.gettransaction(transactionid)
         except JSONRPCException:
             pass
         return transaction
@@ -375,9 +246,9 @@ class DjangoInterface:
         transactions = None
         try:
             if addressid != "":
-                transactions = self.__blockchain.listunspent(1, 999999999, [addressid])
+                transactions = blockchain.listunspent(1, 999999999, [addressid])
             else:
-                transactions = self.__blockchain.listunspent(1, 999999999)
+                transactions = blockchain.listunspent(1, 999999999)
         except JSONRPCException:
             pass
         return transactions
@@ -431,13 +302,13 @@ class DjangoInterface:
         else:
             # not a very thorough check, as we might have funds locked in collateral addresses
             # if this is the case we will fail later when trying to move the funds
-            if self.__blockchain.getbalance() < price:
+            if blockchain.getbalance() < price:
                 raise ValueError("Not enough money in wallet!")
 
         # watched address is the address we are using to receive the funds in asks and send the collateral to in bids
-        watched_address = self.__blockchain.getnewaddress()
+        watched_address = blockchain.getnewaddress()
 
-        transreg = TradeRegistrationClient(self.__privkey, self.__pubkey, self.__blockchain, self.__chainwrapper,
+        transreg = TradeRegistrationClient(self.__privkey, self.__pubkey, blockchain, self.__chainwrapper,
                                            self.__artregistry)
         await transreg.register_trade(imagedata_hash, tradetype, watched_address, copies, price, expiration)
 
