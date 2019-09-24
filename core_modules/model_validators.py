@@ -172,14 +172,19 @@ class UUIDField(StringField):
         super().__init__(minsize=36, maxsize=36)
 
 
-class SignatureField(BytesField):
+class SignatureField(StringField):
     def __init__(self):
-        super().__init__(minsize=132, maxsize=132)
+        super().__init__(minsize=152, maxsize=152)
 
 
 class PubkeyField(BytesField):
     def __init__(self):
         super().__init__(minsize=66, maxsize=66)
+
+
+class PastelIDField(StringField):
+    def __init__(self):
+        super().__init__(minsize=86, maxsize=86)
 
 
 class BlockChainAddressField(StringField):

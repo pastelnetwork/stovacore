@@ -8,8 +8,8 @@ from cnode_connection import blockchain
 from core_modules.helpers import get_pynode_digest_bytes, require_true
 from core_modules.logger import initlogging
 from core_modules.model_validators import FieldValidator, StringField, IntegerField, FingerprintField, SHA3512Field, \
-    LubyChunkHashField, LubyChunkField, ImageField, ThumbnailField, TXIDField, UUIDField, SignatureField, PubkeyField, \
-    LubySeedField, BlockChainAddressField, UnixTimeField, StringChoiceField
+    LubyChunkHashField, LubyChunkField, ImageField, ThumbnailField, TXIDField, UUIDField, SignatureField, \
+    PastelIDField, LubySeedField, BlockChainAddressField, UnixTimeField, StringChoiceField
 
 from utils.dupe_detection import DupeDetector
 from core_modules.blackbox_modules.dupe_detection_utils import measure_similarity, assemble_fingerprints_for_pandas
@@ -140,7 +140,7 @@ class TicketModelBase:
         return msgpack.packb(self.to_dict(), use_bin_type=True)
 
     def serialize_base64(self):
-        return base64.b64encode(self.serialize())
+        return base64.b64encode(self.serialize()).decode()
 
     def unserialize(self, packed):
         return msgpack.unpackb(packed, raw=False)
@@ -226,7 +226,7 @@ class ImageData(TicketModelBase):
 class RegistrationTicket(TicketModelBase):
     methods = {
         # mandatory fields for Final Ticket
-        "author": PubkeyField(),
+        "author": PastelIDField(),
         # "author_wallet": BlockChainAddressField(),
         "order_block_txid": TXIDField(),
         "blocknum": IntegerField(minsize=0, maxsize=9999999999999),
@@ -259,7 +259,7 @@ class RegistrationTicket(TicketModelBase):
         require_true(len(self.lubyhashes) == len(self.lubyseeds))
 
         # validate that order txid is not too old
-        block_distance = chainwrapper.get_block_distance(chainwrapper.get_last_block_hash(), self.order_block_txid)
+        block_distance = chainwrapper.get_block_distance(blockchain.getbestblockhash(), self.order_block_txid)
         if block_distance > NetWorkSettings.MAX_REGISTRATION_BLOCK_DISTANCE:
             raise ValueError("Block distance between order_block_height and current block is too large!")
         # validate that art hash doesn't exist:
@@ -276,7 +276,8 @@ class RegistrationTicket(TicketModelBase):
 
                 # collect fingerprints
                 # TODO: only collect this for activated regtickets and tickets not older than X blocks
-                fingerprint_db[regticket.imagedata_hash] = ("DUMMY_PATH", regticket.fingerprints)  # TODO: do we need this?
+                fingerprint_db[regticket.imagedata_hash] = (
+                    "DUMMY_PATH", regticket.fingerprints)  # TODO: do we need this?
 
                 # validate that this art hash does not yet exist on the blockchain
                 # TODO: only prohibit registration when this was registered in the past X blocks
@@ -296,7 +297,7 @@ class RegistrationTicket(TicketModelBase):
 class ActivationTicket(TicketModelBase):
     methods = {
         # mandatory fields for Final Ticket
-        "author": PubkeyField(),
+        "author": PastelIDField(),
         "order_block_txid": TXIDField(),
 
         "registration_ticket_txid": TXIDField(),
@@ -353,7 +354,7 @@ class ActivationTicket(TicketModelBase):
 
 class TradeTicket(TicketModelBase):
     methods = {
-        "public_key": PubkeyField(),
+        "public_key": PastelIDField(),
         "imagedata_hash": SHA3512Field(),
         "type": StringChoiceField(choices=["ask", "bid"]),
         "copies": IntegerField(minsize=0, maxsize=1000),
@@ -400,8 +401,8 @@ class TradeTicket(TicketModelBase):
 
 class TransferTicket(TicketModelBase):
     methods = {
-        "public_key": PubkeyField(),
-        "recipient": PubkeyField(),
+        "public_key": PastelIDField(),
+        "recipient": PastelIDField(),
         "imagedata_hash": SHA3512Field(),
         "copies": IntegerField(minsize=0, maxsize=1000),
     }
@@ -420,7 +421,7 @@ class IDTicket(TicketModelBase):
     methods = {
         # mandatory fields for Final Ticket
         "blockchain_address": BlockChainAddressField(),
-        "public_key": PubkeyField(),
+        "public_key": PastelIDField(),
         "ticket_submission_time": UnixTimeField(),
     }
 
@@ -436,7 +437,7 @@ class IDTicket(TicketModelBase):
 class Signature(TicketModelBase):
     methods = {
         "signature": SignatureField(),
-        "pubkey": PubkeyField(),
+        "pubkey": PastelIDField(),
     }
 
     def validate(self, ticket):

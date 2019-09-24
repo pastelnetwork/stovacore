@@ -93,7 +93,7 @@ class PastelClient:
         return actticket_txid, final_actticket.to_dict()
 
     async def image_registration_step_2(self, title, image_data):
-        artreg = ArtRegistrationClient(self.__privkey, self.__pubkey, self.__chainwrapper, self.__nodemanager)
+        artreg = ArtRegistrationClient(self.__chainwrapper, self.__nodemanager)
 
         result = await artreg.get_workers_fee(
             image_data=image_data,

@@ -269,7 +269,7 @@ class ArtRegistrationServer:
                     regticket_db.mn2_serialized_signature = serialized_signature
                     regticket_db.save()
                     regticket = RegistrationTicket(serialized=regticket_db.regticket)
-                    current_block = self.__chainwrapper.get_last_block_number()
+                    current_block = blockchain.getblockcount()
                     # verify if confirmation receive for 5 blocks or less from regticket creation.
                     if current_block - regticket.blocknum > 5:
                         regticket_db.status = REGTICKET_STATUS_ERROR

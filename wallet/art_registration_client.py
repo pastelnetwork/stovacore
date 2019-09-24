@@ -4,6 +4,7 @@ from datetime import datetime
 
 from aiohttp import ClientConnectorError
 
+from cnode_connection import blockchain
 from core_modules.ticket_models import RegistrationTicket, Signature, FinalRegistrationTicket, ActivationTicket, \
     FinalActivationTicket, ImageData
 from core_modules.settings import NetWorkSettings
@@ -16,18 +17,15 @@ art_reg_client_logger = initlogging('Logger', __name__)
 
 
 class ArtRegistrationClient:
-    def __init__(self, privkey, pubkey, chainwrapper, nodemanager):
+    def __init__(self, chainwrapper, nodemanager):
         self.__chainwrapper = chainwrapper
         self.__nodemanager = nodemanager
 
-        # get MN ordering
-        self.__privkey = privkey
-        self.__pubkey = pubkey
-
     def __generate_signed_ticket(self, ticket):
+        response = blockchain.pastelid_sign(ticket.serialize_base64())
         signed_ticket = Signature(dictionary={
-            "signature": pastel_id_write_signature_on_data_func(ticket.serialize(), self.__privkey, self.__pubkey),
-            "pubkey": self.__pubkey,
+            "signature": blockchain.pastelid_sign(ticket.serialize_base64()),
+            "pubkey": blockchain.pastelid
         })
 
         # make sure we validate correctly
@@ -108,7 +106,7 @@ class ArtRegistrationClient:
         })
 
         image.validate()
-        blocknum = self.__chainwrapper.get_last_block_number()
+        blocknum = blockchain.getblockcount()
         regticket = RegistrationTicket(dictionary={
             "artist_name": artist_name,
             "artist_website": artist_website,
@@ -125,8 +123,8 @@ class ArtRegistrationClient:
             "lubyseeds": image.get_luby_seeds(),
             "thumbnailhash": image.get_thumbnail_hash(),
 
-            "author": self.__pubkey,
-            "order_block_txid": self.__chainwrapper.get_last_block_hash(),
+            "author": blockchain.pastelid,
+            "order_block_txid": blockchain.getbestblockhash(),
             "blocknum": blocknum,
             "imagedata_hash": image.get_artwork_hash(),
         })
@@ -217,9 +215,9 @@ class ArtRegistrationClient:
             "lubyseeds": image.get_luby_seeds(),
             "thumbnailhash": image.get_thumbnail_hash(),
 
-            "author": self.__pubkey,
-            "order_block_txid": self.__chainwrapper.get_last_block_hash(),
-            "blocknum": self.__chainwrapper.get_last_block_number(),
+            "author": blockchain.pastelid,
+            "order_block_txid": blockchain.getbestblockhash(),
+            "blocknum": blockchain.getblockcount(),
             "imagedata_hash": image.get_artwork_hash(),
         })
 
@@ -274,7 +272,7 @@ class ArtRegistrationClient:
 
         # generate activation ticket
         actticket = ActivationTicket(dictionary={
-            "author": self.__pubkey,
+            "author": blockchain.pastelid,
             "order_block_txid": regticket.order_block_txid,
             "registration_ticket_txid": regticket_txid,
         })

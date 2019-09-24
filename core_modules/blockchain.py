@@ -193,7 +193,8 @@ class BlockChain:
                 yield txid
 
     def pastelid_sign(self, base64data):
-        return self.__call_jsonrpc("pastelid", "sign", base64data, self.pastelid, self.passphrase)
+        response = self.__call_jsonrpc("pastelid", "sign", base64data, self.pastelid, self.passphrase)
+        return response['signature']
 
     def pastelid_verify(self, base64data, signature):
         return self.__call_jsonrpc("pastelid", "verify", base64data, signature, self.pastelid)
