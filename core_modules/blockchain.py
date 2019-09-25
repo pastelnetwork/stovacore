@@ -22,6 +22,13 @@ class BlockChain:
         self.__reconnect()
         self.__logger = initlogging('', __name__)
 
+        # passing `passphrase` parameter has the same idea as `pastelid` one.
+        # we pass it for wallet_api and leave blank for masternode
+        if not passphrase:
+            self.passphrase = DEFAULT_PASTEL_ID_PASSPHRASE
+        else:
+            self.passphrase = passphrase
+
         # for masternode mode - pastelID should be empty and fetched automatically
         # for wallet API mode - user will change which pastelID use, so wallet_api will create Blockchain object with
         # predefined pastelid
@@ -29,13 +36,6 @@ class BlockChain:
             self.pastelid = self.get_or_create_pastel_id()
         else:
             self.pastelid = pastelid
-
-        # passing `passphrase` parameter has the same idea as `pastelid` one.
-        # we pass it for wallet_api and leave blank for masternode
-        if not passphrase:
-            self.passphrase = DEFAULT_PASTEL_ID_PASSPHRASE
-        else:
-            self.passphrase = passphrase
 
     def get_or_create_pastel_id(self):
         pastelid_list = self.pastelid_list()
