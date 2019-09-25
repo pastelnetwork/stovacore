@@ -110,9 +110,9 @@ NetWorkSettings.DUPE_DETECTION_STRICTNESS = 0.99
 NetWorkSettings.DUPE_DETECTION_KENDALL_MAX = 0
 NetWorkSettings.DUPE_DETECTION_HOEFFDING_MAX = 0
 
-# NetWorkSettings.HTTPS_KEY_FILE = '/home/animecoinuser/.pastel/pynode_https_cert/privkey.pem'
-# NetWorkSettings.HTTPS_CERTIFICATE_FILE = '/home/animecoinuser/.pastel/pynode_https_cert/certificate.pem'
-NetWorkSettings.HTTPS_KEY_FILE = '/Users/alex/PycharmProjects/spa/src/StoVaCore/https_cert/privkey.pem'
-NetWorkSettings.HTTPS_CERTIFICATE_FILE = '/Users/alex/PycharmProjects/spa/src/StoVaCore/https_cert/certificate.pem'
+NetWorkSettings.HTTPS_KEY_FILE = '/home/animecoinuser/.pastel/pynode_https_cert/privkey.pem'
+NetWorkSettings.HTTPS_CERTIFICATE_FILE = '/home/animecoinuser/.pastel/pynode_https_cert/certificate.pem'
+# NetWorkSettings.HTTPS_KEY_FILE = '/Users/alex/PycharmProjects/spa/src/StoVaCore/https_cert/privkey.pem'
+# NetWorkSettings.HTTPS_CERTIFICATE_FILE = '/Users/alex/PycharmProjects/spa/src/StoVaCore/https_cert/certificate.pem'
 NetWorkSettings.MN_DATABASE_FILE = '/home/animecoinuser/.pastel/masternode.db'
 NetWorkSettings.LONG_REGTICKET_VALIDATION_ENABLED = False

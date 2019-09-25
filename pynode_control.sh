@@ -73,6 +73,7 @@ function update_requirements()
     /home/animecoinuser/.virtualenvs/StoVaCore/bin/pip install -r ~/StoVaCore/requirements.txt
 }
 
+
 case $1 in
     "start") start;;
     "status") status;;
