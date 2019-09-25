@@ -39,12 +39,12 @@ def ext_hook(code, data):
 
 
 def ensure_types_for_v1(container):
-    sender_id = ensure_type_of_field(container, "sender_id", bytes)
-    receiver_id = ensure_type_of_field(container, "receiver_id", bytes)
+    sender_id = ensure_type_of_field(container, "sender_id", str)
+    receiver_id = ensure_type_of_field(container, "receiver_id", str)
     data = ensure_type_of_field(container, "data", list)
     nonce = ensure_type_of_field(container, "nonce", bytes)
     timestamp = ensure_type_of_field(container, "timestamp", float)
-    signature = ensure_type_of_field(container, "signature", bytes)
+    signature = ensure_type_of_field(container, "signature", str)
     return sender_id, receiver_id, data, nonce, timestamp, signature
 
 
@@ -126,7 +126,7 @@ def pack_and_sign(receiver_pastel_id, message_body, version=MAX_SUPPORTED_VERSIO
         # serialize container, calculate hash and sign with private key
         # signature is None as this point as we can't know the signature without calculating it
         container_serialized = msgpack.packb(container, default=default, use_bin_type=True)
-        signature = blockchain.pastelid_sign(base64.b64encode(get_pynode_digest_bytes(container_serialized)))
+        signature = blockchain.pastelid_sign(base64.b64encode(get_pynode_digest_bytes(container_serialized)).decode())
 
         # TODO: serializing twice is not the best solution if we want to work with large messages
 
