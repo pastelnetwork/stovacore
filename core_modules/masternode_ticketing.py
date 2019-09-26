@@ -144,7 +144,7 @@ class ArtRegistrationServer:
         regticket = RegistrationTicket(serialized=regticket_serialized)
 
         # validate client's signature on the ticket
-        require_true(signed_regticket.pubkey == regticket.author)
+        require_true(signed_regticket.pastelid == regticket.author)
         signed_regticket.validate(regticket)
 
         # validate registration ticket
@@ -154,7 +154,7 @@ class ArtRegistrationServer:
         signature = blockchain.pastelid_sign(regticket.serialize_base64())
         ticket_signed_by_mn = Signature(dictionary={
             "signature": signature,
-            "pubkey": blockchain.pastelid,
+            "pastelid": blockchain.pastelid,
         })
         return ticket_signed_by_mn.serialize()
 
@@ -165,7 +165,7 @@ class ArtRegistrationServer:
         regticket_serialized, regticket_signature_serialized = data
         regticket = RegistrationTicket(serialized=regticket_serialized)
         signed_regticket = Signature(serialized=regticket_signature_serialized)
-        require_true(signed_regticket.pubkey == regticket.author)
+        require_true(signed_regticket.pastelid == regticket.author)
         signed_regticket.validate(regticket)
 
         # validate registration ticket
@@ -284,8 +284,9 @@ class ArtRegistrationServer:
                                                             (
                                                                 Signature(dictionary={
                                                                     "signature": blockchain.pastelid_sign(
-                                                                        base64.b64encode(regticket_db.regticket)),
-                                                                    "pubkey": blockchain.pastelid
+                                                                        base64.b64encode(
+                                                                            regticket_db.regticket)).decode(),
+                                                                    "pastelid": blockchain.pastelid
                                                                 }), Signature(
                                                                     serialized=regticket_db.mn1_serialized_signature),
                                                                 Signature(
@@ -361,7 +362,7 @@ class ArtRegistrationServer:
         # sign activation ticket
         ticket_signed_by_mn = Signature(dictionary={
             "signature": blockchain.pastelid_sign(base64.b64encode(activationticket_serialized)),
-            "pubkey": blockchain.pastelid,
+            "pastelid": blockchain.pastelid,
         })
         return ticket_signed_by_mn.serialize()
 

@@ -22,10 +22,9 @@ class ArtRegistrationClient:
         self.__nodemanager = nodemanager
 
     def __generate_signed_ticket(self, ticket):
-        response = blockchain.pastelid_sign(ticket.serialize_base64())
         signed_ticket = Signature(dictionary={
             "signature": blockchain.pastelid_sign(ticket.serialize_base64()),
-            "pubkey": blockchain.pastelid
+            "pastelid": blockchain.pastelid
         })
 
         # make sure we validate correctly

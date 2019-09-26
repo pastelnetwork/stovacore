@@ -437,11 +437,11 @@ class IDTicket(TicketModelBase):
 class Signature(TicketModelBase):
     methods = {
         "signature": SignatureField(),
-        "pubkey": PastelIDField(),
+        "pastelid": PastelIDField(),
     }
 
     def validate(self, ticket):
-        if not blockchain.pastelid_verify(ticket.serialize_base64(), self.signature, self.pubkey):
+        if not blockchain.pastelid_verify(ticket.serialize_base64(), self.signature, self.pastelid):
             raise ValueError("Invalid signature")
 
 
