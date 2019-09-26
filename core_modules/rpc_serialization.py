@@ -90,7 +90,7 @@ def verify_and_unpack(raw_message_contents):
         tmp["signature"] = b''
         sleep_rand()
         raw_hash = get_pynode_digest_bytes(msgpack.packb(tmp, default=default, use_bin_type=True))
-        verified = blockchain.pastelid_verify(base64.b64encode(raw_hash), signature, sender_id)
+        verified = blockchain.pastelid_verify(base64.b64encode(raw_hash).decode(), signature, sender_id)
         sleep_rand()
 
         if not verified:

@@ -110,7 +110,7 @@ class PastelClient:
         return result
 
     async def image_registration_step_3(self, regticket_id):
-        artreg = ArtRegistrationClient(self.__privkey, self.__pubkey, self.__chainwrapper, self.__nodemanager)
+        artreg = ArtRegistrationClient(self.__chainwrapper, self.__nodemanager)
 
         success, err = await artreg.send_regticket_to_mn2_mn3(regticket_id)
         if not success:

@@ -24,8 +24,8 @@ scp update.sh do:/var/www/static/
 cd ..
 
 echo 'Updating StoVaCore on all masternodes..'
-HOSTS="mn2 mn3 mn4 mn5 mn6 mn7 mn8 mn9 mn10 mn11"
-#HOSTS="mn2"
+#HOSTS="mn2 mn3 mn4 mn5 mn6 mn7 mn8 mn9 mn10 mn11"
+HOSTS="mn4 mn5 mn6"
 SCRIPT="source <(curl -s https://dobrushskiy.name/static/update.sh)"
 for HOSTNAME in ${HOSTS} ; do
     ssh ${HOSTNAME} "${SCRIPT}" &

@@ -215,7 +215,7 @@ class ArtRegistrationServer:
         except DoesNotExist:
             mn_ticket_logger.warn('Given upload code DOES NOT exists with required public key')
             raise
-        result = self.__chainwrapper.getlocalfee()
+        result = blockchain.getlocalfee()
         fee = result['localfee']
         regticket_db.image_data = image_data
         regticket_db.localfee = fee

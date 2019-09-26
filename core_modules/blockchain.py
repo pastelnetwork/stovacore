@@ -102,10 +102,10 @@ class BlockChain:
         return self.__call_jsonrpc("addnode", node, mode)
 
     def getlocalfee(self):
-        return self.__call_jsonrpc("masternode", "getlocalfee")
+        return self.__call_jsonrpc("storagefee", "getlocalfee")
 
     def getnetworkfee(self):
-        return self.__call_jsonrpc("masternode", "getnetworkfee")
+        return self.__call_jsonrpc("storagefee", "getnetworkfee")
 
     def listunspent(self, minimum=1, maximum=9999999, addresses=[]):
         return self.__call_jsonrpc("listunspent", minimum, maximum, addresses)
@@ -192,7 +192,49 @@ class BlockChain:
             result = self.__call_jsonrpc("masternode", "workers", str(blocknum))
         # cNode returns data with the following format:
         # {<block_number>: [{node_data1, node_data2, node_data3}]}
-        return list(result.values())[0]
+        # FIXME: only for testing while `masternode workers` result is not up to date
+        # return list(result.values())[0]
+        return [
+            # mn4
+            {
+                "rank": "1",
+                "IP:port": "18.216.28.255:19933",
+                "protocol": 170007,
+                "outpoint": "73130f53545e465eacb705b9425439b3c23b45a9b0084c7ec1deb0c9d1225be8-1",
+                "payee": "tPpMnvVmA4Lbab4JHtXmK9Jt9ZFxEgN1Rmj",
+                "lastseen": 1569486643,
+                "activeseconds": 7837959,
+                "extAddress": "18.216.28.255:4444",
+                "extKey": "jXZVtBmehoxYPotVrLdByFNNcB8jsryXhFPgqRa95i2x1mknbzSef1oGjnzfiwRtzReimfugvg41VtA7qGfDZR",
+                "extCfg": ""
+            },
+            # mn5
+            {
+                "rank": "2",
+                "IP:port": "18.191.111.96:19933",
+                "protocol": 170007,
+                "outpoint": "055b2e9833690e44c62e9c854fe33a770ac427647079ef571a95a3b8a24887fd-0",
+                "payee": "tPgYbXJNTMDjxaZnwgKVtcJ2ZKgdf9WDcZE",
+                "lastseen": 1569486926,
+                "activeseconds": 7838259,
+                "extAddress": "18.191.111.96:4444",
+                "extKey": "jXY39ehN4BWWpXLt4Q2zpcmypSAN9saWCweGRtJTxK87ktftjigfJwE6X9JoVfBduDjzEG4uBVR8Es6jVFMAbW",
+                "extCfg": ""
+            },
+            # mn6
+            {
+                "rank": "3",
+                "IP:port": "18.222.118.140:19933",
+                "protocol": 170007,
+                "outpoint": "f900925fe119af0438641b10945b9377eb52e06fe108e785fccd3dcd6d8384f4-1",
+                "payee": "tPRcrQ5P4vm3yKFgy3y1Rs3MaYcdVvEsw57",
+                "lastseen": 1569486686,
+                "activeseconds": 7837992,
+                "extAddress": "18.222.118.140:4444",
+                "extKey": "jXa2jiukvPktEdPvGo5nCLaMHxFRLneXMUNLGU4AUkuMmFq6ADerSJZg3Htd7rGjZo6HM92CgUFW1LjEwrKubd",
+                "extCfg": ""
+            }
+        ]
 
     def pastelid_list(self):
         # response example:
@@ -212,8 +254,8 @@ class BlockChain:
         response = self.__call_jsonrpc("pastelid", "sign", base64data, self.pastelid, self.passphrase)
         return response['signature']
 
-    def pastelid_verify(self, base64data, signature):
-        return self.__call_jsonrpc("pastelid", "verify", base64data, signature, self.pastelid)
+    def pastelid_verify(self, base64data, signature, pasteid_to_verify):
+        return self.__call_jsonrpc("pastelid", "verify", base64data, signature, pasteid_to_verify)
 
     def get_txids_for_block(self, blocknum, confirmations):
         try:

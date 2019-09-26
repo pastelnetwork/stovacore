@@ -29,11 +29,34 @@ function get_status()
 function status()
 {
     get_status
-    if [ $PYNODE_STATUS -eq $STOPPED ];
+    if [[ $PYNODE_STATUS -eq $STOPPED ]];
     then
         echo "Stopped"
     else
         echo "Running"
+    fi
+}
+
+function get_cnode_status()
+{
+    line=`ps aux | grep [p]asteld`
+    if [ -z "$line" ];
+    then
+        CNODE_STATUS=$STOPPED
+    else
+        CNODE_STATUS=$RUNNING
+    fi
+
+}
+
+function cnode_status()
+{
+    get_cnode_status
+    if [[ CNODE_STATUS -eq $STOPPED ]];
+    then
+        echo "PastelD Stopped"
+    else
+        echo "PastelD Running"
     fi
 }
 
@@ -73,6 +96,19 @@ function update_requirements()
     /home/animecoinuser/.virtualenvs/StoVaCore/bin/pip install -r ~/StoVaCore/requirements.txt
 }
 
+function stop_cnode()
+{
+    cd /home/animecoinuser/pastel
+    ./pastel-cli stop
+}
+
+
+function start_cnode()
+{
+    cd /home/animecoinuser/pastel
+    source start_mn.sh &
+}
+
 
 case $1 in
     "start") start;;
@@ -82,4 +118,7 @@ case $1 in
     "create_tables") create_tables;;
     "update_requirements") update_requirements;;
     "drop_db") drop_db;;
+    "stop_cnode") stop_cnode;;
+    "start_cnode") start_cnode;;
+    "cnode_status") cnode_status;;
 esac
