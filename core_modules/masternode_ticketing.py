@@ -10,6 +10,7 @@ from peewee import DoesNotExist
 
 from core_modules.blackbox_modules.nsfw import NSFWDetector
 from core_modules.database import Regticket, db, REGTICKET_STATUS_ERROR
+from core_modules.settings import NetWorkSettings
 from debug.masternode_conf import MASTERNODE_NAMES
 from pynode.utils import get_masternode_ordering
 from cnode_connection import blockchain
@@ -271,7 +272,7 @@ class ArtRegistrationServer:
                     regticket = RegistrationTicket(serialized=regticket_db.regticket)
                     current_block = blockchain.getblockcount()
                     # verify if confirmation receive for 5 blocks or less from regticket creation.
-                    if current_block - regticket.blocknum > 5:
+                    if current_block - regticket.blocknum > NetWorkSettings.MAX_CONFIRMATION_DISTANCE_IN_BLOCKS:
                         regticket_db.status = REGTICKET_STATUS_ERROR
                         error_msg = 'Second confirmation received too late - current block {}, regticket block: {}'. \
                             format(current_block, regticket.blocknum)
@@ -285,7 +286,7 @@ class ArtRegistrationServer:
                                                                 Signature(dictionary={
                                                                     "signature": blockchain.pastelid_sign(
                                                                         base64.b64encode(
-                                                                            regticket_db.regticket)).decode(),
+                                                                            regticket_db.regticket).decode()),
                                                                     "pastelid": blockchain.pastelid
                                                                 }), Signature(
                                                                     serialized=regticket_db.mn1_serialized_signature),

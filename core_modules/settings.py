@@ -116,3 +116,6 @@ NetWorkSettings.HTTPS_CERTIFICATE_FILE = '/home/animecoinuser/.pastel/pynode_htt
 # NetWorkSettings.HTTPS_CERTIFICATE_FILE = '/Users/alex/PycharmProjects/spa/src/StoVaCore/https_cert/certificate.pem'
 NetWorkSettings.MN_DATABASE_FILE = '/home/animecoinuser/.pastel/masternode.db'
 NetWorkSettings.LONG_REGTICKET_VALIDATION_ENABLED = False
+
+# FIXME: change to more appropriate for production usage value
+NetWorkSettings.MAX_CONFIRMATION_DISTANCE_IN_BLOCKS = 2000
