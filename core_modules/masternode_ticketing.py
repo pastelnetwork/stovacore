@@ -294,7 +294,7 @@ class ArtRegistrationServer:
                                                                     serialized=regticket_db.mn2_serialized_signature)))
                     # write final ticket into blockchain
                     # TODO: process errors
-                    txid = self.__chainwrapper.store_ticket(final_ticket)
+                    txid = blockchain.register_art_ticket(final_ticket.serialize_base64(), blockchain.pastelid, 'key2')
                     mn_ticket_logger.warn('Final ticket is stored, txid: {}'.format(txid))
                     return txid
                     # TODO: store image into chunkstorage - later, when activation happens

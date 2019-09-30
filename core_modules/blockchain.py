@@ -244,6 +244,9 @@ class BlockChain:
     def pastelid_newkey(self, passphrase):
         return self.__call_jsonrpc("pastelid", "newkey", passphrase)
 
+    def register_art_ticket(self, base64_data, key1, key2):
+        return self.__call_jsonrpc("tickets", "register", "art", base64_data, key1, key2)
+
     def search_chain(self, confirmations=NetWorkSettings.REQUIRED_CONFIRMATIONS):
         blockcount = self.getblockcount() - 1
         for blocknum in range(1, blockcount + 1):
