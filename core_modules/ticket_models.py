@@ -293,6 +293,10 @@ class RegistrationTicket(TicketModelBase):
                 if is_duplicate:
                     raise ValueError("Image failed fingerprint check!")
 
+    @property
+    def base64_imagedatahash(self):
+        return base64.b64encode(self.imagedata_hash).decode()
+
 
 class ActivationTicket(TicketModelBase):
     methods = {
