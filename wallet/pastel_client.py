@@ -71,7 +71,7 @@ class PastelClient:
 # Image registration methods
     async def register_image(self, image_field, image_data):
         # get the registration object
-        artreg = ArtRegistrationClient(self.__privkey, self.__pubkey, self.__chainwrapper, self.__nodemanager)
+        artreg = ArtRegistrationClient(self.__chainwrapper, self.__nodemanager)
 
         # register image
         # TODO: fill these out properly
@@ -150,17 +150,19 @@ class PastelClient:
         self.__logger.warn('MN0: {}'.format(mn0_response))
         self.__logger.warn('MN1: {}'.format(mn1_response))
         self.__logger.warn('MN2: {}'.format(mn2_response))
-        return {
-            'status': 'SUCCESS' if mn0_response[1] and mn1_response[1] and mn2_response[1] else 'ERROR',
-            'mn_data': {
-                'mn0': {'status': 'SUCCESS' if mn0_response[1] else 'ERROR',
-                        'msg': mn0_response[0]},
-                'mn1': {'status': 'SUCCESS' if mn1_response[1] else 'ERROR',
-                        'msg': mn1_response[0]},
-                'mn2': {'status': 'SUCCESS' if mn2_response[1] else 'ERROR',
-                        'msg': mn2_response[0]}
-            }
-        }
+        result = await artreg.put_image_to_chunk_storage(mn0, regticket_db.upload_code_mn0)
+        return {'status': 'Success', 'msg': result}
+        # return {
+        #     'status': 'SUCCESS' if mn0_response[1] and mn1_response[1] and mn2_response[1] else 'ERROR',
+        #     'mn_data': {
+        #         'mn0': {'status': 'SUCCESS' if mn0_response[1] else 'ERROR',
+        #                 'msg': mn0_response[0]},
+        #         'mn1': {'status': 'SUCCESS' if mn1_response[1] else 'ERROR',
+        #                 'msg': mn1_response[0]},
+        #         'mn2': {'status': 'SUCCESS' if mn2_response[1] else 'ERROR',
+        #                 'msg': mn2_response[0]}
+        #     }
+        # }
 
 # TODO: Methods below are not currently used. Need to inspect and probably remove
     def __get_identities(self):

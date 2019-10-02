@@ -185,6 +185,17 @@ class ArtRegistrationClient:
         regticket_db.save()
         return True, None
 
+    async def put_image_to_chunk_storage(self, mn0_rpc_client, regticket_upload_code):
+        """
+        Send request to a given masternode to place a given image into chunk storage, associated with given regticket
+        by its txid. Any other available regticket unique ID can be used as well.
+        :return:
+        """
+
+        return await mn0_rpc_client.call_masternode("PLACEINCHUNKSTORAGE_REQ", "PLACEINCHUNKSTORAGE_RESP",
+                                                    regticket_upload_code)
+
+    # the following method is not used now. It's legacy of previous implementation which can be used only for reference.
     async def register_image(self, image_data, artist_name=None, artist_website=None, artist_written_statement=None,
                              artwork_title=None, artwork_series_name=None, artwork_creation_video_youtube_url=None,
                              artwork_keyword_set=None, total_copies=None):

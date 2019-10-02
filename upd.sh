@@ -1,0 +1,1 @@
+./pynodes.sh stop; ./update_pynodes.sh ; ./pynodes.sh start; ./pynodes.sh stop; ./pynodes.sh start

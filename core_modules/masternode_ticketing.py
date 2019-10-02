@@ -136,7 +136,7 @@ class ArtRegistrationServer:
         rpcserver.add_callback("PLACEONBLOCKCHAIN_REQ", "PLACEONBLOCKCHAIN_RESP",
                                self.masternode_place_ticket_on_blockchain)
         rpcserver.add_callback("PLACEINCHUNKSTORAGE_REQ", "PLACEINCHUNKSTORAGE_RESP",
-                               self.masternode_place_image_data_in_chunkstorage)
+                               self.masternode_place_image_data_in_chunkstorage_new)
 
     def masternode_sign_registration_ticket(self, data, *args, **kwargs):
         # parse inputs
@@ -383,6 +383,39 @@ class ArtRegistrationServer:
         # place ticket on the blockchain
         return self.__chainwrapper.store_ticket(ticket)
 
+    def masternode_place_image_data_in_chunkstorage_new(self, data, *args, **kwargs):
+        mn_ticket_logger.debug('Placing image data in chunk storage')
+        upload_code = data
+        mn_ticket_logger.debug('regticket upload code: {}'.format(upload_code))
+        regticket_db = Regticket.get(upload_code=upload_code)
+        imagedata = ImageData(dictionary={
+            "image": regticket_db.image_data,
+            "lubychunks": ImageData.generate_luby_chunks(regticket_db.image_data),
+            "thumbnail": ImageData.generate_thumbnail(regticket_db.image_data),
+        })
+
+        image_hash = imagedata.get_thumbnail_hash()
+
+        # FIXME: skip validation for now. Further we should verify 2 things:
+        # FIXME: - regticket was payed
+        # FIXME: - incoming image hash is equal to image hash from regticket
+        # verify that this is an actual image that is being registered
+        # final_regticket = self.__chainwrapper.retrieve_ticket(regticket_txid)
+        # final_regticket.validate(self.__chainwrapper)
+        mn_ticket_logger.debug('Placing thumbnail to the chunk storage')
+
+        # store thumbnail
+        # unique image ID is image hash
+        self.__chunkmanager.store_chunk_in_temp_storage(bytes_to_chunkid(image_hash), imagedata.thumbnail)
+
+        # store chunks
+        for chunkhash, chunkdata in zip(imagedata.get_luby_hashes(), imagedata.lubychunks):
+            chunkhash_int = bytes_to_chunkid(chunkhash)
+            self.__chunkmanager.store_chunk_in_temp_storage(chunkhash_int, chunkdata)
+        mn_ticket_logger.debug('Image is placed. Return success')
+        return 'Success'
+
+    # old version, to be used only for reference
     def masternode_place_image_data_in_chunkstorage(self, data, *args, **kwargs):
         regticket_txid, imagedata_serialized = data
 

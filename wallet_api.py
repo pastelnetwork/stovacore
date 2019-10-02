@@ -65,7 +65,7 @@ async def image_registration_step_3(request):
 
     response = await get_pastel_client().image_registration_step_3(regticket_id)
     print('Img registration step 3 response: {}'.format(response), file=sys.stderr)
-    return web.json_response(response)
+    return web.json_response({'status': 'SUCCESS', 'msg': response['msg']})
 
 
 @routes.post('/image_registration_cancel')
