@@ -164,6 +164,47 @@ class PastelClient:
         #     }
         # }
 
+    #  async def download_image(self, artid_hex):
+    async def download_image(self, artid):
+        # artid = bytes_from_hex(artid_hex)
+
+        ticket = self.__artregistry.get_ticket_for_artwork(artid)
+        if ticket is not None:
+            finalregticket = self.__chainwrapper.retrieve_ticket(ticket.ticket.registration_ticket_txid)
+            regticket = finalregticket.ticket
+            lubyhashes = regticket.lubyhashes.copy()
+
+            lubychunks = []
+            while True:
+                # fetch chunks 5 at a time
+                # TODO: maybe turn this into a parameter or a settings variable
+                rpcs = []
+                while len(rpcs) < 15 and len(lubyhashes) > 0:
+                    lubyhash = lubyhashes.pop(0)
+                    rpcs.append(self.__get_chunk_id(lubyhash.hex()))
+
+                # if we ran out of chunks, abort
+                if len(rpcs) == 0:
+                    break
+
+                chunks = await asyncio.gather(*rpcs)
+                for chunk in chunks:
+                    lubychunks.append(chunk)
+
+                self.__logger.debug("Fetched luby chunks, total chunks: %s" % len(lubychunks))
+
+                try:
+                    decoded = luby_decode(lubychunks)
+                except NotEnoughChunks:
+                    self.__logger.debug("Luby decode failed with NotEnoughChunks!")
+                else:
+                    self.__logger.debug("Luby decode successful!")
+                    return decoded
+
+            self.__logger.warning("Could not get enough Luby chunks to reconstruct image!")
+            raise RuntimeError("Could not get enough Luby chunks to reconstruct image!")
+
+
 # TODO: Methods below are not currently used. Need to inspect and probably remove
     def __get_identities(self):
         addresses = []
