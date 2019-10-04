@@ -135,8 +135,6 @@ class ArtRegistrationServer:
                                self.masternode_sign_activation_ticket)
         rpcserver.add_callback("PLACEONBLOCKCHAIN_REQ", "PLACEONBLOCKCHAIN_RESP",
                                self.masternode_place_ticket_on_blockchain)
-        rpcserver.add_callback("PLACEINCHUNKSTORAGE_REQ", "PLACEINCHUNKSTORAGE_RESP",
-                               self.masternode_place_image_data_in_chunkstorage_new)
 
     def masternode_sign_registration_ticket(self, data, *args, **kwargs):
         # parse inputs
@@ -292,12 +290,14 @@ class ArtRegistrationServer:
                                                                     serialized=regticket_db.mn1_serialized_signature),
                                                                 Signature(
                                                                     serialized=regticket_db.mn2_serialized_signature)))
+
+                    # store image and thumbnail in chunkstorage
+                    self.masternode_place_image_data_in_chunkstorage(regticket_db.image_data)
+
                     # write final ticket into blockchain
-                    # TODO: process errors
-                    txid = blockchain.register_art_ticket(final_ticket.serialize_base64(), blockchain.pastelid,
-                                                          regticket.base64_imagedatahash)
-                    mn_ticket_logger.warn('Final ticket is stored, txid: {}'.format(txid))
-                    return txid
+                    bc_response = blockchain.register_art_ticket(final_ticket.serialize_base64(), blockchain.pastelid,
+                                                                 regticket.base64_imagedatahash)
+                    return bc_response
                     # TODO: store image into chunkstorage - later, when activation happens
                     # TODO: extract all this into separate function
                 else:
@@ -306,7 +306,7 @@ class ArtRegistrationServer:
             mn_ticket_logger.warn('Given upload code DOES NOT exists with required public key')
             raise Exception('Given upload code DOES NOT exists with required public key')
         mn_ticket_logger.info('Confirmation from MN received')
-        return 'Ok'
+        return 'Validation passed'
 
     async def masternode_validate_txid_upload_code_image(self, data, *args, **kwargs):
         burn_10_txid, upload_code = data
@@ -333,13 +333,13 @@ class ArtRegistrationServer:
             mn_signed_regticket = self.__generate_signed_ticket(regticket)
             # TODO: run task and return without waiting for result (as if it was in Celery)
             # TODO: handle errors/exceptions
-            await mn0.call_masternode("REGTICKET_MN0_CONFIRM_REQ",
-                                      "REGTICKET_MN0_CONFIRM_RESP",
-                                      [regticket.author, regticket.imagedata_hash,
-                                       mn_signed_regticket.serialize()])
+            response = await mn0.call_masternode("REGTICKET_MN0_CONFIRM_REQ",
+                                                 "REGTICKET_MN0_CONFIRM_RESP",
+                                                 [regticket.author, regticket.imagedata_hash,
+                                                  mn_signed_regticket.serialize()])
             # We return success status cause validation on this node has passed. However exception may happen when
             # calling mn0 - need to handle it somehow (or better - schedule async task).
-            return 'Validation passed'
+            return response
         else:
             return 'Validation passed'
 
@@ -383,26 +383,14 @@ class ArtRegistrationServer:
         # place ticket on the blockchain
         return self.__chainwrapper.store_ticket(ticket)
 
-    def masternode_place_image_data_in_chunkstorage_new(self, data, *args, **kwargs):
-        mn_ticket_logger.debug('Placing image data in chunk storage')
-        upload_code = data
-        mn_ticket_logger.debug('regticket upload code: {}'.format(upload_code))
-        regticket_db = Regticket.get(upload_code=upload_code)
+    def masternode_place_image_data_in_chunkstorage(self, regticket_image_data):
         imagedata = ImageData(dictionary={
-            "image": regticket_db.image_data,
-            "lubychunks": ImageData.generate_luby_chunks(regticket_db.image_data),
-            "thumbnail": ImageData.generate_thumbnail(regticket_db.image_data),
+            "image": regticket_image_data,
+            "lubychunks": ImageData.generate_luby_chunks(regticket_image_data),
+            "thumbnail": ImageData.generate_thumbnail(regticket_image_data),
         })
 
         image_hash = imagedata.get_thumbnail_hash()
-
-        # FIXME: skip validation for now. Further we should verify 2 things:
-        # FIXME: - regticket was payed
-        # FIXME: - incoming image hash is equal to image hash from regticket
-        # verify that this is an actual image that is being registered
-        # final_regticket = self.__chainwrapper.retrieve_ticket(regticket_txid)
-        # final_regticket.validate(self.__chainwrapper)
-        mn_ticket_logger.debug('Placing thumbnail to the chunk storage')
 
         # store thumbnail
         # unique image ID is image hash
@@ -412,27 +400,26 @@ class ArtRegistrationServer:
         for chunkhash, chunkdata in zip(imagedata.get_luby_hashes(), imagedata.lubychunks):
             chunkhash_int = bytes_to_chunkid(chunkhash)
             self.__chunkmanager.store_chunk_in_temp_storage(chunkhash_int, chunkdata)
-        mn_ticket_logger.debug('Image is placed. Return success')
-        return 'Success'
 
-    # old version, to be used only for reference
-    def masternode_place_image_data_in_chunkstorage(self, data, *args, **kwargs):
-        regticket_txid, imagedata_serialized = data
-
-        imagedata = ImageData(serialized=imagedata_serialized)
-        image_hash = imagedata.get_thumbnail_hash()
-
-        # verify that this is an actual image that is being registered
-        final_regticket = self.__chainwrapper.retrieve_ticket(regticket_txid)
-        final_regticket.validate(self.__chainwrapper)
-
-        # store thumbnail
-        self.__chunkmanager.store_chunk_in_temp_storage(bytes_to_chunkid(image_hash), imagedata.thumbnail)
-
-        # store chunks
-        for chunkhash, chunkdata in zip(imagedata.get_luby_hashes(), imagedata.lubychunks):
-            chunkhash_int = bytes_to_chunkid(chunkhash)
-            self.__chunkmanager.store_chunk_in_temp_storage(chunkhash_int, chunkdata)
+    # # old version, to be used only for reference
+    # def masternode_place_image_data_in_chunkstorage(self, data, *args, **kwargs):
+    #     regticket_txid, imagedata_serialized = data
+    #
+    #     imagedata = ImageData(serialized=imagedata_serialized)
+    #     image_hash = imagedata.get_thumbnail_hash()
+    #
+    #     # verify that this is an actual image that is being registered
+    #     final_regticket = self.__chainwrapper.retrieve_ticket(regticket_txid)
+    #     final_regticket.validate(self.__chainwrapper)
+    #
+    #     # store thumbnail
+    #     self.__chunkmanager.store_chunk_in_temp_storage(bytes_to_chunkid(image_hash), imagedata.thumbnail)
+    #
+    #     # store chunks
+    #     for chunkhash, chunkdata in zip(imagedata.get_luby_hashes(), imagedata.lubychunks):
+    #         chunkhash_int = bytes_to_chunkid(chunkhash)
+    #         self.__chunkmanager.store_chunk_in_temp_storage(chunkhash_int, chunkdata)
+    #
 
 
 class IDRegistrationClient:

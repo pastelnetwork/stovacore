@@ -150,19 +150,28 @@ class PastelClient:
         self.__logger.warn('MN0: {}'.format(mn0_response))
         self.__logger.warn('MN1: {}'.format(mn1_response))
         self.__logger.warn('MN2: {}'.format(mn2_response))
-        result = await artreg.put_image_to_chunk_storage(mn0, regticket_db.upload_code_mn0)
-        return {'status': 'Success', 'msg': result}
-        # return {
-        #     'status': 'SUCCESS' if mn0_response[1] and mn1_response[1] and mn2_response[1] else 'ERROR',
-        #     'mn_data': {
-        #         'mn0': {'status': 'SUCCESS' if mn0_response[1] else 'ERROR',
-        #                 'msg': mn0_response[0]},
-        #         'mn1': {'status': 'SUCCESS' if mn1_response[1] else 'ERROR',
-        #                 'msg': mn1_response[0]},
-        #         'mn2': {'status': 'SUCCESS' if mn2_response[1] else 'ERROR',
-        #                 'msg': mn2_response[0]}
-        #     }
-        # }
+        if mn0_response[1] and mn1_response[1] and mn2_response[1]:
+            # all responses indicate success. Mn1 or mn2 response should container txid
+            if 'txid' in mn1_response[0]:
+                txid = mn1_response[0]['txid']
+            elif 'txid' in mn2_response[0]:
+                txid = mn2_response[0]['txid']
+            else:
+                raise Exception('Txid not found neither in mn1 nor in mn2 response!')
+            return {'status': 'SUCCESS', 'txid': txid}
+        else:
+            # some error happened, return details
+            return {
+                'status': 'SUCCESS' if mn0_response[1] and mn1_response[1] and mn2_response[1] else 'ERROR',
+                'mn_data': {
+                    'mn0': {'status': 'SUCCESS' if mn0_response[1] else 'ERROR',
+                            'msg': mn0_response[0]},
+                    'mn1': {'status': 'SUCCESS' if mn1_response[1] else 'ERROR',
+                            'msg': mn1_response[0]},
+                    'mn2': {'status': 'SUCCESS' if mn2_response[1] else 'ERROR',
+                            'msg': mn2_response[0]}
+                }
+            }
 
     #  async def download_image(self, artid_hex):
     async def download_image(self, artid):

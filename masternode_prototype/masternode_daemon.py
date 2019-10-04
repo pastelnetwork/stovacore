@@ -23,7 +23,7 @@ class MasterNodeDaemon:
 
         loop.create_task(self.logic.run_rpc_server())
         loop.create_task(self.logic.run_masternode_parser())
-        loop.create_task(self.logic.run_ticket_parser())
+        # loop.create_task(self.logic.run_ticket_parser())
         loop.create_task(self.logic.run_chunk_fetcher_forever())
 
         try:
