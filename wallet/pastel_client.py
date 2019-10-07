@@ -8,6 +8,7 @@ from cnode_connection import blockchain
 from core_modules.artregistry import ArtRegistry
 from core_modules.blackbox_modules.luby import decode as luby_decode, NotEnoughChunks
 from core_modules.chainwrapper import ChainWrapper
+from core_modules.chunkmanager_modules.aliasmanager import AliasManager
 from core_modules.http_rpc import RPCException
 from core_modules.masternode_ticketing import IDRegistrationClient, TransferRegistrationClient, \
     TradeRegistrationClient
@@ -15,6 +16,7 @@ from core_modules.masternode_ticketing import FinalIDTicket, FinalTradeTicket, F
     FinalActivationTicket, FinalRegistrationTicket
 from core_modules.logger import initlogging
 from core_modules.helpers import hex_to_chunkid, bytes_from_hex, require_true
+from core_modules.ticket_models import RegistrationTicket
 from wallet.art_registration_client import ArtRegistrationClient
 from wallet.client_node_manager import ClientNodeManager
 from wallet.database import RegticketDB
@@ -32,7 +34,7 @@ class PastelClient:
         self.__artregistry = ArtRegistry()
         self.__chainwrapper = ChainWrapper(self.__artregistry)
         self.__nodemanager = ClientNodeManager()
-
+        self.__aliasmanager = AliasManager(self.__nodemanager)
         self.__active_tasks = {}
 
     def __defer_execution(self, future):
@@ -42,6 +44,7 @@ class PastelClient:
 
     async def __get_chunk_id(self, chunkid_hex):
         await asyncio.sleep(0)
+
         chunkid = hex_to_chunkid(chunkid_hex)
 
         chunk_data = None
@@ -174,44 +177,41 @@ class PastelClient:
             }
 
     #  async def download_image(self, artid_hex):
-    async def download_image(self, artid):
-        # artid = bytes_from_hex(artid_hex)
+    async def download_image(self, image_hash):
+        ticket_db = RegticketDB.get(RegticketDB.image_hash == image_hash)
+        ticket = RegistrationTicket(serialized=ticket_db.serialized_regticket)
+        lubyhashes = ticket.lubyhashes.copy()
+        self.__logger.warn('Trying to download lubyhashes: {}'.format(lubyhashes))
+        lubychunks = []
+        while True:
+            # fetch chunks 5 at a time
+            rpcs = []
 
-        ticket = self.__artregistry.get_ticket_for_artwork(artid)
-        if ticket is not None:
-            finalregticket = self.__chainwrapper.retrieve_ticket(ticket.ticket.registration_ticket_txid)
-            regticket = finalregticket.ticket
-            lubyhashes = regticket.lubyhashes.copy()
+            # while len(rpcs) < 15 and len(lubyhashes) > 0:
+            lubyhash = lubyhashes.pop(0)
+            # rpcs.append(self.__get_chunk_id(lubyhash.hex()))
+            chunk = await self.__get_chunk_id(lubyhash.hex())
 
-            lubychunks = []
-            while True:
-                # fetch chunks 5 at a time
-                # TODO: maybe turn this into a parameter or a settings variable
-                rpcs = []
-                while len(rpcs) < 15 and len(lubyhashes) > 0:
-                    lubyhash = lubyhashes.pop(0)
-                    rpcs.append(self.__get_chunk_id(lubyhash.hex()))
+            # if we ran out of chunks, abort
+            # if len(rpcs) == 0:
+            #     break
+            #
+            # chunks = await asyncio.gather(*rpcs)
+            # for chunk in chunks:
+            lubychunks.append(chunk)
 
-                # if we ran out of chunks, abort
-                if len(rpcs) == 0:
-                    break
+            self.__logger.debug("Fetched luby chunks, total chunks: %s" % len(lubychunks))
 
-                chunks = await asyncio.gather(*rpcs)
-                for chunk in chunks:
-                    lubychunks.append(chunk)
+            try:
+                decoded = luby_decode(lubychunks)
+            except NotEnoughChunks:
+                self.__logger.debug("Luby decode failed with NotEnoughChunks!")
+            else:
+                self.__logger.debug("Luby decode successful!")
+                return decoded
 
-                self.__logger.debug("Fetched luby chunks, total chunks: %s" % len(lubychunks))
-
-                try:
-                    decoded = luby_decode(lubychunks)
-                except NotEnoughChunks:
-                    self.__logger.debug("Luby decode failed with NotEnoughChunks!")
-                else:
-                    self.__logger.debug("Luby decode successful!")
-                    return decoded
-
-            self.__logger.warning("Could not get enough Luby chunks to reconstruct image!")
-            raise RuntimeError("Could not get enough Luby chunks to reconstruct image!")
+        self.__logger.warning("Could not get enough Luby chunks to reconstruct image!")
+        raise RuntimeError("Could not get enough Luby chunks to reconstruct image!")
 
 
 # TODO: Methods below are not currently used. Need to inspect and probably remove

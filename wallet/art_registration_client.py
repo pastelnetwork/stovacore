@@ -130,7 +130,8 @@ class ArtRegistrationClient:
         regticket_signature = self.__generate_signed_ticket(regticket)
         regticket_db = RegticketDB.create(created=datetime.now(), blocknum=blocknum,
                                           serialized_regticket=regticket.serialize(),
-                                          serialized_signature=regticket_signature.serialize())
+                                          serialized_signature=regticket_signature.serialize(),
+                                          image_hash=image.get_artwork_hash())
 
         mn0, mn1, mn2 = self.__nodemanager.get_masternode_ordering()
         art_reg_client_logger.debug(

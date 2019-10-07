@@ -17,6 +17,7 @@ class RegticketDB(Model):
     upload_code_mn0 = BlobField(null=True)
     upload_code_mn1 = BlobField(null=True)
     upload_code_mn2 = BlobField(null=True)
+    image_hash = BlobField()
 
     class Meta:
         database = db
