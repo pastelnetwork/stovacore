@@ -15,7 +15,7 @@ from core_modules.masternode_ticketing import IDRegistrationClient, TransferRegi
 from core_modules.masternode_ticketing import FinalIDTicket, FinalTradeTicket, FinalTransferTicket, \
     FinalActivationTicket, FinalRegistrationTicket
 from core_modules.logger import initlogging
-from core_modules.helpers import hex_to_chunkid, bytes_from_hex, require_true
+from core_modules.helpers import hex_to_chunkid, bytes_from_hex, require_true, bytes_to_chunkid
 from core_modules.ticket_models import RegistrationTicket
 from wallet.art_registration_client import ArtRegistrationClient
 from wallet.client_node_manager import ClientNodeManager
@@ -42,19 +42,18 @@ class PastelClient:
         self.__active_tasks[identifier] = future
         return identifier
 
-    async def __get_chunk_id(self, chunkid_hex):
+    async def __get_chunk_id(self, lubyhash):
         await asyncio.sleep(0)
 
-        chunkid = hex_to_chunkid(chunkid_hex)
-
+        # chunkid = hex_to_chunkid(chunkid_hex)
+        chunkid = bytes_to_chunkid(lubyhash)
         chunk_data = None
 
         # find MNs that have this chunk
         owners = list(self.__aliasmanager.find_other_owners_for_chunk(chunkid))
         random.shuffle(owners)
 
-        for owner in owners:
-            mn = self.__nodemanager.get(owner)
+        for mn in owners:
 
             chunk_data = await mn.send_rpc_fetchchunk(chunkid)
 
@@ -176,7 +175,6 @@ class PastelClient:
                 }
             }
 
-    #  async def download_image(self, artid_hex):
     async def download_image(self, image_hash):
         ticket_db = RegticketDB.get(RegticketDB.image_hash == image_hash)
         ticket = RegistrationTicket(serialized=ticket_db.serialized_regticket)
@@ -190,7 +188,7 @@ class PastelClient:
             # while len(rpcs) < 15 and len(lubyhashes) > 0:
             lubyhash = lubyhashes.pop(0)
             # rpcs.append(self.__get_chunk_id(lubyhash.hex()))
-            chunk = await self.__get_chunk_id(lubyhash.hex())
+            chunk = await self.__get_chunk_id(lubyhash)
 
             # if we ran out of chunks, abort
             # if len(rpcs) == 0:

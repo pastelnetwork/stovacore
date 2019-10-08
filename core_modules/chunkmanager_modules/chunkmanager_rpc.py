@@ -95,7 +95,7 @@ class ChunkManagerRPC:
 
         return {"digest": digest}
 
-    def receive_rpc_fetchchunk(self, data):
+    def receive_rpc_fetchchunk(self, data, **kwargs):
         # NOTE: data is untrusted!
         if not isinstance(data, dict):
             raise TypeError("Data must be a dict!")

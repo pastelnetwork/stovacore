@@ -159,6 +159,9 @@ class ChunkManager:
         chunk = self.__chunk_db[chunkid]
         return created, chunk
 
+    def add_chunk_to_db(self, chunkid):
+        self.__chunk_db[chunkid] = Chunk(chunkid=chunkid)
+
     # START - CHUNK FETCHER
     def get_missing_chunks_num(self):
         return len(self.__missing_chunks)
@@ -200,6 +203,7 @@ class ChunkManager:
             return
 
         self.__store_missing_chunk(chunk, data)
+
     # END - CHUNK FETCHER
 
     def select_random_chunks_we_have(self, n):
@@ -236,19 +240,22 @@ class ChunkManager:
         # self.dump_internal_stats("DB STAT After")
 
     def store_chunk_in_temp_storage(self, chunkid, data):
-        if chunkid != get_pynode_digest_int(data):
-            raise ValueError("data does not match chunkid!")
-
+        # FIXME: as initially chunkids are generated on the wallet, probably it's not correct to check them on another node
+        # FIXME: cause they will differ.
+        # if chunkid != get_pynode_digest_int(data):
+        #     raise ValueError("data does not match chunkid!")
+        #
         self.__tmpstorage.put(chunkid, data)
 
     def get_chunk_if_we_have_it(self, chunkid):
-        if not self.__alias_manager.we_own_chunk(chunkid):
-            raise ValueError("We don't own this chunk!")
-
+        # if not self.__alias_manager.we_own_chunk(chunkid):
+        #     raise ValueError("We don't own this chunk!")
+        self.__logger.warn('Chunk DB dump')
+        self.__logger.warn('{}'.format(self.__chunk_db))
         chunk = self.__chunk_db.get(chunkid)
         if chunk is None:
-            self.__logger.info("This chunk is missing from our database, is it in any valid tickets? %s" %
-                               chunkid_to_hex(chunkid))
+            self.__logger.info(
+                "This chunk is missing from our database, is it in any valid tickets? {}".format(chunkid))
             return None
 
         return self.get_chunk(chunk)

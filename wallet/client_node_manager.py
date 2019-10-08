@@ -23,10 +23,3 @@ class ClientNodeManager:
             rpc_client = RPCClient(remote_pastelid, ip, py_rpc_port)
             mn_rpc_clients.append(rpc_client)
         return mn_rpc_clients
-
-    def get_rpc_client_for_masternode(self, masternode):
-        remote_pastelid = masternode['extKey']
-
-        ip, py_rpc_port = masternode['extAddress'].split(':')
-        rpc_client = RPCClient(remote_pastelid, ip, py_rpc_port)
-        return rpc_client

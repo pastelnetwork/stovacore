@@ -292,7 +292,7 @@ class ArtRegistrationServer:
                                                                     serialized=regticket_db.mn2_serialized_signature)))
 
                     # store image and thumbnail in chunkstorage
-                    self.masternode_place_image_data_in_chunkstorage(regticket_db.image_data)
+                    self.masternode_place_image_data_in_chunkstorage(regticket, regticket_db.image_data)
 
                     # write final ticket into blockchain
                     bc_response = blockchain.register_art_ticket(final_ticket.serialize_base64(), blockchain.pastelid,
@@ -383,7 +383,7 @@ class ArtRegistrationServer:
         # place ticket on the blockchain
         return self.__chainwrapper.store_ticket(ticket)
 
-    def masternode_place_image_data_in_chunkstorage(self, regticket_image_data):
+    def masternode_place_image_data_in_chunkstorage(self, regticket, regticket_image_data):
         imagedata = ImageData(dictionary={
             "image": regticket_image_data,
             "lubychunks": ImageData.generate_luby_chunks(regticket_image_data),
@@ -397,9 +397,11 @@ class ArtRegistrationServer:
         self.__chunkmanager.store_chunk_in_temp_storage(bytes_to_chunkid(image_hash), imagedata.thumbnail)
 
         # store chunks
-        for chunkhash, chunkdata in zip(imagedata.get_luby_hashes(), imagedata.lubychunks):
+        for chunkhash, chunkdata in zip(regticket.lubyhashes, imagedata.lubychunks):
             chunkhash_int = bytes_to_chunkid(chunkhash)
             self.__chunkmanager.store_chunk_in_temp_storage(chunkhash_int, chunkdata)
+            mn_ticket_logger.debug('Adding chunk id to DB: {}'.format(chunkhash_int))
+            self.__chunkmanager.add_chunk_to_db(chunkhash_int)
 
     # # old version, to be used only for reference
     # def masternode_place_image_data_in_chunkstorage(self, data, *args, **kwargs):
