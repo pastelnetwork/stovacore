@@ -473,7 +473,3 @@ class TestUnixTimeField(unittest.TestCase):
 
     def test_valid(self):
         self.v.validate(1538056615)
-
-
-if __name__ == '__main__':
-    unittest.main()

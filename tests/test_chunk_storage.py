@@ -7,6 +7,7 @@ import tempfile
 
 from core_modules.chunk_storage import ChunkStorage
 from core_modules.helpers import get_pynode_digest_int
+from core_modules.blackbox_modules import luby
 
 
 class TestChunkStorageInit(unittest.TestCase):
@@ -81,5 +82,25 @@ class TestChunkStorageInterface(unittest.TestCase):
         self.assertListEqual([self.chunk_digest], list(self.cs.index()))
 
 
-if __name__ == '__main__':
-    unittest.main()
+class TestLuby(unittest.TestCase):
+    def test_luby_decode_encoded(self):
+        redundancy_factor = 2
+        block_size = 1024
+
+        data = b'A' * 1024 * 512 + b'A' * 100  # test for padding
+        blocks = luby.encode(redundancy_factor, block_size, data)
+        decoded = luby.decode(blocks)
+        self.assertEqual(data, decoded)
+
+    def test_luby_encode_2_times_compare_result(self):
+        redundancy_factor = 3
+        block_size = 1024
+
+        data = b'A' * 1024 * 512 + b'A' * 100  # test for padding
+        blocks1 = luby.encode(redundancy_factor, block_size, data)
+        blocks2 = luby.encode(redundancy_factor, block_size, data)
+        self.assertNotEqual(blocks1[0], blocks2[0])
+        decoded1 = luby.decode(blocks1)
+        decoded2 = luby.decode(blocks2)
+
+        self.assertEqual(decoded1, decoded2)
