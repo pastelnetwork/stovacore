@@ -58,6 +58,9 @@ class MasterNodeLogic:
         self.__rpcserver.add_callback("FETCHCHUNK_REQ", "FETCHCHUNK_RESP",
                                       self.__chunkmanager_rpc.receive_rpc_fetchchunk)
 
+        self.__rpcserver.add_callback("IMAGEDOWNLOAD_REQ", "IMAGEDOWNLOAD_RESP",
+                                      self.__chunkmanager_rpc.receive_rpc_download_image)
+
         self.__artregistrationserver.register_rpcs(self.__rpcserver)
 
         # we like to enable/disable this from masternodedaemon

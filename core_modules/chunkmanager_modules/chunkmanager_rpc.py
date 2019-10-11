@@ -1,6 +1,7 @@
 import random
 import asyncio
 
+from core_modules.database import Regticket
 from core_modules.http_rpc import RPCException
 from core_modules.helpers import hex_to_chunkid, chunkid_to_hex, require_true, get_pynode_digest_hex
 from core_modules.logger import initlogging
@@ -27,7 +28,7 @@ class ChunkManagerRPC:
 
                 # pick a random range
                 require_true(len(data) > 1024)
-                start = random.randint(0, len(data)-1024)
+                start = random.randint(0, len(data) - 1024)
                 end = start + 1024
 
                 # calculate digest
@@ -111,3 +112,11 @@ class ChunkManagerRPC:
         chunk = self.__chunkmanager.get_chunk_if_we_have_it(chunkid)
 
         return {"chunk": chunk}
+
+    def receive_rpc_download_image(self, data, *args, **kwargs):
+        image_hash = data['image_hash']
+        regticket = Regticket.get(image_hash=image_hash)
+        image_data = regticket.image_data  # assemble from chunks
+        return {
+            "status": "SUCCESS",
+            "image_data": image_data}

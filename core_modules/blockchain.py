@@ -189,15 +189,15 @@ class BlockChain:
         # return self.__call_jsonrpc("masternode", "list", "extra")
         # FIXME: only for testing, to limit set of masternodes
         return {
-            'mn1': {
+            'mn4': {
                 'extKey': 'jXZVtBmehoxYPotVrLdByFNNcB8jsryXhFPgqRa95i2x1mknbzSef1oGjnzfiwRtzReimfugvg41VtA7qGfDZR',
                 'extAddress': '18.216.28.255:4444'
             },
-            'mn2': {
+            'mn5': {
                 'extKey': 'jXY39ehN4BWWpXLt4Q2zpcmypSAN9saWCweGRtJTxK87ktftjigfJwE6X9JoVfBduDjzEG4uBVR8Es6jVFMAbW',
                 'extAddress': '18.191.111.96:4444'
             },
-            'mn3': {
+            'mn6': {
                 'extKey': 'jXa2jiukvPktEdPvGo5nCLaMHxFRLneXMUNLGU4AUkuMmFq6ADerSJZg3Htd7rGjZo6HM92CgUFW1LjEwrKubd',
                 'extAddress': '18.222.118.140:4444'
             }

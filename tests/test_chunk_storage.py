@@ -104,3 +104,7 @@ class TestLuby(unittest.TestCase):
         decoded2 = luby.decode(blocks2)
 
         self.assertEqual(decoded1, decoded2)
+
+
+# TODO: add tests emulating the full flow  - put image to the chunkstorage, and receive it using image_hash
+# (not chunk hash, which is different every time when new portion of chunks is generated).

@@ -9,7 +9,7 @@ from core_modules.artregistry import ArtRegistry
 from core_modules.blackbox_modules.luby import decode as luby_decode, NotEnoughChunks
 from core_modules.chainwrapper import ChainWrapper
 from core_modules.chunkmanager_modules.aliasmanager import AliasManager
-from core_modules.http_rpc import RPCException
+from core_modules.http_rpc import RPCException, RPCClient
 from core_modules.masternode_ticketing import IDRegistrationClient, TransferRegistrationClient, \
     TradeRegistrationClient
 from core_modules.masternode_ticketing import FinalIDTicket, FinalTradeTicket, FinalTransferTicket, \
@@ -21,6 +21,20 @@ from wallet.art_registration_client import ArtRegistrationClient
 from wallet.client_node_manager import ClientNodeManager
 from wallet.database import RegticketDB
 from wallet.settings import BURN_ADDRESS
+
+
+def masternodes_by_distance_from_image(image_hash):
+    # FIXME: hardcoded list for testing only
+    # TODO: how should it behave:
+    # - get masternodelist (with pastelid)
+    # calculate some hash for each node based on pastelid
+    # calculated distance between node hash and image_hash
+    # return masternodes sorted by this hash
+    masternodes = blockchain.masternode_list().values()
+    mn_clients = []
+    for mn in masternodes:
+        mn_clients.append(RPCClient(mn['extKey'], mn['extAddress'].split(':')[0], mn['extAddress'].split(':')[1]))
+    return mn_clients
 
 
 class PastelClient:
@@ -70,7 +84,7 @@ class PastelClient:
         else:
             return result
 
-# Image registration methods
+    # Image registration methods
     async def register_image(self, image_field, image_data):
         # get the registration object
         artreg = ArtRegistrationClient(self.__chainwrapper, self.__nodemanager)
@@ -176,43 +190,17 @@ class PastelClient:
             }
 
     async def download_image(self, image_hash):
-        ticket_db = RegticketDB.get(RegticketDB.image_hash == image_hash)
-        ticket = RegistrationTicket(serialized=ticket_db.serialized_regticket)
-        lubyhashes = ticket.lubyhashes.copy()
-        self.__logger.warn('Trying to download lubyhashes: {}'.format(lubyhashes))
-        lubychunks = []
-        while True:
-            # fetch chunks 5 at a time
-            rpcs = []
+        mn_rpc_clients = masternodes_by_distance_from_image(image_hash)
+        image_data = None
+        for mn in mn_rpc_clients:
+            response = await mn.call_masternode("IMAGEDOWNLOAD_REQ", "IMAGEDOWNLOAD_RESP",
+                                                {'image_hash': image_hash})
+            if response['status'] == 'SUCCESS':
+                image_data = response['image_data']
+                break
+        return image_data
 
-            # while len(rpcs) < 15 and len(lubyhashes) > 0:
-            lubyhash = lubyhashes.pop(0)
-            # rpcs.append(self.__get_chunk_id(lubyhash.hex()))
-            chunk = await self.__get_chunk_id(lubyhash)
-
-            # if we ran out of chunks, abort
-            # if len(rpcs) == 0:
-            #     break
-            #
-            # chunks = await asyncio.gather(*rpcs)
-            # for chunk in chunks:
-            lubychunks.append(chunk)
-
-            self.__logger.debug("Fetched luby chunks, total chunks: %s" % len(lubychunks))
-
-            try:
-                decoded = luby_decode(lubychunks)
-            except NotEnoughChunks:
-                self.__logger.debug("Luby decode failed with NotEnoughChunks!")
-            else:
-                self.__logger.debug("Luby decode successful!")
-                return decoded
-
-        self.__logger.warning("Could not get enough Luby chunks to reconstruct image!")
-        raise RuntimeError("Could not get enough Luby chunks to reconstruct image!")
-
-
-# TODO: Methods below are not currently used. Need to inspect and probably remove
+    # TODO: Methods below are not currently used. Need to inspect and probably remove
     def __get_identities(self):
         addresses = []
         for unspent in blockchain.listunspent():
@@ -349,4 +337,3 @@ class PastelClient:
 
             self.__logger.warning("Could not get enough Luby chunks to reconstruct image!")
             raise RuntimeError("Could not get enough Luby chunks to reconstruct image!")
-
