@@ -114,9 +114,11 @@ class ChunkManagerRPC:
         return {"chunk": chunk}
 
     def receive_rpc_download_image(self, data, *args, **kwargs):
+        # TODO: assemble from chunks instead of fetching from DB
         image_hash = data['image_hash']
         regticket = Regticket.get(image_hash=image_hash)
-        image_data = regticket.image_data  # assemble from chunks
+        image_data = regticket.image_data
         return {
             "status": "SUCCESS",
-            "image_data": image_data}
+            "image_data": image_data
+        }

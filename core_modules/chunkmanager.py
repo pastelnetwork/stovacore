@@ -41,6 +41,7 @@ class ChunkManager:
         self.__alias_manager = aliasmanager
 
         # databases we keep
+        # FIXME: as we have sqlite DB with Chunk table - we dont' need this. Remove carefully.
         self.__chunk_db = {}
         self.__missing_chunks = {}
 
@@ -159,9 +160,6 @@ class ChunkManager:
         chunk = self.__chunk_db[chunkid]
         return created, chunk
 
-    def add_chunk_to_db(self, chunkid):
-        self.__chunk_db[chunkid] = Chunk(chunkid=chunkid)
-
     # START - CHUNK FETCHER
     def get_missing_chunks_num(self):
         return len(self.__missing_chunks)
@@ -240,11 +238,9 @@ class ChunkManager:
         # self.dump_internal_stats("DB STAT After")
 
     def store_chunk_in_temp_storage(self, chunkid, data):
-        # FIXME: as initially chunkids are generated on the wallet, probably it's not correct to check them on another node
-        # FIXME: cause they will differ.
-        # if chunkid != get_pynode_digest_int(data):
-        #     raise ValueError("data does not match chunkid!")
-        #
+        if chunkid != get_pynode_digest_int(data):
+            raise ValueError("data does not match chunkid!")
+
         self.__tmpstorage.put(chunkid, data)
 
     def get_chunk_if_we_have_it(self, chunkid):

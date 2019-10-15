@@ -9,7 +9,7 @@ from datetime import datetime
 from peewee import DoesNotExist
 
 from core_modules.blackbox_modules.nsfw import NSFWDetector
-from core_modules.database import Regticket, db, REGTICKET_STATUS_ERROR
+from core_modules.database import Regticket, db, REGTICKET_STATUS_ERROR, Chunk
 from core_modules.settings import NetWorkSettings
 from debug.masternode_conf import MASTERNODE_NAMES
 from pynode.utils import get_masternode_ordering
@@ -393,35 +393,16 @@ class ArtRegistrationServer:
         image_hash = imagedata.get_thumbnail_hash()
 
         # store thumbnail
-        # unique image ID is image hash
+        # unique image ID is image hash. wallet knows it and can download.
         self.__chunkmanager.store_chunk_in_temp_storage(bytes_to_chunkid(image_hash), imagedata.thumbnail)
+        artwork_hash = imagedata.get_artwork_hash()
 
         # store chunks
-        for chunkhash, chunkdata in zip(regticket.lubyhashes, imagedata.lubychunks):
+        for chunkhash, chunkdata in zip(imagedata.get_luby_hashes(), imagedata.lubychunks):
             chunkhash_int = bytes_to_chunkid(chunkhash)
             self.__chunkmanager.store_chunk_in_temp_storage(chunkhash_int, chunkdata)
             mn_ticket_logger.debug('Adding chunk id to DB: {}'.format(chunkhash_int))
-            self.__chunkmanager.add_chunk_to_db(chunkhash_int)
-
-    # # old version, to be used only for reference
-    # def masternode_place_image_data_in_chunkstorage(self, data, *args, **kwargs):
-    #     regticket_txid, imagedata_serialized = data
-    #
-    #     imagedata = ImageData(serialized=imagedata_serialized)
-    #     image_hash = imagedata.get_thumbnail_hash()
-    #
-    #     # verify that this is an actual image that is being registered
-    #     final_regticket = self.__chainwrapper.retrieve_ticket(regticket_txid)
-    #     final_regticket.validate(self.__chainwrapper)
-    #
-    #     # store thumbnail
-    #     self.__chunkmanager.store_chunk_in_temp_storage(bytes_to_chunkid(image_hash), imagedata.thumbnail)
-    #
-    #     # store chunks
-    #     for chunkhash, chunkdata in zip(imagedata.get_luby_hashes(), imagedata.lubychunks):
-    #         chunkhash_int = bytes_to_chunkid(chunkhash)
-    #         self.__chunkmanager.store_chunk_in_temp_storage(chunkhash_int, chunkdata)
-    #
+            Chunk.create(chunk_id=str(chunkhash_int), image_hash=artwork_hash)
 
 
 class IDRegistrationClient:

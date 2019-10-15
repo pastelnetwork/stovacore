@@ -94,3 +94,11 @@ class Regticket(Model):
             self.delete()
             return False, self.__errors
 
+
+class Chunk(Model):
+    chunk_id = IntegerField(unique=True)
+    image_hash = CharField()
+
+    class Meta:
+        database = db
+        table_name = 'chunk'

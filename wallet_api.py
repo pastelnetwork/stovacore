@@ -14,6 +14,10 @@ routes = web.RouteTableDef()
 pastel_client = None
 
 
+def get_artwork_dir():
+    return os.path.join(APP_DIR, 'artworks')
+
+
 def get_pastel_client():
     # this import should be local to let env varibles be set earlier than blockchain object will be created
     # global blockchain object uses env variables for getting pastelID and passphrase
@@ -78,6 +82,22 @@ async def image_registration_cancel(request):
     return web.json_response({})
 
 
+@routes.post('/download_image')
+async def download_image(request):
+    """
+    Input {regticket_id}  - id from local DB.
+    """
+    data = await request.json()
+    regticket_db = RegticketDB.get(RegticketDB.id == data['regticket_id'])
+    response = await get_pastel_client().download_image(regticket_db.image_hash)
+    if response is not None:
+        filename = os.path.join(get_artwork_dir(), '{}.jpg'.format(data['regticket_id']))
+        with open(filename, 'wb') as f:
+            f.write(response)
+        return web.json_response({'status': 'SUCCESS', 'filename': filename})
+    return web.json_response({'status': 'error', 'msg': 'Image not found on masternodes'})
+
+
 @routes.post('/ping')
 async def ping(request):
     get_pastel_client()
@@ -94,6 +114,8 @@ if __name__ == '__main__':
     passphrase = sys.argv[3]
     os.environ.setdefault('PASTEL_ID', pastelid)
     os.environ.setdefault('PASSPHRASE', passphrase)
+    if not os.path.exists(get_artwork_dir()):
+        os.mkdir(get_artwork_dir())
     db.init(os.path.join(APP_DIR, WALLET_DATABASE_FILE))
     if not os.path.exists(os.path.join(APP_DIR, WALLET_DATABASE_FILE)):
         create_tables()
