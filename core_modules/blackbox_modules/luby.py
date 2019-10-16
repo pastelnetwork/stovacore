@@ -6,9 +6,12 @@ import math
 from struct import pack, unpack
 from collections import defaultdict
 
+from core_modules.logger import initlogging
 
 HEADER_PATTERN = '<3I32s'
 HEADER_LENGTH = struct.calcsize(HEADER_PATTERN)
+
+luby_logger = initlogging('Logger', __name__)
 
 
 class NotEnoughChunks(Exception):
@@ -239,7 +242,7 @@ def decode(blocks):
         try:
             data_length, block_size, seed, block_hash, block_body = __parse_block(block)
         except BlockParseError as exc:
-            print("Block parsing failed with exception: %s" % exc)
+            luby_logger.warn("Block parsing failed with exception: %s" % exc)
             continue
 
         # we need to at least find one block that we can parse to calculate minimum_required
@@ -251,7 +254,7 @@ def decode(blocks):
         # make sure block hash matches
         calculated_hash = hashlib.sha3_256(block_body).digest()
         if calculated_hash != block_hash:
-            print("Header body hash is corrupted!")
+            luby_logger.warn("Header body hash is corrupted!")
             continue
 
         # decode the block

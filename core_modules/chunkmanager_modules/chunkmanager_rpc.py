@@ -1,11 +1,13 @@
 import random
 import asyncio
 
-from core_modules.database import Regticket
+from core_modules.blackbox_modules.luby import NotEnoughChunks
+from core_modules.database import Chunk
 from core_modules.http_rpc import RPCException
 from core_modules.helpers import hex_to_chunkid, chunkid_to_hex, require_true, get_pynode_digest_hex
 from core_modules.logger import initlogging
 from core_modules.settings import NetWorkSettings
+from core_modules.blackbox_modules import luby
 
 
 class ChunkManagerRPC:
@@ -114,10 +116,22 @@ class ChunkManagerRPC:
         return {"chunk": chunk}
 
     def receive_rpc_download_image(self, data, *args, **kwargs):
-        # TODO: assemble from chunks instead of fetching from DB
         image_hash = data['image_hash']
-        regticket = Regticket.get(image_hash=image_hash)
-        image_data = regticket.image_data
+        chunks_db = Chunk.select().where(Chunk.image_hash == image_hash)
+        if len(chunks_db) == 0:
+            return {
+                "status": "ERROR",
+                "mgs": "No chunks for given image"
+            }
+        chunks = [self.__chunkmanager.get_chunk(x) for x in chunks_db]
+        try:
+            image_data = luby.decode(chunks)
+        except NotEnoughChunks:
+            return {
+                "status": "ERROR",
+                "mgs": "Not enough chunks to reconstruct given image"
+            }
+
         return {
             "status": "SUCCESS",
             "image_data": image_data

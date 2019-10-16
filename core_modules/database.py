@@ -94,10 +94,16 @@ class Regticket(Model):
             self.delete()
             return False, self.__errors
 
+# FIXME: probably this field should be stored in DB (if we need them at all). then were in old implementation
+# self.chunkid = chunkid
+# self.verified = False
+# self.is_ours = False
+# self.last_fetch_time = None
+
 
 class Chunk(Model):
-    chunk_id = IntegerField(unique=True)
-    image_hash = CharField()
+    chunk_id = CharField(unique=True)
+    image_hash = BlobField()
 
     class Meta:
         database = db
