@@ -1,7 +1,6 @@
 import random
 import asyncio
 
-from core_modules.blackbox_modules.luby import NotEnoughChunks
 from core_modules.database import Chunk
 from core_modules.http_rpc import RPCException
 from core_modules.helpers import hex_to_chunkid, chunkid_to_hex, require_true, get_pynode_digest_hex
@@ -123,10 +122,10 @@ class ChunkManagerRPC:
                 "status": "ERROR",
                 "mgs": "No chunks for given image"
             }
-        chunks = [self.__chunkmanager.get_chunk(x) for x in chunks_db]
+        chunks = [self.__chunkmanager.get_chunk(int(x.chunk_id)) for x in chunks_db]
         try:
             image_data = luby.decode(chunks)
-        except NotEnoughChunks:
+        except luby.NotEnoughChunks:
             return {
                 "status": "ERROR",
                 "mgs": "Not enough chunks to reconstruct given image"

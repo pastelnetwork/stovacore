@@ -256,7 +256,7 @@ class ChunkManager:
 
         return self.get_chunk(chunk)
 
-    def get_chunk(self, chunk):
+    def get_chunk(self, chunk_id):
         # try to find chunk in chunkstorage
         # if chunk.verified:
         #     return self.__storage.get(chunk.chunkid)
@@ -264,8 +264,8 @@ class ChunkManager:
         # fall back to try and find chunk in tmpstorage
         #  - for tickets that are registered through us, but not final on the blockchain yet, this is how we bootstrap
         #  - we are also graceful and can return chunks that are not ours...
-        if self.__tmpstorage.verify(chunk.chunk_id):
-            return self.__tmpstorage.get(chunk.chunk_id)
+        if self.__tmpstorage.verify(chunk_id):
+            return self.__tmpstorage.get(chunk_id)
 
         # we have failed to find the chunk, mark it as missing
         # self.__mark_chunk_as_missing(chunk)
