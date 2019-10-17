@@ -23,6 +23,8 @@ class MasterNodeDaemon:
 
         loop.create_task(self.logic.run_rpc_server())
         loop.create_task(self.logic.run_masternode_parser())
+        # FIXME: ticket parser should rely on cNode ticket API instead of parsing blocks by ourselves.
+        # FIXME: we should keep track of known ticket in local database instead of memory.
         # loop.create_task(self.logic.run_ticket_parser())
         loop.create_task(self.logic.run_chunk_fetcher_forever())
 
