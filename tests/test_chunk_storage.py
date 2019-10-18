@@ -92,18 +92,18 @@ class TestLuby(unittest.TestCase):
         decoded = luby.decode(blocks)
         self.assertEqual(data, decoded)
 
-    # def test_luby_encode_2_times_compare_result(self):
-    #     redundancy_factor = 3
-    #     block_size = 1024
-    #
-    #     data = b'A' * 1024 * 512 + b'A' * 100  # test for padding
-    #     blocks1 = luby.encode(redundancy_factor, block_size, data)
-    #     blocks2 = luby.encode(redundancy_factor, block_size, data)
-    #     self.assertNotEqual(blocks1[0], blocks2[0])
-    #     decoded1 = luby.decode(blocks1)
-    #     decoded2 = luby.decode(blocks2)
-    #
-    #     self.assertEqual(decoded1, decoded2)
+    def test_luby_encode_2_times_compare_result(self):
+        redundancy_factor = 3
+        block_size = 1024
+
+        data = b'A' * 1024 * 512 + b'A' * 100  # test for padding
+        blocks1 = luby.encode(redundancy_factor, block_size, data)
+        blocks2 = luby.encode(redundancy_factor, block_size, data)
+        self.assertNotEqual(blocks1[0], blocks2[0])
+        decoded1 = luby.decode(blocks1)
+        decoded2 = luby.decode(blocks2)
+
+        self.assertEqual(decoded1, decoded2)
 
     def test_reconstruct_with_same_seed(self):
         redundancy_factor = 3
@@ -112,8 +112,9 @@ class TestLuby(unittest.TestCase):
         data = b'A' * 1024 * 512 + b'A' * 100  # test for padding
         blocks1 = luby.encode(redundancy_factor, block_size, data)
         seeds = luby.get_seeds(blocks1)
-        blocks2 = luby.encode_with_seeds(redundancy_factor, block_size, data, seeds)
+        blocks2 = luby.encode(redundancy_factor, block_size, data, seeds)
         self.assertEqual(blocks1[0], blocks2[0])
+
 
 # TODO: add tests emulating the full flow  - put image to the chunkstorage, and receive it using image_hash
 # (not chunk hash, which is different every time when new portion of chunks is generated).

@@ -176,18 +176,8 @@ class ImageData(TicketModelBase):
         return fingerprints
 
     @staticmethod
-    def generate_luby_chunks(imagedata):
-        chunks = luby.encode(NetWorkSettings.LUBY_REDUNDANCY_FACTOR, NetWorkSettings.CHUNKSIZE, imagedata)
-
-        # test that the chunks are correct
-        luby.verify_blocks(chunks)
-
-        return chunks
-
-    @staticmethod
-    def generate_luby_chunks_with_seeds(imagedata, seeds):
-        chunks = luby.encode_with_seeds(NetWorkSettings.LUBY_REDUNDANCY_FACTOR, NetWorkSettings.CHUNKSIZE, imagedata,
-                                        seeds)
+    def generate_luby_chunks(imagedata, seeds=None):
+        chunks = luby.encode(NetWorkSettings.LUBY_REDUNDANCY_FACTOR, NetWorkSettings.CHUNKSIZE, imagedata, seeds)
 
         # test that the chunks are correct
         luby.verify_blocks(chunks)

@@ -153,11 +153,12 @@ class _BlockGraph:
                 yield (next(iter(check.src_nodes)), check.check)
 
 
-def encode(redundancy_factor, end_block_size, data):
+def encode(redundancy_factor, end_block_size, data, seeds=None):
+    """
+    Encode image with given `data` into number of chunks, using provided redundancy_factor and block size.
+    Use provided seeds, or generate random ones.
+    """
     block_size = end_block_size - HEADER_LENGTH
-
-    # seed = random.randint(0, 2**30)
-    seed = 9999
     total_blocks = math.ceil((1.00 * redundancy_factor * len(data)) / block_size)
 
     blocks = []
@@ -168,11 +169,16 @@ def encode(redundancy_factor, end_block_size, data):
         blocks.append(tmp)
 
     prng = _PRNG(len(blocks))
-    prng.set_seed(seed)
+
+    if seeds is None:
+        seed = random.randint(0, 2**30)
+        prng.set_seed(seed)
 
     luby_blocks = []
+    count = 0
     while len(luby_blocks) < total_blocks:
-        seed, d, ix_samples = prng.get_src_blocks()
+        seed = seeds[count] if seeds else None
+        seed, d, ix_samples = prng.get_src_blocks(seed=seed)
         block_data = 0
         for ix in ix_samples:
             block_data ^= blocks[ix]
@@ -184,43 +190,7 @@ def encode(redundancy_factor, end_block_size, data):
 
         packed_block_data = pack(bit_packing_pattern_string, *block)
         luby_blocks.append(packed_block_data)
-
-    return luby_blocks
-
-
-def encode_with_seeds(redundancy_factor, end_block_size, data, seeds):
-    block_size = end_block_size - HEADER_LENGTH
-
-    # seed = random.randint(0, 2**30)
-    seed = 9999
-    total_blocks = math.ceil((1.00 * redundancy_factor * len(data)) / block_size)
-
-    blocks = []
-    for i in range(0, len(data), block_size):
-        # zero pad
-        x = data[i:i+block_size].ljust(block_size, b'0')
-        tmp = int.from_bytes(x, 'little')
-        blocks.append(tmp)
-
-    prng = _PRNG(len(blocks))
-    prng.set_seed(seed)
-
-    luby_blocks = []
-
-    for s in seeds:
-        seed, d, ix_samples = prng.get_src_blocks(seed=s)
-        block_data = 0
-        for ix in ix_samples:
-            block_data ^= blocks[ix]
-        block_data_bytes = int.to_bytes(block_data, block_size, 'little')
-        block_hash = hashlib.sha3_256(block_data_bytes).digest()
-        block = (len(data), block_size, seed, block_hash, block_data_bytes)
-
-        bit_packing_pattern_string = HEADER_PATTERN + str(block_size) + 's'
-
-        packed_block_data = pack(bit_packing_pattern_string, *block)
-        luby_blocks.append(packed_block_data)
-
+        count += 1
     return luby_blocks
 
 
@@ -241,11 +211,14 @@ def __parse_block(block):
 
 
 def get_seeds(blocks):
-    seeds = set()
+    """
+    Parse each block and return list of its seeds. Order is important to reconstruct image properly.
+    """
+    seeds = []
     for block in blocks:
         data_length, block_size, seed, block_hash, block_body = __parse_block(block)
-        seeds.add(seed)
-    return list(seeds)
+        seeds.append(seed)
+    return seeds
 
 
 def verify_blocks(blocks):
