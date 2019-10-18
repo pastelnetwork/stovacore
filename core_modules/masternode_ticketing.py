@@ -384,17 +384,26 @@ class ArtRegistrationServer:
         return self.__chainwrapper.store_ticket(ticket)
 
     def masternode_place_image_data_in_chunkstorage(self, regticket, regticket_image_data):
+        """
+        Place image to the chunkstorage. Initially artwork is placed to the so called temporary storage
+        (which exist only on the given masternode and is not distributed to other).
+        After activation ticket will be created (by the wallet) and parsed by current masternode  -
+        masternode will move artwork chunks to regular chunkstorage and start promote chunks to
+        other masternodes, so artwork will be stored distributedly.
+        """
+        # reconstruct image with seeds from regticket.
+        # then and only then chunk set will be identical to what wallet generated (and which hashes
+        # are written to the regticket.lubyhashes).
         imagedata = ImageData(dictionary={
             "image": regticket_image_data,
-            "lubychunks": ImageData.generate_luby_chunks(regticket_image_data),
+            "lubychunks": ImageData.generate_luby_chunks(regticket_image_data, seeds=regticket.lubyseeds),
             "thumbnail": ImageData.generate_thumbnail(regticket_image_data),
         })
 
-        image_hash = imagedata.get_thumbnail_hash()
+        thumbnail_hash = imagedata.get_thumbnail_hash()
 
         # store thumbnail
-        # unique image ID is image hash. wallet knows it and can download.
-        self.__chunkmanager.store_chunk_in_temp_storage(bytes_to_chunkid(image_hash), imagedata.thumbnail)
+        self.__chunkmanager.store_chunk_in_temp_storage(bytes_to_chunkid(thumbnail_hash), imagedata.thumbnail)
         artwork_hash = imagedata.get_artwork_hash()
 
         # store chunks
@@ -402,6 +411,8 @@ class ArtRegistrationServer:
             chunkhash_int = bytes_to_chunkid(chunkhash)
             self.__chunkmanager.store_chunk_in_temp_storage(chunkhash_int, chunkdata)
             mn_ticket_logger.debug('Adding chunk id to DB: {}'.format(chunkhash_int))
+            # keep track of chunks in the local SQLite database.
+            # we should be ably to find all chunks by artwork hash as well.
             Chunk.create(chunk_id=str(chunkhash_int), image_hash=artwork_hash)
 
 
