@@ -15,8 +15,8 @@ from core_modules.masternode_ticketing import IDRegistrationClient, TransferRegi
 from core_modules.masternode_ticketing import FinalIDTicket, FinalTradeTicket, FinalTransferTicket, \
     FinalActivationTicket, FinalRegistrationTicket
 from core_modules.logger import initlogging
-from core_modules.helpers import hex_to_chunkid, bytes_from_hex, require_true, bytes_to_chunkid
-from core_modules.ticket_models import RegistrationTicket
+from core_modules.helpers import bytes_from_hex, require_true, bytes_to_chunkid
+from utils.utils import get_masternode_ordering
 from wallet.art_registration_client import ArtRegistrationClient
 from wallet.client_node_manager import ClientNodeManager
 from wallet.database import RegticketDB
@@ -48,7 +48,7 @@ class PastelClient:
         self.__artregistry = ArtRegistry()
         self.__chainwrapper = ChainWrapper(self.__artregistry)
         self.__nodemanager = ClientNodeManager()
-        self.__aliasmanager = AliasManager(self.__nodemanager)
+        self.__aliasmanager = AliasManager()
         self.__active_tasks = {}
 
     def __defer_execution(self, future):
@@ -87,7 +87,7 @@ class PastelClient:
     # Image registration methods
     async def register_image(self, image_field, image_data):
         # get the registration object
-        artreg = ArtRegistrationClient(self.__chainwrapper, self.__nodemanager)
+        artreg = ArtRegistrationClient(self.__chainwrapper)
 
         # register image
         # TODO: fill these out properly
@@ -109,7 +109,7 @@ class PastelClient:
         return actticket_txid, final_actticket.to_dict()
 
     async def image_registration_step_2(self, title, image_data):
-        artreg = ArtRegistrationClient(self.__chainwrapper, self.__nodemanager)
+        artreg = ArtRegistrationClient(self.__chainwrapper)
 
         result = await artreg.get_workers_fee(
             image_data=image_data,
@@ -126,7 +126,7 @@ class PastelClient:
         return result
 
     async def image_registration_step_3(self, regticket_id):
-        artreg = ArtRegistrationClient(self.__chainwrapper, self.__nodemanager)
+        artreg = ArtRegistrationClient(self.__chainwrapper)
 
         success, err = await artreg.send_regticket_to_mn2_mn3(regticket_id)
         if not success:
@@ -142,7 +142,7 @@ class PastelClient:
         regticket_db.burn_tx_id = burn_10_percent_txid
         regticket_db.save()
 
-        mn0, mn1, mn2 = self.__nodemanager.get_masternode_ordering(regticket_db.blocknum)
+        mn0, mn1, mn2 = get_masternode_ordering(regticket_db.blocknum)
 
         async def send_txid_10_req_to_mn(mn, data):
             """

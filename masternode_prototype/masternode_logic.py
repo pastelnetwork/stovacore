@@ -10,7 +10,7 @@ from core_modules.chunkmanager_modules.chunkmanager_rpc import ChunkManagerRPC
 from core_modules.chunkmanager_modules.aliasmanager import AliasManager
 from core_modules.ticket_models import FinalActivationTicket, FinalTransferTicket, FinalTradeTicket
 from core_modules.http_rpc import RPCException, RPCServer
-from pynode.masternode_communication import NodeManager
+from pynode.masternode_communication import MasternodeManager
 from core_modules.masternode_ticketing import ArtRegistrationServer
 from core_modules.settings import NetWorkSettings
 from core_modules.helpers import get_pynode_digest_int, bytes_to_chunkid, chunkid_to_hex
@@ -32,10 +32,10 @@ class MasterNodeLogic:
         self.__autotrader = AutoTrader(self.__artregistry)
 
         # masternode manager
-        self.__mn_manager = NodeManager()
+        self.__mn_manager = MasternodeManager()
 
         # alias manager
-        self.__aliasmanager = AliasManager(self.__mn_manager)
+        self.__aliasmanager = AliasManager()
 
         # chunk manager
         self.__chunkmanager = ChunkManager(self.__aliasmanager)
@@ -67,7 +67,7 @@ class MasterNodeLogic:
         self.issue_random_tests_forever = self.__chunkmanager_rpc.issue_random_tests_forever
 
     def __refresh_masternode_list(self):
-        added, removed = self.__mn_manager.update_masternode_list()
+        added, removed = MasternodeManager.update_masternode_list()
         self.__chunkmanager.update_mn_list(added, removed)
 
     async def run_masternode_parser(self):

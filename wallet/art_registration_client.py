@@ -11,15 +11,15 @@ from core_modules.settings import NetWorkSettings
 from core_modules.helpers import require_true
 from core_modules.logger import initlogging
 from debug.masternode_conf import MASTERNODE_NAMES
+from utils.utils import get_masternode_ordering
 from wallet.database import RegticketDB
 
 art_reg_client_logger = initlogging('Logger', __name__)
 
 
 class ArtRegistrationClient:
-    def __init__(self, chainwrapper, nodemanager):
+    def __init__(self, chainwrapper):
         self.__chainwrapper = chainwrapper
-        self.__nodemanager = nodemanager
 
     def __generate_signed_ticket(self, ticket):
         signed_ticket = Signature(dictionary={
@@ -133,7 +133,7 @@ class ArtRegistrationClient:
                                           serialized_signature=regticket_signature.serialize(),
                                           image_hash=image.get_artwork_hash())
 
-        mn0, mn1, mn2 = self.__nodemanager.get_masternode_ordering()
+        mn0, mn1, mn2 = get_masternode_ordering()
         art_reg_client_logger.debug(
             'Received to 3 masternodes: {}, {}, {}'.format(MASTERNODE_NAMES.get(mn0.server_ip),
                                                            MASTERNODE_NAMES.get(mn1.server_ip),
@@ -152,7 +152,7 @@ class ArtRegistrationClient:
         with open(regticket_db.path_to_image, 'rb') as f:
             image_data = f.read()
 
-        mn0, mn1, mn2 = self.__nodemanager.get_masternode_ordering(regticket_db.blocknum)
+        mn0, mn1, mn2 = get_masternode_ordering(regticket_db.blocknum)
 
         async def send_regticket_to_mn(mn, serialized_regticket, serialized_signature, img_data):
             """
@@ -240,7 +240,7 @@ class ArtRegistrationClient:
 
         # get masternode ordering from regticket
         art_reg_client_logger.info('Get masternode ordering')
-        masternode_ordering = self.__nodemanager.get_masternode_ordering(regticket.order_block_txid)
+        masternode_ordering = get_masternode_ordering(regticket.order_block_txid)
         art_reg_client_logger.info('Get masternode ordering ... done')
         mn0, mn1, mn2 = masternode_ordering
 

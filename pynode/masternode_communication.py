@@ -1,13 +1,11 @@
-import base64
 import random
 
-from core_modules.http_rpc import RPCClient
-from core_modules.helpers import get_nodeid_from_pubkey
+from core_modules.database import Masternode
 from core_modules.logger import initlogging
 from cnode_connection import blockchain
 
 
-class NodeManager:
+class MasternodeManager:
     def __init__(self):
         self.__masternodes = {}
         self.__logger = initlogging('', __name__)
@@ -32,39 +30,27 @@ class NodeManager:
                 other_nodes.append(mn.nodeid)
         return other_nodes
 
-    def get_masternode_ordering(self, blocknum):
-        mn_rpc_clients = []
-        workers = blockchain.masternode_workers(blocknum)
-        for node in workers:
-            remote_pastelid = node['extKey']
-
-            ip, py_rpc_port = node['extAddress'].split(':')
-            rpc_client = RPCClient(remote_pastelid, ip, py_rpc_port)
-            mn_rpc_clients.append(rpc_client)
-        return mn_rpc_clients
-
-    def update_masternode_list(self):
-        workers_list = blockchain.masternode_workers()
+    @classmethod
+    def update_masternode_list(cls):
+        """
+        Fetch current masternode list from cNode (by calling `masternode list extra`) and
+        update database Masternode table accordingly.
+        Return 2 sets of MN pastelIDs - added and removed,
+        """
+        masternode_list = blockchain.masternode_list()
 
         # parse new list
-        new_mn_list = {}
-        for node in workers_list:
-            # extKey is pastelID of the remote node
-            remote_pastelid = node['extKey']
-            if not remote_pastelid:
-                continue
-            ip, py_rpc_port = node['extAddress'].split(':')
-            new_mn_list[remote_pastelid] = RPCClient(remote_pastelid, ip, py_rpc_port)
+        fresh_mn_list = {}
+        for node in masternode_list:
+            # generate dict of {pastelid: <ip:port>}
+            fresh_mn_list['extKey'] = node['extAddress']
 
-        old = set(self.__masternodes.keys())
-        new = set(new_mn_list.keys())
-        added = new - old
-        removed = old - new
+        existing_mn_pastelids = set([mn.pastel_id for mn in Masternode.select()])
+        fresh_mn_pastelids = set(fresh_mn_list.keys())
+        added_pastelids = fresh_mn_pastelids - existing_mn_pastelids
+        removed_pastelids = existing_mn_pastelids - fresh_mn_pastelids
 
-        for i in added:
-            self.__logger.debug("Added MN %s" % i)
-        for i in removed:
-            self.__logger.debug("Removed MN %s" % i)
-
-        self.__masternodes = new_mn_list
-        return added, removed
+        Masternode.delete().where(Masternode.pastel_id.in_(removed_pastelids)).execute()
+        Masternode.insert(
+            [{'pastel_id': pastelid, 'ext_address': fresh_mn_list[pastelid]} for pastelid in added_pastelids]).execute()
+        return added_pastelids, removed_pastelids

@@ -2,7 +2,11 @@ from core_modules.http_rpc import RPCClient
 from cnode_connection import blockchain
 
 
-def get_masternode_ordering(blocknum):
+def get_masternode_ordering(blocknum=None):
+    """
+    Fetch `masternode workers` from cNode, create RPCClient for each one,
+    return list of RPCClients.
+    """
     mn_rpc_clients = []
     workers = blockchain.masternode_workers(blocknum)
     for node in workers:

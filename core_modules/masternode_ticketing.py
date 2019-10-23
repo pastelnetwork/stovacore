@@ -12,7 +12,7 @@ from core_modules.blackbox_modules.nsfw import NSFWDetector
 from core_modules.database import Regticket, db, REGTICKET_STATUS_ERROR, Chunk
 from core_modules.settings import NetWorkSettings
 from debug.masternode_conf import MASTERNODE_NAMES
-from pynode.utils import get_masternode_ordering
+from utils.utils import get_masternode_ordering
 from cnode_connection import blockchain
 from .ticket_models import RegistrationTicket, Signature, FinalRegistrationTicket, ActivationTicket, \
     FinalActivationTicket, ImageData, IDTicket, FinalIDTicket, TransferTicket, FinalTransferTicket, TradeTicket, \

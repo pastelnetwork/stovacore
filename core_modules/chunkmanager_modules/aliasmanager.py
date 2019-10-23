@@ -1,5 +1,4 @@
 from core_modules.helpers import get_pynode_digest_int
-from core_modules.http_rpc import RPCClient
 from core_modules.settings import NetWorkSettings
 from core_modules.logger import initlogging
 from cnode_connection import blockchain
@@ -26,9 +25,8 @@ class AliasManager:
       1. Which MN should we request for a given chunk
       2. Which chunk are we expected to store.
     """
-    def __init__(self, mn_manager):
+    def __init__(self):
         self.__logger = initlogging('', __name__)
-        self.__mn_manager = mn_manager
 
         # helper lookup table for alias generation and other nodes
         aliases = []
