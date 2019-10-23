@@ -1,4 +1,6 @@
-from peewee import Model, SqliteDatabase, BlobField, DateTimeField, DecimalField, BooleanField, IntegerField, CharField
+from peewee import (Model, SqliteDatabase, BlobField, DateTimeField, DecimalField, BooleanField, IntegerField,
+                    CharField,
+                    ForeignKeyField)
 
 from core_modules.settings import NetWorkSettings
 
@@ -36,6 +38,7 @@ class Regticket(Model):
         database = db
         table_name = 'regticket'
 
+
 # FIXME: probably this field should be stored in DB (if we need them at all). then were in old implementation
 # self.chunkid = chunkid
 # self.verified = False
@@ -59,3 +62,11 @@ class Masternode(Model):
     class Meta:
         database = db
         table_name = 'masternode'
+
+
+class ChunkMnDistance(Model):
+    chunk = ForeignKeyField(Chunk)
+    masternode = ForeignKeyField(Masternode, on_delete='CASCADE')
+    distance = CharField()  # TODO: actually we'll store very long integers here. But sqlite maximum integer
+    # size is 4 or 8 byte, which is insufficient. As we need to order by this field as it was an integer - need to
+    # make sure that all characters will be the same length, appended by zeros from the left if required.

@@ -17,6 +17,22 @@ from core_modules.helpers import get_pynode_digest_int, bytes_to_chunkid, chunki
 from cnode_connection import blockchain
 
 
+def refresh_masternode_list():
+    """
+    Update MN list in database, initiate distance calculation for added masternodes
+    """
+    added, removed = MasternodeManager.update_masternode_list()
+    # TODO: call `calculate_xor_distances_for_mns(added)` if some masternode were added
+    #  (which is expected to occur not so often..)
+    # self.__chunkmanager.update_mn_list(added, removed)
+
+
+async def masternodes_refresh_task():
+    while True:
+        await asyncio.sleep(1)
+        refresh_masternode_list()
+
+
 class MasterNodeLogic:
     def __init__(self):
 
@@ -40,9 +56,6 @@ class MasterNodeLogic:
         # chunk manager
         self.__chunkmanager = ChunkManager(self.__aliasmanager)
 
-        # refresh masternode list
-        self.__refresh_masternode_list()
-
         self.__chunkmanager_rpc = ChunkManagerRPC(self.__chunkmanager, self.__mn_manager,
                                                   self.__aliasmanager)
 
@@ -65,15 +78,6 @@ class MasterNodeLogic:
 
         # we like to enable/disable this from masternodedaemon
         self.issue_random_tests_forever = self.__chunkmanager_rpc.issue_random_tests_forever
-
-    def __refresh_masternode_list(self):
-        added, removed = MasternodeManager.update_masternode_list()
-        self.__chunkmanager.update_mn_list(added, removed)
-
-    async def run_masternode_parser(self):
-        while True:
-            await asyncio.sleep(1)
-            self.__refresh_masternode_list()
 
     async def run_ticket_parser(self):
         # sleep to start fast
