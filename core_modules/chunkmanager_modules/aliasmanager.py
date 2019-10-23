@@ -7,6 +7,25 @@ from utils.mn_rpc import get_rpc_client_for_masternode
 
 
 class AliasManager:
+    """
+    This purpose of this class is:
+     - Maintain actual masternode list (using task which periodically will execute cNode's `masternode list` command,
+     compare data with what we currently have in our DB and update it accordingly.
+     - Masternode ID is pastelID. We use it to calculate `XOR distance` between entities (mostly, between a masternode
+     and a chunk). This class should go though live of known chunks in out DB, and calculate chunk owner by calculating
+     XOR distance between each chunk and masternode. As Cartesian product of all masternodes * all chunks is quite a huge
+     number of combinations - we should calculate distance in two cases:
+       1. Masternode has been added (need to calculate XOR distance from new MN to every chunk), expected to be a large
+       number of rows affected.
+       2. Chunk has been added (calculate distance from this chunk to every MN), expected to affect small number of
+       rows.
+     Also, after each recalculation we chunk should we keep (according to the whitepaper, top 10 masternodes closest to
+     this chunk is terms of XOR distance should store the chunk). Reflected in LUBY_REDUNDANCY_FACTOR NetworkSetting.
+     Thus, it will be another periodic task.
+     - In this way, with the help of AliasManager we always can answer 2 simple but important questions:
+      1. Which MN should we request for a given chunk
+      2. Which chunk are we expected to store.
+    """
     def __init__(self, mn_manager):
         self.__logger = initlogging('', __name__)
         self.__mn_manager = mn_manager

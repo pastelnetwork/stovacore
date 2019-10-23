@@ -108,3 +108,12 @@ class Chunk(Model):
     class Meta:
         database = db
         table_name = 'chunk'
+
+
+class Masternode(Model):
+    ext_address = CharField(unique=True)  # ip:port
+    pastel_id = CharField(unique=True)
+
+    class Meta:
+        database = db
+        table_name = 'masternode'
