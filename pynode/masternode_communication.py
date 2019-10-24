@@ -41,9 +41,11 @@ class MasternodeManager:
 
         # parse new list
         fresh_mn_list = {}
-        for node in masternode_list:
+        for k in masternode_list:
+            node = masternode_list[k]
             # generate dict of {pastelid: <ip:port>}
-            fresh_mn_list['extKey'] = node['extAddress']
+            if node['extKey'] and node['extAddress']:
+                fresh_mn_list[node['extKey']] = node['extAddress']
 
         existing_mn_pastelids = set([mn.pastel_id for mn in Masternode.select()])
         fresh_mn_pastelids = set(fresh_mn_list.keys())
