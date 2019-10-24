@@ -8,7 +8,7 @@ from datetime import datetime
 
 from peewee import DoesNotExist
 
-from core_modules.blackbox_modules.nsfw import NSFWDetector
+from core_modules.blackbox_modules.nsfw import get_nsfw_detector
 from core_modules.database import Regticket, db, REGTICKET_STATUS_ERROR, Chunk
 from core_modules.settings import NetWorkSettings
 from debug.masternode_conf import MASTERNODE_NAMES
@@ -320,8 +320,8 @@ class ArtRegistrationServer:
             raise ValueError(errors)
         regticket = RegistrationTicket(serialized=regticket_db.regticket)
         # TODO: perform duplication check
-        if NSFWDetector.is_nsfw(regticket_db.image_data):
-            raise ValueError("Image is NSFW, score: %s" % NSFWDetector.get_score(regticket_db.image_data))
+        if get_nsfw_detector().is_nsfw(regticket_db.image_data):
+            raise ValueError("Image is NSFW, score: %s" % get_nsfw_detector().get_score(regticket_db.image_data))
 
         # if we're on mn1 or mn2:
         if regticket_db.localfee is None:

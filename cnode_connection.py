@@ -5,9 +5,8 @@ from core_modules.blockchain import BlockChain
 from core_modules.logger import initlogging
 
 global_logger = initlogging(int(0), __name__)
-global_logger.debug("Started logger")
 
-#  global blockchain connection object, user for cNode communication
+#  global blockchain connection object, used for cNode communication
 _blockchain = None
 
 
@@ -32,7 +31,7 @@ def connect_to_blockchain_daemon():
                                     )
 
         try:
-            get_blockchain_connection().getwalletinfo()
+            _blockchain.getwalletinfo()
         except (ConnectionRefusedError, bitcoinrpc.authproxy.JSONRPCException) as exc:
             global_logger.debug("Exception %s while getting wallet info, retrying..." % exc)
             time.sleep(0.5)

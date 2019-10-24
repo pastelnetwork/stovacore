@@ -11,11 +11,10 @@ from core_modules.model_validators import FieldValidator, StringField, IntegerFi
     LubyChunkHashField, LubyChunkField, ImageField, ThumbnailField, TXIDField, UUIDField, SignatureField, \
     PastelIDField, LubySeedField, BlockChainAddressField, UnixTimeField, StringChoiceField
 
-from utils.dupe_detection import DupeDetector
 from core_modules.blackbox_modules.dupe_detection_utils import measure_similarity, assemble_fingerprints_for_pandas
 from core_modules.settings import NetWorkSettings
 
-from core_modules.blackbox_modules.nsfw import NSFWDetector
+from core_modules.blackbox_modules.nsfw import get_nsfw_detector
 
 from core_modules.blackbox_modules import luby
 
@@ -170,6 +169,7 @@ class ImageData(TicketModelBase):
         return get_pynode_digest_bytes(self.image)
 
     def generate_fingerprints(self):
+        from utils.dupe_detection import DupeDetector
         fingerprints = DupeDetector(NetWorkSettings.DUPE_DETECTION_MODELS,
                                     NetWorkSettings.DUPE_DETECTION_TARGET_SIZE).compute_deep_learning_features(
             self.image)
@@ -352,8 +352,8 @@ class ActivationTicket(TicketModelBase):
         require_true(regticket.imagedata_hash == image.get_artwork_hash())
 
         # run nsfw check
-        if NSFWDetector.is_nsfw(image.image):
-            raise ValueError("Image is NSFW, score: %s" % NSFWDetector.get_score(image.image))
+        if get_nsfw_detector().is_nsfw(image.image):
+            raise ValueError("Image is NSFW, score: %s" % get_nsfw_detector().get_score(image.image))
 
 
 class TradeTicket(TicketModelBase):
