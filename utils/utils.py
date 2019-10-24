@@ -1,5 +1,5 @@
 from core_modules.http_rpc import RPCClient
-from cnode_connection import blockchain
+from cnode_connection import get_blockchain_connection
 
 
 def get_masternode_ordering(blocknum=None):
@@ -8,7 +8,7 @@ def get_masternode_ordering(blocknum=None):
     return list of RPCClients.
     """
     mn_rpc_clients = []
-    workers = blockchain.masternode_workers(blocknum)
+    workers = get_blockchain_connection().masternode_workers(blocknum)
     for node in workers:
         remote_pastelid = node['extKey']
         ip, py_rpc_port = node['extAddress'].split(':')

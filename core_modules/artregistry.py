@@ -1,7 +1,7 @@
 from core_modules.logger import initlogging
 from core_modules.helpers import require_true
 from core_modules.settings import NetWorkSettings
-from cnode_connection import blockchain
+from cnode_connection import get_blockchain_connection
 
 
 class ArtWork:
@@ -341,7 +341,7 @@ class ArtRegistry:
                 # if the bid belongs to us
                 # FIXME: probably match.bid.ticket.public_key need to be replaced with match.bid.ticket.pastelid,
                 # FIXME: and pastelid should be added to the ticket
-                if match.bid.ticket.public_key == blockchain.pastelid:
+                if match.bid.ticket.public_key == get_blockchain_connection().pastelid:
                     # return the wallet address and total price
                     ret.append((match.ask.ticket.watched_address, match.ask.ticket.price * match.ask.ticket.copies))
         return ret

@@ -1,5 +1,5 @@
 from core_modules.logger import initlogging
-from cnode_connection import blockchain
+from cnode_connection import get_blockchain_connection
 
 
 class AutoTrader:
@@ -14,8 +14,8 @@ class AutoTrader:
 
         # collect all transaction currently in the mempool
         mempool_transactions = set()
-        for txid in blockchain.getrawmempool(verbose=False):
-            transaction = blockchain.getrawtransaction(txid, 1)
+        for txid in get_blockchain_connection().getrawmempool(verbose=False):
+            transaction = get_blockchain_connection().getrawtransaction(txid, 1)
             for vout in transaction["vout"]:
                 if "addresses" not in vout["scriptPubKey"]:
                     continue
@@ -37,7 +37,7 @@ class AutoTrader:
                 continue
 
             # consummate
-            blockchain.sendtoaddress(watched_address, total_price)
+            get_blockchain_connection().sendtoaddress(watched_address, total_price)
             self.__logger.debug("Consummating transaction: %s, price: %s" % (watched_address, total_price))
 
     def enable(self):

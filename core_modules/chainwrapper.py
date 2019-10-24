@@ -9,7 +9,7 @@ from core_modules.helpers import bytes_to_hex
 from core_modules.ticket_models import FinalIDTicket, FinalActivationTicket, FinalRegistrationTicket,\
     FinalTransferTicket, FinalTradeTicket
 from core_modules.settings import NetWorkSettings
-from cnode_connection import blockchain
+from cnode_connection import get_blockchain_connection
 
 
 class BlockChainTicket:
@@ -60,8 +60,8 @@ class ChainWrapper:
         if type(btxid) == bytes:
             btxid = bytes_to_hex(btxid)
 
-        block_a = blockchain.getblock(atxid)
-        block_b = blockchain.getblock(btxid)
+        block_a = get_blockchain_connection().getblock(atxid)
+        block_b = get_blockchain_connection().getblock(btxid)
         height_a = int(block_a["height"])
         height_b = int(block_b["height"])
         return abs(height_a-height_b)
@@ -82,11 +82,11 @@ class ChainWrapper:
 
         encoded_data = identifier + ticket.serialize()
 
-        return blockchain.store_data_in_utxo(encoded_data)
+        return get_blockchain_connection().store_data_in_utxo(encoded_data)
 
     def retrieve_ticket(self, txid, validate=False):
         try:
-            raw_ticket_data = blockchain.retrieve_data_from_utxo(txid)
+            raw_ticket_data = get_blockchain_connection().retrieve_data_from_utxo(txid)
         except JSONRPCException as exc:
             if exc.code == -8:
                 # parameter 1 must be hexadecimal string
@@ -120,7 +120,7 @@ class ChainWrapper:
         return ticket
 
     def all_ticket_iterator(self):
-        for txid in blockchain.search_chain():
+        for txid in get_blockchain_connection().search_chain():
             try:
                 ticket = self.retrieve_ticket(txid)
             except Exception as exc:
@@ -133,13 +133,13 @@ class ChainWrapper:
             yield txid, ticket
 
     def get_transactions_for_block(self, blocknum, confirmations=NetWorkSettings.REQUIRED_CONFIRMATIONS):
-        for txid in blockchain.get_txids_for_block(blocknum, confirmations):
+        for txid in get_blockchain_connection().get_txids_for_block(blocknum, confirmations):
             try:
                 ticket = self.retrieve_ticket(txid, validate=False)
             except JSONRPCException as exc:
                 continue
             except Exception as exc:
-                yield txid, "transaction", blockchain.getrawtransaction(txid, 1)
+                yield txid, "transaction", get_blockchain_connection().getrawtransaction(txid, 1)
             else:
                 # validate the tickets, only return them if we ran the validator
                 if type(ticket) == FinalActivationTicket:
@@ -171,7 +171,7 @@ class ChainWrapper:
         locked_utxos = self.__artregistry.get_all_collateral_utxo_for_pubkey(my_public_key)
 
         eligible_unspent = []
-        for unspent in blockchain.listunspent():
+        for unspent in get_blockchain_connection().listunspent():
             if unspent["spendable"] is True\
             and unspent["confirmations"] > NetWorkSettings.REQUIRED_CONFIRMATIONS_FOR_TRADE_UTXO\
             and unspent["txid"] not in locked_utxos:
@@ -182,25 +182,25 @@ class ChainWrapper:
             raise ValueError("Not enough coins available for transaction: %s / %s" % (amount_to_send, balance))
 
         # create a change address
-        change_address = blockchain.getnewaddress()
+        change_address = get_blockchain_connection().getnewaddress()
 
         # create raw transaction
         raw_transaction = self.__create_raw_transaction(eligible_unspent,
                                                         [(collateral_address, amount_to_send)], change_address)
 
-        signed_raw_transaction = blockchain.signrawtransaction(raw_transaction)
+        signed_raw_transaction = get_blockchain_connection().signrawtransaction(raw_transaction)
 
         self.__logger.debug("Signed raw transaction: %s" % signed_raw_transaction)
 
         if hasattr(signed_raw_transaction, "errors"):
             raise ValueError("Errors in signed transaction: %s" % signed_raw_transaction["errors"])
 
-        txid = blockchain.sendrawtransaction(signed_raw_transaction["hex"])
+        txid = get_blockchain_connection().sendrawtransaction(signed_raw_transaction["hex"])
 
         self.__logger.debug("Published collateral transaction with txid: %s" % txid)
 
         while True:
-            transaction_info = blockchain.gettransaction(txid)
+            transaction_info = get_blockchain_connection().gettransaction(txid)
             if transaction_info["confirmations"] < NetWorkSettings.REQUIRED_CONFIRMATIONS_FOR_TRADE_UTXO:
                 await asyncio.sleep(1)
             else:
@@ -242,7 +242,7 @@ class ChainWrapper:
         self.__logger.debug("Paying %s to %s, change %s to %s from a total of %s, with fees: %s" % (
             amount_to_send, addresses, outputs[change_address], change_address, total_in, fees))
 
-        rawtrans = blockchain.createrawtransaction(inputs, outputs)
+        rawtrans = get_blockchain_connection().createrawtransaction(inputs, outputs)
 
         # we calculate the final transaction size + 128bytes (for signatures)
         # If we are above this limit we fail. If this happens there are a large number of utxos with small
@@ -253,7 +253,7 @@ class ChainWrapper:
                              % (total_bytes_used, kbytes_paid * 1024))
 
         # check rawtrans to make sure things add up
-        decoded = blockchain.decoderawtransaction(rawtrans)
+        decoded = get_blockchain_connection().decoderawtransaction(rawtrans)
 
         # sum up ins
         total_in = Decimal()

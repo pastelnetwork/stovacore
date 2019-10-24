@@ -1,7 +1,7 @@
 from core_modules.helpers import get_pynode_digest_int
 from core_modules.settings import NetWorkSettings
 from core_modules.logger import initlogging
-from cnode_connection import blockchain
+from cnode_connection import get_blockchain_connection
 from utils.mn_rpc import get_rpc_client_for_masternode
 
 
@@ -38,7 +38,7 @@ class AliasManager:
         self.__alias_digests = tuple(aliases)
 
     def __find_owners_for_chunk(self, chunkid):
-        mns = blockchain.masternode_list().values()
+        mns = get_blockchain_connection().masternode_list().values()
         mns_rpc_clients = [get_rpc_client_for_masternode(mn) for mn in mns]
         owners = [mns_rpc_clients[0]]  # FIXME: owner is locked only for testing
         # for alias_digest in self.__alias_digests:
@@ -61,8 +61,8 @@ class AliasManager:
 
     def find_other_owners_for_chunk(self, chunkid):
         owners = self.__find_owners_for_chunk(chunkid)
-        # return owners - {blockchain.pastelid}
+        # return owners - {get_blockchain_connection().pastelid}
         return owners
 
     def we_own_chunk(self, chunkid):
-        return blockchain.pastelid in self.__find_owners_for_chunk(chunkid)
+        return get_blockchain_connection().pastelid in self.__find_owners_for_chunk(chunkid)

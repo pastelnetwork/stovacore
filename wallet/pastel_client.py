@@ -4,7 +4,7 @@ import uuid
 
 from bitcoinrpc.authproxy import JSONRPCException
 
-from cnode_connection import blockchain
+from cnode_connection import get_blockchain_connection
 from core_modules.artregistry import ArtRegistry
 from core_modules.blackbox_modules.luby import decode as luby_decode, NotEnoughChunks
 from core_modules.chainwrapper import ChainWrapper
@@ -30,7 +30,7 @@ def masternodes_by_distance_from_image(image_hash):
     # calculate some hash for each node based on pastelid
     # calculated distance between node hash and image_hash
     # return masternodes sorted by this hash
-    masternodes = blockchain.masternode_list().values()
+    masternodes = get_blockchain_connection().masternode_list().values()
     mn_clients = []
     for mn in masternodes:
         mn_clients.append(RPCClient(mn['extKey'], mn['extAddress'].split(':')[0], mn['extAddress'].split(':')[1]))
@@ -78,7 +78,7 @@ class PastelClient:
 
     def __send_to_address(self, address, amount, comment=""):
         try:
-            result = blockchain.sendtoaddress(address, amount, public_comment=comment)
+            result = get_blockchain_connection().sendtoaddress(address, amount, public_comment=comment)
         except JSONRPCException as exc:
             return str(exc)
         else:
@@ -203,7 +203,7 @@ class PastelClient:
     # TODO: Methods below are not currently used. Need to inspect and probably remove
     def __get_identities(self):
         addresses = []
-        for unspent in blockchain.listunspent():
+        for unspent in get_blockchain_connection().listunspent():
             if unspent["address"] not in addresses:
                 addresses.append(unspent["address"])
 
@@ -289,11 +289,11 @@ class PastelClient:
         else:
             # not a very thorough check, as we might have funds locked in collateral addresses
             # if this is the case we will fail later when trying to move the funds
-            if blockchain.getbalance() < price:
+            if get_blockchain_connection().getbalance() < price:
                 raise ValueError("Not enough money in wallet!")
 
         # watched address is the address we are using to receive the funds in asks and send the collateral to in bids
-        watched_address = blockchain.getnewaddress()
+        watched_address = get_blockchain_connection().getnewaddress()
 
         transreg = TradeRegistrationClient(self.__privkey, self.__pubkey, blockchain, self.__chainwrapper,
                                            self.__artregistry)

@@ -218,9 +218,9 @@ class ChunkManager:
 
     def update_mn_list(self, added, removed):
         if len(added) + len(removed) > 0:
-            if blockchain.pastelid in removed:
+            if get_blockchain_connection().pastelid in removed:
                 # TODO: figure out what to do here
-                self.__logger.warning("I am removed from the MN list, aborting %s" % blockchain.pastelid)
+                self.__logger.warning("I am removed from the MN list, aborting %s" % get_blockchain_connection().pastelid)
                 # return
 
             self.__logger.info("MN list has changed -> added: %s, removed: %s" % (added, removed))

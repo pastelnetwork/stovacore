@@ -11,7 +11,7 @@ from core_modules.helpers import get_pynode_digest_bytes
 from core_modules.helpers_type import ensure_type, ensure_type_of_field
 from core_modules.helpers import require_true
 from core_modules.settings import NetWorkSettings
-from cnode_connection import blockchain
+from cnode_connection import get_blockchain_connection
 
 MAX_SUPPORTED_VERSION = 1
 NONCE_LENGTH = 32
@@ -76,8 +76,8 @@ def verify_and_unpack(raw_message_contents):
         # typecheck all the fields
         sender_id, receiver_id, data, nonce, timestamp, signature = ensure_types_for_v1(container)
 
-        if receiver_id != blockchain.pastelid:
-            raise ValueError("receiver_id is not us (%s != %s)" % (receiver_id, blockchain.pastelid))
+        if receiver_id != get_blockchain_connection().pastelid:
+            raise ValueError("receiver_id is not us (%s != %s)" % (receiver_id, get_blockchain_connection().pastelid))
 
         # TODO: validate timestamp - is this enough?
         require_true(timestamp > time.time() - 60)
@@ -90,7 +90,7 @@ def verify_and_unpack(raw_message_contents):
         tmp["signature"] = b''
         sleep_rand()
         raw_hash = get_pynode_digest_bytes(msgpack.packb(tmp, default=default, use_bin_type=True))
-        verified = blockchain.pastelid_verify(base64.b64encode(raw_hash).decode(), signature, sender_id)
+        verified = get_blockchain_connection().pastelid_verify(base64.b64encode(raw_hash).decode(), signature, sender_id)
         sleep_rand()
 
         if not verified:
@@ -112,7 +112,7 @@ def pack_and_sign(receiver_pastel_id, message_body, version=MAX_SUPPORTED_VERSIO
         # pack container
         container = {
             "version": version,
-            "sender_id": blockchain.pastelid,
+            "sender_id": get_blockchain_connection().pastelid,
             "receiver_id": receiver_pastel_id,
             "data": message_body,  # here message_body is already serialized with msgpack
             "nonce": nacl.utils.random(NONCE_LENGTH),
@@ -126,7 +126,7 @@ def pack_and_sign(receiver_pastel_id, message_body, version=MAX_SUPPORTED_VERSIO
         # serialize container, calculate hash and sign with private key
         # signature is None as this point as we can't know the signature without calculating it
         container_serialized = msgpack.packb(container, default=default, use_bin_type=True)
-        signature = blockchain.pastelid_sign(base64.b64encode(get_pynode_digest_bytes(container_serialized)).decode())
+        signature = get_blockchain_connection().pastelid_sign(base64.b64encode(get_pynode_digest_bytes(container_serialized)).decode())
 
         # TODO: serializing twice is not the best solution if we want to work with large messages
 

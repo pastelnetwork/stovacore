@@ -1,5 +1,6 @@
 import asyncio
 
+from core_modules.database import Masternode, Chunk, ChunkMnDistance
 from core_modules.logger import initlogging
 from core_modules.artregistry import ArtRegistry
 from core_modules.autotrader import AutoTrader
@@ -14,18 +15,55 @@ from pynode.masternode_communication import MasternodeManager
 from core_modules.masternode_ticketing import ArtRegistrationServer
 from core_modules.settings import NetWorkSettings
 from core_modules.helpers import get_pynode_digest_int, bytes_to_chunkid, chunkid_to_hex
-from cnode_connection import blockchain
+from cnode_connection import get_blockchain_connection
+
+
+def update_masternode_list():
+    """
+    Fetch current masternode list from cNode (by calling `masternode list extra`) and
+    update database Masternode table accordingly.
+    Return 2 sets of MN pastelIDs - added and removed,
+    """
+    masternode_list = get_blockchain_connection().masternode_list()
+
+    # parse new list
+    fresh_mn_list = {}
+    for k in masternode_list:
+        node = masternode_list[k]
+        # generate dict of {pastelid: <ip:port>}
+        if node['extKey'] and node['extAddress']:
+            fresh_mn_list[node['extKey']] = node['extAddress']
+
+    existing_mn_pastelids = set([mn.pastel_id for mn in Masternode.select()])
+    fresh_mn_pastelids = set(fresh_mn_list.keys())
+    added_pastelids = fresh_mn_pastelids - existing_mn_pastelids
+    removed_pastelids = existing_mn_pastelids - fresh_mn_pastelids
+
+    Masternode.delete().where(Masternode.pastel_id.in_(removed_pastelids)).execute()
+    Masternode.insert(
+        [{'pastel_id': pastelid, 'ext_address': fresh_mn_list[pastelid]} for pastelid in added_pastelids]).execute()
+    return added_pastelids, removed_pastelids
 
 
 def refresh_masternode_list():
     """
     Update MN list in database, initiate distance calculation for added masternodes
     """
-    added, removed = MasternodeManager.update_masternode_list()
+    added, removed = update_masternode_list()
     # TODO: call `calculate_xor_distances_for_mns(added)` if some masternode were added
     #  (which is expected to occur not so often..)
     # self.__chunkmanager.update_mn_list(added, removed)
 
+
+
+def calculate_xor_distances_for_masternodes(masternodes):
+    """
+    `masternodes` - list of pastelids of masternodes. PastelID is a string.
+    """
+    mns_db = Masternode.select().where(Masternode.pastel_id.in_(masternodes))
+    for mn in mns_db:
+        for chunk in Chunk.select():
+            ChunkMnDistance.create(chunk=chunk, masternode=mn, distance=distance)
 
 async def masternodes_refresh_task():
     while True:
@@ -87,11 +125,11 @@ class MasterNodeLogic:
         while True:
             try:
                 # get the block count to be used later
-                blockcount = blockchain.getblockcount()
+                blockcount = get_blockchain_connection().getblockcount()
 
                 # try to get block - will raise NotEnoughConfirmations if block is not mature
                 # we do this so that it's guaranteed that we don't update artregistry with a bad block
-                blockchain.get_txids_for_block(current_block,
+                get_blockchain_connection().get_txids_for_block(current_block,
                                                confirmations=NetWorkSettings.REQUIRED_CONFIRMATIONS)
 
                 # update current block height in artregistry - this purges old tickets / matches

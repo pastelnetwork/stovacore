@@ -7,6 +7,9 @@ from core_modules.logger import initlogging
 global_logger = initlogging(int(0), __name__)
 global_logger.debug("Started logger")
 
+#  global blockchain connection object, user for cNode communication
+_blockchain = None
+
 
 def connect_to_blockchain_daemon():
     pastelid = os.environ.get('PASTEL_ID')
@@ -29,7 +32,7 @@ def connect_to_blockchain_daemon():
                                     )
 
         try:
-            blockchain.getwalletinfo()
+            get_blockchain_connection().getwalletinfo()
         except (ConnectionRefusedError, bitcoinrpc.authproxy.JSONRPCException) as exc:
             global_logger.debug("Exception %s while getting wallet info, retrying..." % exc)
             time.sleep(0.5)
@@ -39,8 +42,12 @@ def connect_to_blockchain_daemon():
     return blockchain
 
 
-# blockchain aka cNode aka pasteld connection object.
-# it has `pastelid` attribute - current pastelID
-blockchain = connect_to_blockchain_daemon()
+# blockchain connection lazy initializer
+def get_blockchain_connection():
+    global _blockchain
+    if not _blockchain:
+        _blockchain = connect_to_blockchain_daemon()
+    return _blockchain
+
 
 basedir = os.getcwd()

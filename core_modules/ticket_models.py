@@ -4,7 +4,7 @@ import msgpack
 
 from PIL import Image
 
-from cnode_connection import blockchain
+from cnode_connection import get_blockchain_connection
 from core_modules.helpers import get_pynode_digest_bytes, require_true
 from core_modules.logger import initlogging
 from core_modules.model_validators import FieldValidator, StringField, IntegerField, FingerprintField, SHA3512Field, \
@@ -259,7 +259,7 @@ class RegistrationTicket(TicketModelBase):
         require_true(len(self.lubyhashes) == len(self.lubyseeds))
 
         # validate that order txid is not too old
-        block_distance = chainwrapper.get_block_distance(blockchain.getbestblockhash(), self.order_block_txid)
+        block_distance = chainwrapper.get_block_distance(get_blockchain_connection().getbestblockhash(), self.order_block_txid)
         if block_distance > NetWorkSettings.MAX_REGISTRATION_BLOCK_DISTANCE:
             raise ValueError("Block distance between order_block_height and current block is too large!")
         # validate that art hash doesn't exist:
@@ -375,7 +375,7 @@ class TradeTicket(TicketModelBase):
         # if this is a bid, validate collateral
         if self.type == "bid":
             # does the collateral utxo exist?
-            transaction = blockchain.getrawtransaction(self.collateral_txid, 1)
+            transaction = get_blockchain_connection().getrawtransaction(self.collateral_txid, 1)
 
             # is the utxo a new one we are not currently watching? - this is to prevent a user reusing a collateral
             _, listen_utxos = artregistry.get_listen_addresses_and_utxos()
@@ -445,7 +445,7 @@ class Signature(TicketModelBase):
     }
 
     def validate(self, ticket):
-        if not blockchain.pastelid_verify(ticket.serialize_base64(), self.signature, self.pastelid):
+        if not get_blockchain_connection().pastelid_verify(ticket.serialize_base64(), self.signature, self.pastelid):
             raise ValueError("Invalid signature")
 
 

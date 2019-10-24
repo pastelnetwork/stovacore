@@ -122,7 +122,7 @@ def checkmultisig_scriptPubKey_dump(fd):
 
 def store_data_in_utxo(jsonrpc, input_data):
     uncompressed_file_size_in_bytes = sys.getsizeof(input_data)
-    # print('Now storing preparing file for storage in blockchain. Original uncompressed file size in bytes: ' + str(
+    # print('Now storing preparing file for storage in get_blockchain_connection(). Original uncompressed file size in bytes: ' + str(
     #     uncompressed_file_size_in_bytes) + ' bytes')
 
     input_data_hash = get_cnode_digest_bytes(input_data)

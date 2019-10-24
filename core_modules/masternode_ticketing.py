@@ -13,7 +13,7 @@ from core_modules.database import Regticket, db, REGTICKET_STATUS_ERROR, Chunk
 from core_modules.settings import NetWorkSettings
 from debug.masternode_conf import MASTERNODE_NAMES
 from utils.utils import get_masternode_ordering
-from cnode_connection import blockchain
+from cnode_connection import get_blockchain_connection
 from .ticket_models import RegistrationTicket, Signature, FinalRegistrationTicket, ActivationTicket, \
     FinalActivationTicket, ImageData, IDTicket, FinalIDTicket, TransferTicket, FinalTransferTicket, TradeTicket, \
     FinalTradeTicket
@@ -39,7 +39,7 @@ def generate_final_regticket(ticket, signature, mn_signatures):
 
 def is_burn_10_tx_height_valid(regticket, txid):
     regticket = RegistrationTicket(serialized=regticket.regticket)
-    raw_tx_data = blockchain.getrawtransaction(txid, verbose=1)
+    raw_tx_data = get_blockchain_connection().getrawtransaction(txid, verbose=1)
     if not raw_tx_data:
         return False, 'Burn 10% txid is invalid'
 
@@ -49,10 +49,10 @@ def is_burn_10_tx_height_valid(regticket, txid):
 
 
 def is_burn_10_tx_amount_valid(regticket, txid):
-    networkfee_result = blockchain.getnetworkfee()
+    networkfee_result = get_blockchain_connection().getnetworkfee()
     networkfee = networkfee_result['networkfee']
     tx_amounts = []
-    raw_tx_data = blockchain.getrawtransaction(txid, verbose=1)
+    raw_tx_data = get_blockchain_connection().getrawtransaction(txid, verbose=1)
     for vout in raw_tx_data['vout']:
         tx_amounts.append(vout['value'])
 
@@ -100,10 +100,10 @@ class ArtRegistrationServer:
 
     def __generate_signed_ticket(self, ticket):
 
-        signature = blockchain.pastelid_sign(ticket.serialize_base64())
+        signature = get_blockchain_connection().pastelid_sign(ticket.serialize_base64())
         signed_ticket = Signature(dictionary={
             "signature": signature,
-            "pastelid": blockchain.pastelid,
+            "pastelid": get_blockchain_connection().pastelid,
         })
 
         # make sure we validate correctly
@@ -150,10 +150,10 @@ class ArtRegistrationServer:
         regticket.validate(self.__chainwrapper)
 
         # sign regticket
-        signature = blockchain.pastelid_sign(regticket.serialize_base64())
+        signature = get_blockchain_connection().pastelid_sign(regticket.serialize_base64())
         ticket_signed_by_mn = Signature(dictionary={
             "signature": signature,
-            "pastelid": blockchain.pastelid,
+            "pastelid": get_blockchain_connection().pastelid,
         })
         return ticket_signed_by_mn.serialize()
 
@@ -214,7 +214,7 @@ class ArtRegistrationServer:
         except DoesNotExist:
             mn_ticket_logger.warn('Given upload code DOES NOT exists with required public key')
             raise
-        result = blockchain.getlocalfee()
+        result = get_blockchain_connection().getlocalfee()
         fee = result['localfee']
         regticket_db.image_data = image_data
         regticket_db.localfee = fee
@@ -268,7 +268,7 @@ class ArtRegistrationServer:
                     regticket_db.mn2_serialized_signature = serialized_signature
                     regticket_db.save()
                     regticket = RegistrationTicket(serialized=regticket_db.regticket)
-                    current_block = blockchain.getblockcount()
+                    current_block = get_blockchain_connection().getblockcount()
                     # verify if confirmation receive for 5 blocks or less from regticket creation.
                     if current_block - regticket.blocknum > NetWorkSettings.MAX_CONFIRMATION_DISTANCE_IN_BLOCKS:
                         regticket_db.status = REGTICKET_STATUS_ERROR
@@ -282,10 +282,10 @@ class ArtRegistrationServer:
                                                                 serialized=regticket_db.artists_signature_ticket),
                                                             (
                                                                 Signature(dictionary={
-                                                                    "signature": blockchain.pastelid_sign(
+                                                                    "signature": get_blockchain_connection().pastelid_sign(
                                                                         base64.b64encode(
                                                                             regticket_db.regticket).decode()),
-                                                                    "pastelid": blockchain.pastelid
+                                                                    "pastelid": get_blockchain_connection().pastelid
                                                                 }), Signature(
                                                                     serialized=regticket_db.mn1_serialized_signature),
                                                                 Signature(
@@ -295,7 +295,7 @@ class ArtRegistrationServer:
                     self.masternode_place_image_data_in_chunkstorage(regticket, regticket_db.image_data)
 
                     # write final ticket into blockchain
-                    bc_response = blockchain.register_art_ticket(final_ticket.serialize_base64(), blockchain.pastelid,
+                    bc_response = get_blockchain_connection().register_art_ticket(final_ticket.serialize_base64(), get_blockchain_connection().pastelid,
                                                                  regticket.base64_imagedatahash)
                     return bc_response
                     # TODO: store image into chunkstorage - later, when activation happens
@@ -363,8 +363,8 @@ class ArtRegistrationServer:
 
         # sign activation ticket
         ticket_signed_by_mn = Signature(dictionary={
-            "signature": blockchain.pastelid_sign(base64.b64encode(activationticket_serialized)),
-            "pastelid": blockchain.pastelid,
+            "signature": get_blockchain_connection().pastelid_sign(base64.b64encode(activationticket_serialized)),
+            "pastelid": get_blockchain_connection().pastelid,
         })
         return ticket_signed_by_mn.serialize()
 
