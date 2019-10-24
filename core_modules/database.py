@@ -49,6 +49,7 @@ class Regticket(Model):
 class Chunk(Model):
     chunk_id = CharField(unique=True)
     image_hash = BlobField()
+    indexed = BooleanField(default=False)  # to track fresh added chunks, and calculate XOR distances for them.
 
     class Meta:
         database = db

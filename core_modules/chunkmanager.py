@@ -8,7 +8,7 @@ from core_modules.chunk_storage import ChunkStorage
 from core_modules.helpers import chunkid_to_hex
 from core_modules.settings import NetWorkSettings
 from core_modules.logger import initlogging
-from cnode_connection import basedir, blockchain
+from cnode_connection import basedir, get_blockchain_connection
 
 
 class Chunk:

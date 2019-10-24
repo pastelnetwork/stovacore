@@ -41,23 +41,25 @@ class AliasManager:
         mns = get_blockchain_connection().masternode_list().values()
         mns_rpc_clients = [get_rpc_client_for_masternode(mn) for mn in mns]
         owners = [mns_rpc_clients[0]]  # FIXME: owner is locked only for testing
-        # for alias_digest in self.__alias_digests:
-        #     # compute alt_key
-        #     alt_key = alias_digest ^ chunkid
-        #
-        #     # check if we have an MasterNodes
-        #     if len(mn_nodeids) == 0:
-        #         raise RuntimeError("There are no MNs online!")
-        #
-        #     # found owners for this alt_key
-        #     owner, min_distance = None, None
-        #     for nodeid in mn_nodeids:
-        #         distance = alt_key ^ nodeid
-        #         if owner is None or distance < min_distance:
-        #             owner = nodeid
-        #             min_distance = distance
-        #     owners.add(owner)
         return owners
+
+    def __find_owners_for_chunk_old(self, chunkid):
+        for alias_digest in self.__alias_digests:
+            # compute alt_key
+            alt_key = alias_digest ^ chunkid
+
+            # check if we have an MasterNodes
+            if len(mn_nodeids) == 0:
+                raise RuntimeError("There are no MNs online!")
+
+            # found owners for this alt_key
+            owner, min_distance = None, None
+            for nodeid in mn_nodeids:
+                distance = alt_key ^ nodeid
+                if owner is None or distance < min_distance:
+                    owner = nodeid
+                    min_distance = distance
+            owners.add(owner)
 
     def find_other_owners_for_chunk(self, chunkid):
         owners = self.__find_owners_for_chunk(chunkid)

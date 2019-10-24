@@ -32,6 +32,7 @@ class __NSFWDetector:
 _NSFWDetector = None
 
 
+# NSFW detector lazy loader, as it uses Tensorflow, which is quite heavy to import
 def get_nsfw_detector():
     global _NSFWDetector
     if not _NSFWDetector:

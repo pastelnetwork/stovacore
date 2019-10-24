@@ -31,7 +31,7 @@ def connect_to_blockchain_daemon():
                                     )
 
         try:
-            _blockchain.getwalletinfo()
+            blockchain.getwalletinfo()
         except (ConnectionRefusedError, bitcoinrpc.authproxy.JSONRPCException) as exc:
             global_logger.debug("Exception %s while getting wallet info, retrying..." % exc)
             time.sleep(0.5)

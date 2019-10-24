@@ -17,6 +17,8 @@ from core_modules.settings import NetWorkSettings
 from core_modules.helpers import get_pynode_digest_int, bytes_to_chunkid, chunkid_to_hex
 from cnode_connection import get_blockchain_connection
 
+mnl_logger = initlogging('', __name__)
+
 
 def update_masternode_list():
     """
@@ -31,17 +33,20 @@ def update_masternode_list():
     for k in masternode_list:
         node = masternode_list[k]
         # generate dict of {pastelid: <ip:port>}
-        if node['extKey'] and node['extAddress']:
+        if len(node['extKey']) > 20 and len(node['extAddress']) > 4:
             fresh_mn_list[node['extKey']] = node['extAddress']
 
     existing_mn_pastelids = set([mn.pastel_id for mn in Masternode.select()])
     fresh_mn_pastelids = set(fresh_mn_list.keys())
     added_pastelids = fresh_mn_pastelids - existing_mn_pastelids
     removed_pastelids = existing_mn_pastelids - fresh_mn_pastelids
+    if len(removed_pastelids):
+        Masternode.delete().where(Masternode.pastel_id.in_(removed_pastelids)).execute()
 
-    Masternode.delete().where(Masternode.pastel_id.in_(removed_pastelids)).execute()
-    Masternode.insert(
-        [{'pastel_id': pastelid, 'ext_address': fresh_mn_list[pastelid]} for pastelid in added_pastelids]).execute()
+    if len(added_pastelids):
+        data_for_insert = [{'pastel_id': pastelid, 'ext_address': fresh_mn_list[pastelid]} for pastelid in
+                           added_pastelids]
+        Masternode.insert(data_for_insert).execute()
     return added_pastelids, removed_pastelids
 
 
@@ -50,25 +55,68 @@ def refresh_masternode_list():
     Update MN list in database, initiate distance calculation for added masternodes
     """
     added, removed = update_masternode_list()
-    # TODO: call `calculate_xor_distances_for_mns(added)` if some masternode were added
-    #  (which is expected to occur not so often..)
-    # self.__chunkmanager.update_mn_list(added, removed)
+    calculate_xor_distances_for_masternodes(added)
 
 
-
-def calculate_xor_distances_for_masternodes(masternodes):
+def calculate_xor_distance(pastelid, chunkid):
     """
-    `masternodes` - list of pastelids of masternodes. PastelID is a string.
+    This method is single point of calculating XOR distance between pastelid and chunkid.
+    PastelID is initially string. There is a number of ways to convert string to some integer value
+    (depending on the input string), but it's important to select one way and keep it.
+    `chunkid` is expected to be integer.
     """
-    mns_db = Masternode.select().where(Masternode.pastel_id.in_(masternodes))
+    # there is
+    node_digest = get_pynode_digest_int(pastelid.encode())
+    xor_distance = node_digest ^ chunkid
+    return xor_distance
+
+
+def calculate_xor_distances_for_masternodes(pastelids):
+    """
+    `pastelids` - list of pastelids of masternodes. PastelID is a string.
+    """
+    mns_db = Masternode.select().where(Masternode.pastel_id.in_(pastelids))
     for mn in mns_db:
         for chunk in Chunk.select():
-            ChunkMnDistance.create(chunk=chunk, masternode=mn, distance=distance)
+            # we store chunk.chunk_id as CharField, but essentially it's very long integer (more then 8 bytes,
+            # doesn't fit in database INT type)
+            xor_distance = calculate_xor_distance(mn.pastel_id, int(chunk.chunk_id))
+            ChunkMnDistance.create(chunk=chunk, masternode=mn, distance=str(xor_distance))
+
+
+def calculate_xor_distances_for_chunks(chunk_ids):
+    """
+    `chunk_ids` - list of chunks ids. Chunk ID is a very long integer.
+    """
+    chunk_ids_str = [str(x) for x in chunk_ids]
+    chunks_db = Chunk.select().where(Chunk.chunk_id.in_(chunk_ids_str))
+    for chunk in chunks_db:
+        for mn in Masternode.select():
+            # we store chunk.chunk_id as CharField, but essentially it's very long integer (more then 8 bytes,
+            # doesn't fit in database INT type)
+            xor_distance = calculate_xor_distance(mn.pastel_id, int(chunk.chunk_id))
+            ChunkMnDistance.create(chunk=chunk, masternode=mn, distance=str(xor_distance))
+
+
+def index_new_chunks():
+    """
+    Select chunks which has not been indexed (XOR distance is not calculated) and calculate XOR distance for them.
+    """
+    chunk_ids = [int(c.chunk_id) for c in Chunk.select().where(Chunk.indexed == False)]
+    if len(chunk_ids):
+        calculate_xor_distances_for_chunks(chunk_ids)
+
 
 async def masternodes_refresh_task():
     while True:
         await asyncio.sleep(1)
         refresh_masternode_list()
+
+
+async def index_new_chunks_task():
+    while True:
+        await asyncio.sleep(1)
+        index_new_chunks()
 
 
 class MasterNodeLogic:
@@ -130,7 +178,7 @@ class MasterNodeLogic:
                 # try to get block - will raise NotEnoughConfirmations if block is not mature
                 # we do this so that it's guaranteed that we don't update artregistry with a bad block
                 get_blockchain_connection().get_txids_for_block(current_block,
-                                               confirmations=NetWorkSettings.REQUIRED_CONFIRMATIONS)
+                                                                confirmations=NetWorkSettings.REQUIRED_CONFIRMATIONS)
 
                 # update current block height in artregistry - this purges old tickets / matches
                 self.__artregistry.update_current_block_height(current_block)
