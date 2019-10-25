@@ -106,10 +106,10 @@ def index_new_chunks():
     chunk_ids = [int(c.chunk_id) for c in chunk_qs]
     if len(chunk_ids):
         calculate_xor_distances_for_chunks(chunk_ids)
-    # update all processed chunks with `indexed` = True
-    for chunk in chunk_qs:
-        chunk.indexed = True
-    Chunk.bulk_update(chunk_qs, fields=[Chunk.indexed])
+        # update all processed chunks with `indexed` = True
+        for chunk in chunk_qs:
+            chunk.indexed = True
+        Chunk.bulk_update(chunk_qs, fields=[Chunk.indexed])
 
 
 async def masternodes_refresh_task():

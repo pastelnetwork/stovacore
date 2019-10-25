@@ -2,9 +2,8 @@ from peewee import (Model, SqliteDatabase, BlobField, DateTimeField, DecimalFiel
                     CharField,
                     ForeignKeyField)
 
-from core_modules.settings import NetWorkSettings
 
-db = SqliteDatabase(NetWorkSettings.MN_DATABASE_FILE)
+db = SqliteDatabase(None)
 
 REGTICKET_STATUS_CREATED = 0
 REGTICKET_STATUS_ERROR = -1
@@ -75,3 +74,6 @@ class ChunkMnDistance(Model):
     class Meta:
         database = db
         table_name = 'chunkmndistance'
+
+
+DB_MODELS = [Regticket, Chunk, Masternode, ChunkMnDistance]
