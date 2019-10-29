@@ -185,6 +185,7 @@ def move_confirmed_chunks_to_persistant_storage():
 def get_owned_chunks():
     pastelid = get_blockchain_connection().pastelid
     # TODO: sql query
+    # select chunk from (select chunk, mn, distance, row_number() over (partition by chunk order by distance) as r from test) as t where t.r<3 and mn=2;
 
 def download_missing_chunks():
 # TODO: task which get list of chunks we should own, and download missing
