@@ -3,7 +3,8 @@ import signal
 
 from core_modules.logger import initlogging
 
-from masternode_prototype.masternode_logic import MasterNodeLogic, masternodes_refresh_task, index_new_chunks_task
+from masternode_prototype.masternode_logic import MasterNodeLogic, masternodes_refresh_task, index_new_chunks_task, \
+    process_new_tickets_task
 
 
 class MasterNodeDaemon:
@@ -24,10 +25,11 @@ class MasterNodeDaemon:
         loop.create_task(self.logic.run_rpc_server())
         loop.create_task(masternodes_refresh_task())
         loop.create_task(index_new_chunks_task())
-        # FIXME: ticket parser should rely on cNode ticket API instead of parsing blocks by ourselves.
-        # FIXME: we should keep track of known ticket in local database instead of memory.
-        # loop.create_task(self.logic.run_ticket_parser())
         loop.create_task(self.logic.run_chunk_fetcher_forever())
+        loop.create_task(process_new_tickets_task())
+        # FIXME: old ticket_parser is replaced with `process_new_tickets_task`, left here for reference.
+        # TODO: remove when it'll be clear that nothing from there is needed.
+        # loop.create_task(self.logic.run_ticket_parser())
 
         try:
             loop.run_forever()

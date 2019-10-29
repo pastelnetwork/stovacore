@@ -2,6 +2,7 @@ from peewee import (Model, SqliteDatabase, BlobField, DateTimeField, DecimalFiel
                     CharField,
                     ForeignKeyField)
 
+from core_modules.helpers import bytes_to_chunkid
 
 db = SqliteDatabase(None)
 
@@ -15,7 +16,7 @@ REGTICKET_STATUS_CHOICES = ((REGTICKET_STATUS_CREATED, 'Created'),
 
 
 class Regticket(Model):
-    upload_code = BlobField(unique=True)
+    upload_code = BlobField(unique=True, null=True)
     regticket = BlobField()
     artist_pk = BlobField()
     image_hash = BlobField()
@@ -32,6 +33,7 @@ class Regticket(Model):
     is_valid_mn2 = BooleanField(null=True)
     status = IntegerField(choices=REGTICKET_STATUS_CHOICES, default=REGTICKET_STATUS_CREATED)
     error = CharField(null=True)
+    confirmed = BooleanField(default=False)  # track if confirmation ticket for a given regticket exists
 
     class Meta:
         database = db
@@ -49,10 +51,22 @@ class Chunk(Model):
     chunk_id = CharField(unique=True)
     image_hash = BlobField()
     indexed = BooleanField(default=False)  # to track fresh added chunks, and calculate XOR distances for them.
+    confirmed = BooleanField(default=False)  # indicates if chunk ID is contained in one
+    # of confirmed registration tickets
 
     class Meta:
         database = db
         table_name = 'chunk'
+
+    @classmethod
+    def create_from_hash(cls, chunkhash, artwork_hash):
+        chunkhash_int = bytes_to_chunkid(chunkhash)
+        Chunk.create(chunk_id=str(chunkhash_int), image_hash=artwork_hash)
+
+    @classmethod
+    def get_by_hash(cls, chunkhash):
+        chunkhash_int = bytes_to_chunkid(chunkhash)
+        return Chunk.get(chunk_id=str(chunkhash_int))
 
 
 class Masternode(Model):

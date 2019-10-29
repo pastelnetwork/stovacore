@@ -1,6 +1,8 @@
 import asyncio
 
-from core_modules.database import Masternode, Chunk, ChunkMnDistance
+from peewee import DoesNotExist, IntegrityError
+
+from core_modules.database import Masternode, Chunk, ChunkMnDistance, Regticket
 from core_modules.logger import initlogging
 from core_modules.artregistry import ArtRegistry
 from core_modules.autotrader import AutoTrader
@@ -9,7 +11,7 @@ from core_modules.chainwrapper import ChainWrapper
 from core_modules.chunkmanager import ChunkManager
 from core_modules.chunkmanager_modules.chunkmanager_rpc import ChunkManagerRPC
 from core_modules.chunkmanager_modules.aliasmanager import AliasManager
-from core_modules.ticket_models import FinalActivationTicket, FinalTransferTicket, FinalTradeTicket
+from core_modules.ticket_models import FinalActivationTicket, FinalTransferTicket, FinalTradeTicket, RegistrationTicket
 from core_modules.http_rpc import RPCException, RPCServer
 from pynode.masternode_communication import MasternodeManager
 from core_modules.masternode_ticketing import ArtRegistrationServer
@@ -110,6 +112,68 @@ def index_new_chunks():
         for chunk in chunk_qs:
             chunk.indexed = True
         Chunk.bulk_update(chunk_qs, fields=[Chunk.indexed])
+
+
+def get_registration_ticket_from_act_ticket(act_ticket):
+    # TODO: implement
+    return RegistrationTicket()
+
+
+def get_and_proccess_new_activation_tickets():
+    """
+    As as input we have list of new activation ticket.
+    Outputs of this task are:
+     - Store appropriate registration tickets in local DB, marking them confirmed
+     - Store chunks from these registration tickets in local DB, marking them confirmed.
+     (which will be used by another chunk-processing tasks).
+    """
+    # get tickets
+    # FIXME: make sure that we get only new, unprocessed tickets here
+    # tickets = get_blockchain_connection().list_tickets('conf')
+    # TODO: Output of this task: current masternode get new chunk IDs into its local DB.
+    # TODO: Then it calculates distances, fetches required chunks (or moves them to the persistent storage).
+    tickets = [
+        {
+            'txid': '',
+            'pastelid': '',
+            'regticket_txid': ''
+        }
+    ]
+    for ticket in tickets:
+        # fetch regticket from activation ticket
+        # store regticket in local DB if not exist
+        # get list of chunk ids, add to local DB (Chunk table)
+        regticket = get_registration_ticket_from_act_ticket(ticket)
+        try:
+            regticket_db = Regticket.get(image_hash=regticket.imagedata_hash)
+            regticket_db.confirmed = True
+            regticket_db.save()
+        except DoesNotExist:
+            regticket_db = Regticket.create(
+                artist_pk=regticket.author,
+                image_hash=regticket.imagedata_hash,
+                regticket=regticket.serialize(),
+                confirmed=True
+            )
+        chunk_hashes = regticket.lubyhashes  # this is list of bytes objects
+        for chunkhash in chunk_hashes:
+            # FIXME: it can be speed up with bulk_update and bulk_create
+            # if chunk exists - mark it as confirmed
+            # else - create it. And mark as confirmed. More frequently we'll have no such chunk.
+            try:
+                chunk = Chunk.create_from_hash(chunkhash=chunkhash, artwork_hash=regticket.imagedata_hash)
+            except IntegrityError:  # if Chunk with such chunkhash already exist
+                chunk = Chunk.get_by_hash(chunkhash=chunkhash)
+            chunk.confirmed = True
+            chunk.save()
+# TODO: task which moves chunks from temp storage to persistent one
+# TODO: task which get list of chunks we should own, and download missing
+
+
+async def process_new_tickets_task():
+    while True:
+        await asyncio.sleep(1)
+        get_and_proccess_new_activation_tickets()
 
 
 async def masternodes_refresh_task():

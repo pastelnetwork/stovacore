@@ -405,7 +405,6 @@ class ArtRegistrationServer:
         # store thumbnail
         self.__chunkmanager.store_chunk_in_temp_storage(bytes_to_chunkid(thumbnail_hash), imagedata.thumbnail)
         artwork_hash = imagedata.get_artwork_hash()
-
         # store chunks
         for chunkhash, chunkdata in zip(imagedata.get_luby_hashes(), imagedata.lubychunks):
             chunkhash_int = bytes_to_chunkid(chunkhash)
@@ -413,7 +412,7 @@ class ArtRegistrationServer:
             mn_ticket_logger.debug('Adding chunk id to DB: {}'.format(chunkhash_int))
             # keep track of chunks in the local SQLite database.
             # we should be ably to find all chunks by artwork hash as well.
-            Chunk.create(chunk_id=str(chunkhash_int), image_hash=artwork_hash)
+            Chunk.create_from_hash(chunkhash=chunkhash, artwork_hash=artwork_hash)
 
 
 class IDRegistrationClient:

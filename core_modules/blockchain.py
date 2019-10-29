@@ -185,6 +185,12 @@ class BlockChain:
     def generate(self, n):
         return self.__call_jsonrpc("generate", int(n))
 
+    def list_tickets(self, ticket_type):
+        """
+        ticket_type - one of (id, art, conf, trade)
+        """
+        return self.__call_jsonrpc("tickets", "list", ticket_type)
+
     def masternode_list(self):
         # return self.__call_jsonrpc("masternode", "list", "extra")
         # FIXME: only for testing, to limit set of masternodes
