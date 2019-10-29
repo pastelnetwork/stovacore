@@ -81,9 +81,10 @@ class Masternode(Model):
 class ChunkMnDistance(Model):
     chunk = ForeignKeyField(Chunk, on_delete='CASCADE')
     masternode = ForeignKeyField(Masternode, on_delete='CASCADE')
-    distance = CharField()  # TODO: actually we'll store very long integers here. But sqlite maximum integer
-    # size is 4 or 8 byte, which is insufficient. As we need to order by this field as it was an integer - need to
-    # make sure that all characters will be the same length, appended by zeros from the left if required.
+    distance = CharField()
+    # TODO: actually we'll store very long integers here (64 bytes). But sqlite maximum integer
+    #  size is 4 or 8 byte, which is insufficient. As we need to order by this field as it was an integer - need to
+    #  make sure that all characters will be the same length, appended by zeros from the left if required.
 
     class Meta:
         database = db

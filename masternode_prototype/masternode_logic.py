@@ -8,7 +8,7 @@ from core_modules.artregistry import ArtRegistry
 from core_modules.autotrader import AutoTrader
 from core_modules.blockchain import NotEnoughConfirmations
 from core_modules.chainwrapper import ChainWrapper
-from core_modules.chunkmanager import ChunkManager
+from core_modules.chunkmanager import ChunkManager, get_chunkmanager
 from core_modules.chunkmanager_modules.chunkmanager_rpc import ChunkManagerRPC
 from core_modules.chunkmanager_modules.aliasmanager import AliasManager
 from core_modules.ticket_models import FinalActivationTicket, FinalTransferTicket, FinalTradeTicket, RegistrationTicket
@@ -166,19 +166,40 @@ def get_and_proccess_new_activation_tickets():
                 chunk = Chunk.get_by_hash(chunkhash=chunkhash)
             chunk.confirmed = True
             chunk.save()
-# TODO: task which moves chunks from temp storage to persistent one
-#  - go through chunks in temp storage
-#  fetch each chunk from DB, if it's confirmed - move to persistant storage.
-#
-def move_confirmed_chunks_to_persistant_storage():
-    # TODO:
-    #   iterate through all chunks in temp storage
 
+
+def move_confirmed_chunks_to_persistant_storage():
+    """
+    Task which moves chunks from temp storage to persistent one.
+     - Goes through chunks in temp storage,
+     - fetch each chunk from DB, if it's confirmed - move to persistant storage.
+    """
+
+    for chunk_id in get_chunkmanager().index_temp_storage:
+        chunk_db = Chunk.get(chunk_id=chunk_id)
+        if chunk_db.confirmed:
+            # move to persistant storge
+            get_chunkmanager().move_to_persistant_storage(chunk_id)
+
+
+def get_owned_chunks():
+    pastelid = get_blockchain_connection().pastelid
+    # TODO: sql query
+
+def download_missing_chunks():
 # TODO: task which get list of chunks we should own, and download missing
-#   - calculate list of chunks we're owner. it makes sense to cache calculation. (caching is easy, but proper
+#   - calculate list of chunks we should own. it makes sense to cache calculation. (caching is easy, but proper
 #   cache invalidation is not very..)
 #   - calculate all owners for a given chunk (select masternode_id from ChunkMnDistance where chunk=<chunk>
 #   order by distance asc limit 10;
+    pass
+
+async def proccess_tmp_storage():
+    while True:
+        # it should not be called very often. New result will be if there are new act tickets parsed
+        await asyncio.sleep(5)
+        move_confirmed_chunks_to_persistant_storage()
+
 
 async def process_new_tickets_task():
     while True:

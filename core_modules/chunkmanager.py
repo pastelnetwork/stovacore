@@ -26,6 +26,16 @@ class Chunk:
                                                            self.verified, self.is_ours)
 
 
+_chunkmanager = None
+
+
+def get_chunkmanager():
+    global _chunkmanager
+    if not _chunkmanager:
+        _chunkmanager = ChunkManager()
+    return _chunkmanager
+
+
 class ChunkManager:
     def __init__(self):
         # initialize logger
@@ -36,18 +46,17 @@ class ChunkManager:
         # the actual storage layer
         self.__storage = ChunkStorage(os.path.join(basedir, "chunkdata"), mode=0o0700)
 
-
-        # databases we keep
-        # FIXME: as we have sqlite DB with Chunk table - we dont' need this. Remove carefully.
-        self.__chunk_db = {}
-        self.__missing_chunks = {}
-
         # tmp storage
-        self.__tmpstoragedir = os.path.join(basedir, "tmpstorage")
-        self.__tmpstorage = ChunkStorage(self.__tmpstoragedir, mode=0o0700)
+        self.__tmpstorage = ChunkStorage(os.path.join(basedir, "tmpstorage"), mode=0o0700)
 
-        # run other initializations
-        self.__initialize()
+    def index_temp_storage(self):
+        return self.__tmpstorage.index()
+
+    def move_to_persistant_storage(self, chunk_id):
+        chunk_data = self.__tmpstorage.get(chunk_id)
+        self.__storage.put(chunk_id, chunk_data)
+        self.__tmpstorage.delete(chunk_id)
+
 
 class ChunkManagerOld:
     def __init__(self, aliasmanager):
