@@ -167,8 +167,18 @@ def get_and_proccess_new_activation_tickets():
             chunk.confirmed = True
             chunk.save()
 # TODO: task which moves chunks from temp storage to persistent one
-# TODO: task which get list of chunks we should own, and download missing
+#  - go through chunks in temp storage
+#  fetch each chunk from DB, if it's confirmed - move to persistant storage.
+#
+def move_confirmed_chunks_to_persistant_storage():
+    # TODO:
+    #   iterate through all chunks in temp storage
 
+# TODO: task which get list of chunks we should own, and download missing
+#   - calculate list of chunks we're owner. it makes sense to cache calculation. (caching is easy, but proper
+#   cache invalidation is not very..)
+#   - calculate all owners for a given chunk (select masternode_id from ChunkMnDistance where chunk=<chunk>
+#   order by distance asc limit 10;
 
 async def process_new_tickets_task():
     while True:

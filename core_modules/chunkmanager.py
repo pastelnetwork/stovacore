@@ -27,6 +27,29 @@ class Chunk:
 
 
 class ChunkManager:
+    def __init__(self):
+        # initialize logger
+        # IMPORTANT: we must ALWAYS use self.__logger.* for logging and not logging.*,
+        # since we need instance-level logging
+        self.__logger = initlogging('', __name__)
+
+        # the actual storage layer
+        self.__storage = ChunkStorage(os.path.join(basedir, "chunkdata"), mode=0o0700)
+
+
+        # databases we keep
+        # FIXME: as we have sqlite DB with Chunk table - we dont' need this. Remove carefully.
+        self.__chunk_db = {}
+        self.__missing_chunks = {}
+
+        # tmp storage
+        self.__tmpstoragedir = os.path.join(basedir, "tmpstorage")
+        self.__tmpstorage = ChunkStorage(self.__tmpstoragedir, mode=0o0700)
+
+        # run other initializations
+        self.__initialize()
+
+class ChunkManagerOld:
     def __init__(self, aliasmanager):
         # initialize logger
         # IMPORTANT: we must ALWAYS use self.__logger.* for logging and not logging.*,

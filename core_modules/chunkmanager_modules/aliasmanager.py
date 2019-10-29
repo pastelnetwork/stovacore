@@ -44,6 +44,7 @@ class AliasManager:
         return owners
 
     def __find_owners_for_chunk_old(self, chunkid):
+        owners = []
         for alias_digest in self.__alias_digests:
             # compute alt_key
             alt_key = alias_digest ^ chunkid
@@ -60,6 +61,7 @@ class AliasManager:
                     owner = nodeid
                     min_distance = distance
             owners.add(owner)
+        return owners
 
     def find_other_owners_for_chunk(self, chunkid):
         owners = self.__find_owners_for_chunk(chunkid)
