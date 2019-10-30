@@ -188,7 +188,7 @@ def recalculate_mn_chunk_ranking_table():
     and masternode will be big), so it needs to be called only when new masternode is added.
     There is a sense to limit frequence of calls (say, no more then once a minute or so).
     """
-    # FIXME: it would be create and more readable to implement all this SQL with Peewee ORM.
+    # FIXME: it would be clearer and more readable to implement all this SQL with Peewee ORM.
     # ChunkMnDistance.select(
     #     ChunkMnDistance.chunk,
     #     ChunkMnDistance.masternode,
@@ -216,16 +216,20 @@ def recalculate_mn_chunk_ranking_table():
 
 
 def get_owned_chunks():
-    # TODO: sql query
-    #  get DB ID of the current masternode
+    """
+    Return list of database chunk records we should store.
+    """
     current_mn_id = Masternode.get(pastel_id=get_blockchain_connection().pastelid).id
+    chunks_ranked_qs = ChunkMnRanked.select().where(ChunkMnRanked.masternode_id==current_mn_id)
+    return [c.chunk for c in chunks_ranked_qs]
 
-    # rank all masternodes for each chunk (sorted by distance)
 
-    # select first  `NetWorkSettings.REPLICATION_FACTOR` masternodes for each chunk
-
-    # TODO: select this sql2 to temporary table, and operate with it.
-    # TODO: update this temporary table only if one of happened: [new masternode was added, new chunk was added]
+def get_chunk_owners(chunk_id):
+    """
+    Return list of masternodes who's expected to store a given chunk
+    """
+    db_chunk = Chunk.get(chunk_id=str(chunk_id))
+    return [c.masternode for c in ChunkMnRanked.select().where(ChunkMnRanked.chunk==db_chunk)]
 
 
 def download_missing_chunks():
