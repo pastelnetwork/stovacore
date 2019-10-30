@@ -1,8 +1,8 @@
 import asyncio
 
-from peewee import DoesNotExist, IntegrityError
+from peewee import DoesNotExist, IntegrityError, fn
 
-from core_modules.database import Masternode, Chunk, ChunkMnDistance, Regticket
+from core_modules.database import Masternode, Chunk, ChunkMnDistance, Regticket, ChunkMnRanked, MASTERNODE_DB
 from core_modules.logger import initlogging
 from core_modules.artregistry import ArtRegistry
 from core_modules.autotrader import AutoTrader
@@ -182,18 +182,60 @@ def move_confirmed_chunks_to_persistant_storage():
             get_chunkmanager().move_to_persistant_storage(chunk_id)
 
 
+def recalculate_mn_chunk_ranking_table():
+    """
+    This method recalculates all ranks of masternodes for each chunk. Is tend to be slow (if the number of chunks
+    and masternode will be big), so it needs to be called only when new masternode is added.
+    There is a sense to limit frequence of calls (say, no more then once a minute or so).
+    """
+    # FIXME: it would be create and more readable to implement all this SQL with Peewee ORM.
+    # ChunkMnDistance.select(
+    #     ChunkMnDistance.chunk,
+    #     ChunkMnDistance.masternode,
+    #     fn.ROW_NUMBER().over(partition_by=[ChunkMnDistance.chunk], order_by=[ChunkMnDistance.distance]).alias('r'))
+
+    # calculate each masternode rank for each chunk
+    subquery = '''
+    select chunk_id, masternode_id, row_number() 
+    over (partition by chunk_id order by distance asc) as r 
+    from chunkmndistance;
+    '''
+
+    # leave only top `NetWorkSettings.REPLICATION_FACTOR` masternodes (which are considered as chunk owners).
+    sql = '''select chunk_id, masternode_id, r from ({}) as t where t.r<={}'''.format(
+        subquery,
+        NetWorkSettings.REPLICATION_FACTOR
+    )
+
+    # delete old rows
+    ChunkMnRanked.delete().execute()
+
+    # insert (chunk, masternode, rank) for all chunk-owners in a separate table for convinience
+    insert_sql = '''insert into chunkmnranked (chunk_id, masternode_id, rank) {};'''.format(sql)
+    MASTERNODE_DB.execute_sql(insert_sql)
+
+
 def get_owned_chunks():
-    pastelid = get_blockchain_connection().pastelid
     # TODO: sql query
-    # select chunk from (select chunk, mn, distance, row_number() over (partition by chunk order by distance) as r from test) as t where t.r<3 and mn=2;
+    #  get DB ID of the current masternode
+    current_mn_id = Masternode.get(pastel_id=get_blockchain_connection().pastelid).id
+
+    # rank all masternodes for each chunk (sorted by distance)
+
+    # select first  `NetWorkSettings.REPLICATION_FACTOR` masternodes for each chunk
+
+    # TODO: select this sql2 to temporary table, and operate with it.
+    # TODO: update this temporary table only if one of happened: [new masternode was added, new chunk was added]
+
 
 def download_missing_chunks():
-# TODO: task which get list of chunks we should own, and download missing
-#   - calculate list of chunks we should own. it makes sense to cache calculation. (caching is easy, but proper
-#   cache invalidation is not very..)
-#   - calculate all owners for a given chunk (select masternode_id from ChunkMnDistance where chunk=<chunk>
-#   order by distance asc limit 10;
+    # TODO: task which get list of chunks we should own, and download missing
+    #   - calculate list of chunks we should own. it makes sense to cache calculation. (caching is easy, but proper
+    #   cache invalidation is not very..)
+    #   - calculate all owners for a given chunk (select masternode_id from ChunkMnDistance where chunk=<chunk>
+    #   order by distance asc limit 10;
     pass
+
 
 async def proccess_tmp_storage():
     while True:

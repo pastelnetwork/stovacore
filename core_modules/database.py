@@ -4,7 +4,7 @@ from peewee import (Model, SqliteDatabase, BlobField, DateTimeField, DecimalFiel
 
 from core_modules.helpers import bytes_to_chunkid
 
-db = SqliteDatabase(None)
+MASTERNODE_DB = SqliteDatabase(None)
 
 REGTICKET_STATUS_CREATED = 0
 REGTICKET_STATUS_ERROR = -1
@@ -36,7 +36,7 @@ class Regticket(Model):
     confirmed = BooleanField(default=False)  # track if confirmation ticket for a given regticket exists
 
     class Meta:
-        database = db
+        database = MASTERNODE_DB
         table_name = 'regticket'
 
 
@@ -55,7 +55,7 @@ class Chunk(Model):
     # of confirmed registration tickets
 
     class Meta:
-        database = db
+        database = MASTERNODE_DB
         table_name = 'chunk'
 
     @classmethod
@@ -74,7 +74,7 @@ class Masternode(Model):
     pastel_id = CharField(unique=True)
 
     class Meta:
-        database = db
+        database = MASTERNODE_DB
         table_name = 'masternode'
 
 
@@ -87,8 +87,23 @@ class ChunkMnDistance(Model):
     #  make sure that all characters will be the same length, appended by zeros from the left if required.
 
     class Meta:
-        database = db
+        database = MASTERNODE_DB
         table_name = 'chunkmndistance'
 
 
-DB_MODELS = [Regticket, Chunk, Masternode, ChunkMnDistance]
+class ChunkMnRanked(Model):
+    """
+    Table for keeping top `NetWorkSettings.REPLICATION_FACTOR` masternodes for each chunk.
+    Content is completely removed and recalculated on each MN add/remove.
+    Content is added when new chunks added.
+    """
+    chunk = ForeignKeyField(Chunk, on_delete='CASCADE')
+    masternode = ForeignKeyField(Masternode, on_delete='CASCADE')
+    rank = IntegerField()
+
+    class Meta:
+        database = MASTERNODE_DB
+        table_name = 'chunkmnranked'
+
+# TODO: when adding new model - add it to the following list as well. it's used for table creation.
+DB_MODELS = [Regticket, Chunk, Masternode, ChunkMnDistance, ChunkMnRanked]

@@ -9,7 +9,7 @@ from datetime import datetime
 from peewee import DoesNotExist
 
 from core_modules.blackbox_modules.nsfw import get_nsfw_detector
-from core_modules.database import Regticket, db, REGTICKET_STATUS_ERROR, Chunk
+from core_modules.database import Regticket, MASTERNODE_DB, REGTICKET_STATUS_ERROR, Chunk
 from core_modules.settings import NetWorkSettings
 from debug.masternode_conf import MASTERNODE_NAMES
 from utils.utils import get_masternode_ordering
@@ -173,7 +173,7 @@ class ArtRegistrationServer:
 
         # TODO: clean upload code and regticket from local db when ticket was placed on the blockchain
         # TODO: clean upload code and regticket from local db if they're old enough
-        db.connect(reuse_if_open=True)
+        MASTERNODE_DB.connect(reuse_if_open=True)
         Regticket.create(regticket=regticket_serialized, upload_code=upload_code, created=datetime.now(),
                          artists_signature_ticket=regticket_signature_serialized, artist_pk=artist_pk,
                          image_hash=regticket.imagedata_hash)
@@ -185,7 +185,7 @@ class ArtRegistrationServer:
         image_data = data['image_data']
         mn_ticket_logger.info('Masternode image upload received, upload_code: {}'.format(upload_code))
         sender_id = kwargs.get('sender_id')
-        db.connect(reuse_if_open=True)
+        MASTERNODE_DB.connect(reuse_if_open=True)
         try:
             regticket_db = Regticket.get(upload_code=upload_code)
             regticket = RegistrationTicket(serialized=regticket_db.regticket)
@@ -204,7 +204,7 @@ class ArtRegistrationServer:
         image_data = data['image_data']
         mn_ticket_logger.info('Masternode image upload received, upload_code: {}'.format(upload_code))
         sender_id = kwargs.get('sender_id')
-        db.connect(reuse_if_open=True)
+        MASTERNODE_DB.connect(reuse_if_open=True)
         try:
             regticket_db = Regticket.get(upload_code=upload_code)
             regticket = RegistrationTicket(serialized=regticket_db.regticket)
@@ -225,7 +225,7 @@ class ArtRegistrationServer:
         # verify identity - return status only to regticket creator
         sender_id = kwargs.get('sender_id')
         upload_code = data.get('upload_code')
-        db.connect(reuse_if_open=True)
+        MASTERNODE_DB.connect(reuse_if_open=True)
         try:
             regticket_db = Regticket.get(artist_pk=sender_id, upload_code=upload_code)
         except DoesNotExist:
@@ -236,7 +236,7 @@ class ArtRegistrationServer:
         # parse inputs
         artist_pk, image_hash, serialized_signature = data
         sender_id = kwargs.get('sender_id')
-        db.connect(reuse_if_open=True)
+        MASTERNODE_DB.connect(reuse_if_open=True)
         mn_ticket_logger.info('masternode_mn0_confirm: received confirmation from {}'.format(sender_id))
         try:
             # Verify that given upload_code exists

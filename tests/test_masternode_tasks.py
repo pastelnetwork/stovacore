@@ -1,14 +1,14 @@
 import unittest
 
-from core_modules.database import db, DB_MODELS, Masternode, Chunk, ChunkMnDistance
+from core_modules.database import MASTERNODE_DB, DB_MODELS, Masternode, Chunk, ChunkMnDistance
 from masternode_prototype.masternode_logic import index_new_chunks
 
 
 class TestXORDistanceTask(unittest.TestCase):
     def setUp(self):
-        db.init(':memory:')
-        db.connect(reuse_if_open=True)
-        db.create_tables(DB_MODELS)
+        MASTERNODE_DB.init(':memory:')
+        MASTERNODE_DB.connect(reuse_if_open=True)
+        MASTERNODE_DB.create_tables(DB_MODELS)
         Masternode.create(
             ext_address='127.0.0.1:444',
             pastel_id='jXZVtBmehoxYPotVrLdByFNNcB8jsryXhFPgqRa95i2x1mknbzSef1oGjnzfiwRtzReimfugvg41VtA7qGfDZR')
