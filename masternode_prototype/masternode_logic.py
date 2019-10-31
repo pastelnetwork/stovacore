@@ -113,7 +113,6 @@ def index_new_chunks():
             chunk.indexed = True
         Chunk.bulk_update(chunk_qs, fields=[Chunk.indexed])
 
-
 def get_registration_ticket_from_act_ticket(act_ticket):
     # TODO: implement
     return RegistrationTicket()
@@ -198,7 +197,7 @@ def recalculate_mn_chunk_ranking_table():
     subquery = '''
     select chunk_id, masternode_id, row_number() 
     over (partition by chunk_id order by distance asc) as r 
-    from chunkmndistance;
+    from chunkmndistance
     '''
 
     # leave only top `NetWorkSettings.REPLICATION_FACTOR` masternodes (which are considered as chunk owners).
@@ -211,7 +210,7 @@ def recalculate_mn_chunk_ranking_table():
     ChunkMnRanked.delete().execute()
 
     # insert (chunk, masternode, rank) for all chunk-owners in a separate table for convinience
-    insert_sql = '''insert into chunkmnranked (chunk_id, masternode_id, rank) {};'''.format(sql)
+    insert_sql = '''insert into chunkmnranked (chunk_id, masternode_id, rank) {}'''.format(sql)
     MASTERNODE_DB.execute_sql(insert_sql)
 
 
