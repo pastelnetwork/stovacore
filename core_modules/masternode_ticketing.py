@@ -412,7 +412,9 @@ class ArtRegistrationServer:
             mn_ticket_logger.debug('Adding chunk id to DB: {}'.format(chunkhash_int))
             # keep track of chunks in the local SQLite database.
             # we should be ably to find all chunks by artwork hash as well.
-            Chunk.create_from_hash(chunkhash=chunkhash, artwork_hash=artwork_hash)
+
+            # save chunk in database and mark `Stored` = True as we've already stored it in the storage (at least temp).
+            Chunk.create_from_hash(chunkhash=chunkhash, artwork_hash=artwork_hash, stored=True)
 
 
 class IDRegistrationClient:

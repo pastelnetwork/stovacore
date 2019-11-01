@@ -113,6 +113,7 @@ def index_new_chunks():
             chunk.indexed = True
         Chunk.bulk_update(chunk_qs, fields=[Chunk.indexed])
 
+
 def get_registration_ticket_from_act_ticket(act_ticket):
     # TODO: implement
     return RegistrationTicket()

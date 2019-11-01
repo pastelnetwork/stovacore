@@ -1,7 +1,7 @@
 import unittest
 
 from core_modules.database import MASTERNODE_DB, DB_MODELS, Masternode, Chunk, ChunkMnDistance, ChunkMnRanked
-from masternode_prototype.masternode_logic import index_new_chunks, recalculate_mn_chunk_ranking_table
+from pynode.masternode_logic import index_new_chunks, recalculate_mn_chunk_ranking_table
 
 
 class TestXORDistanceTask(unittest.TestCase):

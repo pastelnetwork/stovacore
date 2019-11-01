@@ -52,6 +52,7 @@ class Chunk(Model):
     image_hash = BlobField()
     indexed = BooleanField(default=False)  # to track fresh added chunks, and calculate XOR distances for them.
     confirmed = BooleanField(default=False)  # indicates if chunk ID is contained in one
+    stored = BooleanField(default=False)
     # of confirmed registration tickets
 
     class Meta:
@@ -59,9 +60,9 @@ class Chunk(Model):
         table_name = 'chunk'
 
     @classmethod
-    def create_from_hash(cls, chunkhash, artwork_hash):
+    def create_from_hash(cls, chunkhash, artwork_hash, stored=False):
         chunkhash_int = bytes_to_chunkid(chunkhash)
-        Chunk.create(chunk_id=str(chunkhash_int), image_hash=artwork_hash)
+        Chunk.create(chunk_id=str(chunkhash_int), image_hash=artwork_hash, stored=stored)
 
     @classmethod
     def get_by_hash(cls, chunkhash):
