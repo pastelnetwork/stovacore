@@ -118,7 +118,7 @@ class RPCClient:
         self.__logger.debug("FETCHCHUNK REQUEST to %s, chunkid: %s" % (self, chunkid_to_hex(chunkid)))
 
         # chunkid is bignum so we need to serialize it
-        chunkid_str = chunkid_to_hex(chunkid)
+        chunkid_str = chunkid_to_hex(int(chunkid))
         request_packet = self.__return_rpc_packet(self.remote_pastelid, ["FETCHCHUNK_REQ", {"chunkid": chunkid_str}])
 
         response_data = await self.__send_rpc_to_mn("FETCHCHUNK_RESP", request_packet)

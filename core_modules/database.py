@@ -3,6 +3,7 @@ from peewee import (Model, SqliteDatabase, BlobField, DateTimeField, DecimalFiel
                     ForeignKeyField)
 
 from core_modules.helpers import bytes_to_chunkid
+from core_modules.http_rpc import RPCClient
 
 MASTERNODE_DB = SqliteDatabase(None)
 
@@ -77,6 +78,11 @@ class Masternode(Model):
     class Meta:
         database = MASTERNODE_DB
         table_name = 'masternode'
+
+    def get_rpc_client(self):
+        ip, py_rpc_port = self.ext_address.split(':')
+        rpc_client = RPCClient(self.pastel_id, ip, py_rpc_port)
+        return rpc_client
 
 
 class ChunkMnDistance(Model):

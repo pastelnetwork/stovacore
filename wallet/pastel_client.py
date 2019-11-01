@@ -8,7 +8,6 @@ from cnode_connection import get_blockchain_connection
 from core_modules.artregistry import ArtRegistry
 from core_modules.blackbox_modules.luby import decode as luby_decode, NotEnoughChunks
 from core_modules.chainwrapper import ChainWrapper
-from core_modules.chunkmanager_modules.aliasmanager import AliasManager
 from core_modules.http_rpc import RPCException, RPCClient
 from core_modules.masternode_ticketing import IDRegistrationClient, TransferRegistrationClient, \
     TradeRegistrationClient
@@ -48,33 +47,12 @@ class PastelClient:
         self.__artregistry = ArtRegistry()
         self.__chainwrapper = ChainWrapper(self.__artregistry)
         self.__nodemanager = ClientNodeManager()
-        self.__aliasmanager = AliasManager()
         self.__active_tasks = {}
 
     def __defer_execution(self, future):
         identifier = str(uuid.uuid4())
         self.__active_tasks[identifier] = future
         return identifier
-
-    async def __get_chunk_id(self, lubyhash):
-        await asyncio.sleep(0)
-
-        # chunkid = hex_to_chunkid(chunkid_hex)
-        chunkid = bytes_to_chunkid(lubyhash)
-        chunk_data = None
-
-        # find MNs that have this chunk
-        owners = list(self.__aliasmanager.find_other_owners_for_chunk(chunkid))
-        random.shuffle(owners)
-
-        for mn in owners:
-
-            chunk_data = await mn.send_rpc_fetchchunk(chunkid)
-
-            if chunk_data is not None:
-                break
-
-        return chunk_data
 
     def __send_to_address(self, address, amount, comment=""):
         try:

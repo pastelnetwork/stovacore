@@ -57,6 +57,30 @@ class ChunkManager:
         self.__storage.put(chunk_id, chunk_data)
         self.__tmpstorage.delete(chunk_id)
 
+    def store_chunk_in_temp_storage(self, chunkid, data):
+        """
+        :param chunkid: integer
+        :param data: bytes
+        """
+        if chunkid != get_pynode_digest_int(data):
+            raise ValueError("data does not match chunkid!")
+
+        self.__tmpstorage.put(chunkid, data)
+
+    def store_chunk_in_storage(self, chunkid, data):
+        """
+        :param chunkid: integer
+        :param data: bytes
+        """
+        if chunkid != get_pynode_digest_int(data):
+            raise ValueError("data does not match chunkid!")
+
+        self.__storage.put(chunkid, data)
+
+    def get_chunk_data(self, chunk_id):
+        # try to find chunk in chunkstorage
+        return self.__storage.get(chunk_id)
+
 
 class ChunkManagerOld:
     def __init__(self, aliasmanager):

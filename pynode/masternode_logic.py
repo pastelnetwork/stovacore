@@ -1,6 +1,6 @@
 import asyncio
 
-from peewee import DoesNotExist, IntegrityError, fn
+from peewee import DoesNotExist, IntegrityError
 
 from core_modules.database import Masternode, Chunk, ChunkMnDistance, Regticket, ChunkMnRanked, MASTERNODE_DB
 from core_modules.logger import initlogging
@@ -10,7 +10,6 @@ from core_modules.blockchain import NotEnoughConfirmations
 from core_modules.chainwrapper import ChainWrapper
 from core_modules.chunkmanager import ChunkManager, get_chunkmanager
 from core_modules.chunkmanager_modules.chunkmanager_rpc import ChunkManagerRPC
-from core_modules.chunkmanager_modules.aliasmanager import AliasManager
 from core_modules.ticket_models import FinalActivationTicket, FinalTransferTicket, FinalTradeTicket, RegistrationTicket
 from core_modules.http_rpc import RPCException, RPCServer
 from pynode.masternode_communication import MasternodeManager
@@ -220,16 +219,31 @@ def get_owned_chunks():
     Return list of database chunk records we should store.
     """
     current_mn_id = Masternode.get(pastel_id=get_blockchain_connection().pastelid).id
-    chunks_ranked_qs = ChunkMnRanked.select().where(ChunkMnRanked.masternode_id==current_mn_id)
+    chunks_ranked_qs = ChunkMnRanked.select().where(ChunkMnRanked.masternode_id == current_mn_id)
     return [c.chunk for c in chunks_ranked_qs]
+
+
+def get_missing_chunk_ids(pastel_id=None):
+    """
+
+    :param pastel_id: str
+    :return: list of str chunkd ids (big integer numbers wrapper to string as they're stored in DB
+    """
+    if not pastel_id:
+        pastel_id = get_blockchain_connection().pastelid
+    # return chunks that we're owner of but don't have it in the storage
+    current_mn_id = Masternode.get(pastel_id=pastel_id).id
+    chunks_ranked_qs = ChunkMnRanked.select().join(Chunk).where(
+        (ChunkMnRanked.masternode_id == current_mn_id) & (Chunk.stored == False))
+    return [c.chunk.chunk_id for c in chunks_ranked_qs]
 
 
 def get_chunk_owners(chunk_id):
     """
-    Return list of masternodes who's expected to store a given chunk
+    Return list of masternodes database objects who's expected to store a given chunk
     """
     db_chunk = Chunk.get(chunk_id=str(chunk_id))
-    return [c.masternode for c in ChunkMnRanked.select().where(ChunkMnRanked.chunk==db_chunk)]
+    return [c.masternode for c in ChunkMnRanked.select().where(ChunkMnRanked.chunk == db_chunk)]
 
 
 def download_missing_chunks():
@@ -283,18 +297,10 @@ class MasterNodeLogic:
         # masternode manager
         self.__mn_manager = MasternodeManager()
 
-        # alias manager
-        self.__aliasmanager = AliasManager()
-
-        # chunk manager
-        self.__chunkmanager = ChunkManager(self.__aliasmanager)
-
-        self.__chunkmanager_rpc = ChunkManagerRPC(self.__chunkmanager, self.__mn_manager,
-                                                  self.__aliasmanager)
+        self.__chunkmanager_rpc = ChunkManagerRPC(self.__mn_manager)
 
         # art registration server
-        self.__artregistrationserver = ArtRegistrationServer(self.__chainwrapper,
-                                                             self.__chunkmanager)
+        self.__artregistrationserver = ArtRegistrationServer(self.__chainwrapper)
 
         # start rpc server
         self.__rpcserver = RPCServer()
@@ -311,123 +317,6 @@ class MasterNodeLogic:
 
         # we like to enable/disable this from masternodedaemon
         self.issue_random_tests_forever = self.__chunkmanager_rpc.issue_random_tests_forever
-
-    async def run_ticket_parser(self):
-        # sleep to start fast
-        await asyncio.sleep(0)
-
-        current_block = 0
-        while True:
-            try:
-                # get the block count to be used later
-                blockcount = get_blockchain_connection().getblockcount()
-
-                # try to get block - will raise NotEnoughConfirmations if block is not mature
-                # we do this so that it's guaranteed that we don't update artregistry with a bad block
-                get_blockchain_connection().get_txids_for_block(current_block,
-                                                                confirmations=NetWorkSettings.REQUIRED_CONFIRMATIONS)
-
-                # update current block height in artregistry - this purges old tickets / matches
-                self.__artregistry.update_current_block_height(current_block)
-
-                # notify objects of the tickets discovered
-                for txid, transtype, data in self.__chainwrapper.get_transactions_for_block(current_block):
-                    # tickets receveid by get_transactions_for_block are validated
-
-                    # get the currently listened-for addresses:
-                    # we do this here as tickets in a block might add new stuff for the same block
-                    listen_addresses, listen_utxos = self.__artregistry.get_listen_addresses_and_utxos()
-
-                    if transtype == "ticket":
-                        ticket = data
-
-                        # only parse FinalActivationTickets for now
-                        if type(ticket) == FinalActivationTicket:
-                            # fetch corresponding finalregticket
-                            final_regticket = self.__chainwrapper.retrieve_ticket(
-                                ticket.ticket.registration_ticket_txid)
-
-                            # get the actual regticket
-                            regticket = final_regticket.ticket
-
-                            # get the chunkids that we need to store
-                            chunks = []
-                            for chunkid_bytes in [regticket.thumbnailhash] + regticket.lubyhashes:
-                                chunkid = bytes_to_chunkid(chunkid_bytes)
-                                chunks.append(chunkid)
-
-                            # add this chunkid to chunkmanager
-                            self.__chunkmanager.add_new_chunks(chunks)
-
-                            # add ticket to artregistry
-                            self.__artregistry.add_artwork(txid, ticket, regticket)
-                        elif type(ticket) == FinalTransferTicket:
-                            # get the transfer ticket
-                            transfer_ticket = ticket.ticket
-                            transfer_ticket.validate(self.__chainwrapper, self.__artregistry)
-
-                            # add ticket to artregistry
-                            self.__artregistry.add_transfer_ticket(txid, transfer_ticket)
-                        elif type(ticket) == FinalTradeTicket:
-                            # get the transfer ticket
-                            trade_ticket = ticket.ticket
-                            trade_ticket.validate(self.__chainwrapper, self.__artregistry)
-
-                            # add ticket to artregistry
-                            self.__artregistry.add_trade_ticket(txid, trade_ticket)
-                    else:
-                        transaction = data
-
-                        # check on the transaction
-                        # NOTE: do vout first, as we don't want to invalidate a ticket when payment
-                        #       is made, due to the colletral being used as payment
-
-                        # for addresses we plan to receive payments to
-                        for vout in transaction["vout"]:
-                            if len(vout["scriptPubKey"]["addresses"]) > 1:
-                                continue
-
-                            # valid transaction received, notify artregistry
-                            value = vout["value"]
-                            address = vout["scriptPubKey"]["addresses"][0]
-                            if address in listen_addresses:
-                                self.__artregistry.process_watched_vout(address, value)
-
-                        # Do vin second, if collateral has been used as legit payment we consummated
-                        # the train above. If not, the ticket needs invalidation
-                        for vin in transaction["vin"]:
-                            if vin.get("txid") is not None:
-                                if vin["txid"] in listen_utxos:
-                                    self.__artregistry.process_watched_vin(vin["txid"])
-
-                # new tickets are in, call automatic trader
-                if current_block < blockcount:
-                    # only print a message every 2%
-                    if blockcount >= 20:
-                        if current_block % int(blockcount / 50) == 0:
-                            self.__logger.debug("Parsing historic block %s / %s (%.2f%%)" % (
-                                current_block, blockcount, current_block / blockcount * 100))
-                    else:
-                        pass
-                else:
-                    if not self.__autotrader.enabled():
-                        self.__logger.debug("Done parsing history, enabling autottrader")
-                        self.__autotrader.enable()
-
-                # update autotrade - this is a NOP until enabled() is called
-                self.__autotrader.consummate_trades()
-            except NotEnoughConfirmations:
-                # this block hasn't got enough confirmations yet
-                await asyncio.sleep(1)
-            else:
-                # successfully parsed this block
-                current_block += 1
-                await asyncio.sleep(0)
-
-    async def run_heartbeat_forever(self):
-        while True:
-            await asyncio.sleep(1)
-            self.__chunkmanager.dump_internal_stats("HEARTBEAT")
 
     async def run_ping_test_forever(self):
         while True:
@@ -453,31 +342,35 @@ class MasterNodeLogic:
 
     async def run_chunk_fetcher_forever(self):
         async def fetch_single_chunk_via_rpc(chunkid):
-            # we need to fetch it
             found = False
-            for owner in self.__aliasmanager.find_other_owners_for_chunk(chunkid):
-                mn = self.__mn_manager.get(owner)
+            for masternode in get_chunk_owners(chunkid):
+                if masternode.pastel_id == get_blockchain_connection().pastelid:
+                    # don't attempt to connect ourselves
+                    continue
+
+                mn = masternode.get_rpc_client()
 
                 try:
                     data = await mn.send_rpc_fetchchunk(chunkid)
                 except RPCException as exc:
-                    self.__logger.info("FETCHCHUNK RPC FAILED for node %s with exception %s" % (owner, exc))
+                    self.__logger.info("FETCHCHUNK RPC FAILED for node %s with exception %s" % (mn.id, exc))
                     continue
 
                 if data is None:
-                    self.__logger.info("MN %s returned None for fetchchunk %s" % (owner, chunkid))
+                    self.__logger.info("MN %s returned None for fetchchunk %s" % (mn.id, chunkid))
                     # chunk was not found
                     continue
 
                 # verify that digest matches
                 digest = get_pynode_digest_int(data)
-                if chunkid != digest:
+                if chunkid != str(digest):
                     self.__logger.info("MN %s returned bad chunk for fetchchunk %s, mismatched digest: %s" % (
-                        owner, chunkid, digest))
+                        mn.id, chunkid, digest))
                     continue
 
-                # we have the chunk, store it!
-                self.__chunkmanager.store_missing_chunk(chunkid, data)
+                # add chunk to persistant storage and update DB info (`stored` flag) to True
+                get_chunkmanager().store_chunk_in_storage(int(chunkid), data)
+                Chunk.update(stored=True).where(Chunk.chunk_id == chunkid)
                 break
 
             # nobody has this chunk
@@ -485,12 +378,12 @@ class MasterNodeLogic:
                 # TODO: fall back to reconstruct it from luby blocks
                 self.__logger.error("Unable to fetch chunk %s, luby reconstruction is not yet implemented!" %
                                     chunkid_to_hex(chunkid))
-                self.__chunkmanager.failed_to_fetch_chunk(chunkid)
 
         while True:
             await asyncio.sleep(0)
 
-            missing_chunks = self.__chunkmanager.get_random_missing_chunks(NetWorkSettings.CHUNK_FETCH_PARALLELISM)
+            # get chunks we are owner but we don't have
+            missing_chunks = get_missing_chunk_ids()[:NetWorkSettings.CHUNK_FETCH_PARALLELISM]
 
             if len(missing_chunks) == 0:
                 # nothing to do, sleep a little

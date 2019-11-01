@@ -1,7 +1,7 @@
 import unittest
 
 from core_modules.database import MASTERNODE_DB, DB_MODELS, Masternode, Chunk, ChunkMnDistance, ChunkMnRanked
-from pynode.masternode_logic import index_new_chunks, recalculate_mn_chunk_ranking_table
+from pynode.masternode_logic import index_new_chunks, recalculate_mn_chunk_ranking_table, get_missing_chunk_ids
 
 
 class TestXORDistanceTask(unittest.TestCase):
@@ -60,4 +60,15 @@ class TestCalculateRankingTableTask(unittest.TestCase):
         recalculate_mn_chunk_ranking_table()
         self.assertEqual(ChunkMnRanked.select().count(), 9)
 
-    # TODO: test actual ranking
+    def test_get_missing_chunks(self):
+        pastel_id = 'jXZVtBmehoxYPotVrLdByFNNcB8jsryXhFPgqRa95i2x1mknbzSef1oGjnzfiwRtzReimfugvg41VtA7qGfDZ0'
+        recalculate_mn_chunk_ranking_table()
+        chunks = get_missing_chunk_ids(pastel_id)
+        self.assertEqual(len(chunks), 3)
+
+    def test_get_missing_chunks_2(self):
+        pastel_id = 'jXZVtBmehoxYPotVrLdByFNNcB8jsryXhFPgqRa95i2x1mknbzSef1oGjnzfiwRtzReimfugvg41VtA7qGfDZ0'
+        Chunk.update(stored=True).where(Chunk.id == 1).execute()
+        recalculate_mn_chunk_ranking_table()
+        chunks = get_missing_chunk_ids(pastel_id)
+        self.assertEqual(len(chunks), 2)

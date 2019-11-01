@@ -9,6 +9,7 @@ from datetime import datetime
 from peewee import DoesNotExist
 
 from core_modules.blackbox_modules.nsfw import get_nsfw_detector
+from core_modules.chunkmanager import get_chunkmanager
 from core_modules.database import Regticket, MASTERNODE_DB, REGTICKET_STATUS_ERROR, Chunk
 from core_modules.settings import NetWorkSettings
 from debug.masternode_conf import MASTERNODE_NAMES
@@ -94,9 +95,9 @@ def is_burn_tx_valid(regticket, txid):
 
 
 class ArtRegistrationServer:
-    def __init__(self, chainwrapper, chunkmanager):
+    def __init__(self, chainwrapper):
         self.__chainwrapper = chainwrapper
-        self.__chunkmanager = chunkmanager
+        self.__chunkmanager = get_chunkmanager()
 
     def __generate_signed_ticket(self, ticket):
 

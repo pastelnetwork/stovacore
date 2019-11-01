@@ -1,6 +1,9 @@
 import random
 import asyncio
 
+from peewee import DoesNotExist
+
+from core_modules.chunkmanager import get_chunkmanager
 from core_modules.database import Chunk
 from core_modules.http_rpc import RPCException
 from core_modules.helpers import hex_to_chunkid, chunkid_to_hex, require_true, get_pynode_digest_hex
@@ -10,11 +13,11 @@ from core_modules.blackbox_modules import luby
 
 
 class ChunkManagerRPC:
-    def __init__(self, chunkmanager, mn_manager, aliasmanager):
+    def __init__(self, mn_manager):
         self.__logger = initlogging('', __name__)
-        self.__chunkmanager = chunkmanager
-        self.__aliasmanager = aliasmanager
+        self.__chunkmanager = get_chunkmanager()
         self.__mn_manager = mn_manager
+        self.__aliasmanager = None
 
     async def issue_random_tests_forever(self, waittime, number_of_chunks=1):
         while True:
@@ -108,11 +111,16 @@ class ChunkManagerRPC:
         if not isinstance(data["chunkid"], str):
             raise TypeError("Invalid type for key chunkid in spotcheck")
 
-        chunkid = hex_to_chunkid(data["chunkid"])
+        chunkid = hex_to_chunkid(data["chunkid"])  # here chunkid is long integer number
 
-        chunk = self.__chunkmanager.get_chunk_if_we_have_it(chunkid)
+        # fetch chunk from DB, check if we store it
+        chunk = Chunk.get(chunk_id=str(chunkid))  # if we dont have chunk - exception will be raised and returned by RPC
+        if not chunk.stored:
+            raise RPCException('Given chunk is not stored')
 
-        return {"chunk": chunk}
+        chunk_data = get_chunkmanager().get_chunk_data(chunkid)
+
+        return {"chunk": chunk_data}
 
     def receive_rpc_download_image(self, data, *args, **kwargs):
         image_hash = data['image_hash']
