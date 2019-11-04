@@ -1,4 +1,5 @@
 import asyncio
+import random
 
 from peewee import DoesNotExist, IntegrityError
 
@@ -187,12 +188,6 @@ def recalculate_mn_chunk_ranking_table():
     and masternode will be big), so it needs to be called only when new masternode is added.
     There is a sense to limit frequence of calls (say, no more then once a minute or so).
     """
-    # FIXME: it would be clearer and more readable to implement all this SQL with Peewee ORM.
-    # ChunkMnDistance.select(
-    #     ChunkMnDistance.chunk,
-    #     ChunkMnDistance.masternode,
-    #     fn.ROW_NUMBER().over(partition_by=[ChunkMnDistance.chunk], order_by=[ChunkMnDistance.distance]).alias('r'))
-
     # calculate each masternode rank for each chunk
     subquery = '''
     select chunk_id, masternode_id, row_number() 
@@ -280,6 +275,87 @@ async def index_new_chunks_task():
         index_new_chunks()
 
 
+async def chunk_fetcher_task():
+    async def fetch_single_chunk_via_rpc(chunkid):
+        found = False
+        for masternode in get_chunk_owners(chunkid):
+            if masternode.pastel_id == get_blockchain_connection().pastelid:
+                # don't attempt to connect ourselves
+                continue
+
+            mn = masternode.get_rpc_client()
+
+            try:
+                data = await mn.send_rpc_fetchchunk(chunkid)
+            except RPCException as exc:
+                mnl_logger.info("FETCHCHUNK RPC FAILED for node %s with exception %s" % (mn.id, exc))
+                continue
+
+            if data is None:
+                mnl_logger.info("MN %s returned None for fetchchunk %s" % (mn.id, chunkid))
+                # chunk was not found
+                continue
+
+            # verify that digest matches
+            digest = get_pynode_digest_int(data)
+            if chunkid != str(digest):
+                mnl_logger.info("MN %s returned bad chunk for fetchchunk %s, mismatched digest: %s" % (
+                    mn.id, chunkid, digest))
+                continue
+
+            # add chunk to persistant storage and update DB info (`stored` flag) to True
+            get_chunkmanager().store_chunk_in_storage(int(chunkid), data)
+            Chunk.update(stored=True).where(Chunk.chunk_id == chunkid)
+            break
+
+        # nobody has this chunk
+        if not found:
+            # TODO: fall back to reconstruct it from luby blocks
+            mnl_logger.error("Unable to fetch chunk %s, luby reconstruction is not yet implemented!" %
+                             chunkid_to_hex(chunkid))
+
+    while True:
+        await asyncio.sleep(0)
+
+        # get chunks we are owner but we don't have
+        missing_chunks = get_missing_chunk_ids()[:NetWorkSettings.CHUNK_FETCH_PARALLELISM]
+
+        if len(missing_chunks) == 0:
+            # nothing to do, sleep a little
+            await asyncio.sleep(1)
+            continue
+
+        tasks = []
+        for missing_chunk in missing_chunks:
+            tasks.append(fetch_single_chunk_via_rpc(missing_chunk))
+
+        await asyncio.gather(*tasks)
+        await asyncio.sleep(1)
+
+
+async def run_ping_test_forever(self):
+    while True:
+        await asyncio.sleep(1)
+
+        Masternode.select()
+        mn = random.sample(Masternode.select())
+        if mn is None:
+            continue
+
+        data = b'PING'
+
+        try:
+            response_data = await mn.send_rpc_ping(data)
+        except RPCException as exc:
+            mnl_logger.info("PING RPC FAILED for node %s with exception %s" % (mn, exc))
+        else:
+            if response_data != data:
+                mnl_logger.warning("PING FAILED for node %s (%s != %s)" % (mn, data, response_data))
+            else:
+                 mnl_logger.debug("PING SUCCESS for node %s for chunk: %s" % (mn, data))
+
+
+
 class MasterNodeLogic:
     def __init__(self):
 
@@ -318,84 +394,7 @@ class MasterNodeLogic:
         # we like to enable/disable this from masternodedaemon
         self.issue_random_tests_forever = self.__chunkmanager_rpc.issue_random_tests_forever
 
-    async def run_ping_test_forever(self):
-        while True:
-            await asyncio.sleep(1)
-
-            mn = self.__mn_manager.get_random()
-            if mn is None:
-                continue
-
-            data = b'PING'
-
-            try:
-                response_data = await mn.send_rpc_ping(data)
-            except RPCException as exc:
-                self.__logger.info("PING RPC FAILED for node %s with exception %s" % (mn, exc))
-            else:
-                if response_data != data:
-                    self.__logger.warning("PING FAILED for node %s (%s != %s)" % (mn, data, response_data))
-                else:
-                    self.__logger.debug("PING SUCCESS for node %s for chunk: %s" % (mn, data))
-
                 # TODO: track successes/errors
-
-    async def run_chunk_fetcher_forever(self):
-        async def fetch_single_chunk_via_rpc(chunkid):
-            found = False
-            for masternode in get_chunk_owners(chunkid):
-                if masternode.pastel_id == get_blockchain_connection().pastelid:
-                    # don't attempt to connect ourselves
-                    continue
-
-                mn = masternode.get_rpc_client()
-
-                try:
-                    data = await mn.send_rpc_fetchchunk(chunkid)
-                except RPCException as exc:
-                    self.__logger.info("FETCHCHUNK RPC FAILED for node %s with exception %s" % (mn.id, exc))
-                    continue
-
-                if data is None:
-                    self.__logger.info("MN %s returned None for fetchchunk %s" % (mn.id, chunkid))
-                    # chunk was not found
-                    continue
-
-                # verify that digest matches
-                digest = get_pynode_digest_int(data)
-                if chunkid != str(digest):
-                    self.__logger.info("MN %s returned bad chunk for fetchchunk %s, mismatched digest: %s" % (
-                        mn.id, chunkid, digest))
-                    continue
-
-                # add chunk to persistant storage and update DB info (`stored` flag) to True
-                get_chunkmanager().store_chunk_in_storage(int(chunkid), data)
-                Chunk.update(stored=True).where(Chunk.chunk_id == chunkid)
-                break
-
-            # nobody has this chunk
-            if not found:
-                # TODO: fall back to reconstruct it from luby blocks
-                self.__logger.error("Unable to fetch chunk %s, luby reconstruction is not yet implemented!" %
-                                    chunkid_to_hex(chunkid))
-
-        while True:
-            await asyncio.sleep(0)
-
-            # get chunks we are owner but we don't have
-            missing_chunks = get_missing_chunk_ids()[:NetWorkSettings.CHUNK_FETCH_PARALLELISM]
-
-            if len(missing_chunks) == 0:
-                # nothing to do, sleep a little
-                await asyncio.sleep(1)
-                continue
-
-            tasks = []
-            for missing_chunk in missing_chunks:
-                tasks.append(fetch_single_chunk_via_rpc(missing_chunk))
-
-            await asyncio.gather(*tasks)
-            await asyncio.sleep(1)
 
     async def run_rpc_server(self):
         await self.__rpcserver.run_server()

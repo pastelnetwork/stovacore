@@ -129,9 +129,9 @@ class RPCClient:
         if type(response_data["chunk"]) not in [bytes, type(None)]:
             raise TypeError("chunk is not bytes or None: %s" % type(response_data["chunk"]))
 
-        chunk = response_data["chunk"]
+        chunk_data = response_data["chunk"]
 
-        return chunk
+        return chunk_data
 
     async def __send_mn_ticket_rpc(self, rpcreq, rpcresp, data):
         await asyncio.sleep(0)

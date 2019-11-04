@@ -1,3 +1,6 @@
+### Run tests
+`python -m unittest` (from the repository root)
+
 ### Set up and run full masternode
 
 Cloud instance (or bare metal server) is required. Minimal recommended instance configuration:

@@ -1,3 +1,4 @@
+import random
 import unittest
 
 from core_modules.database import MASTERNODE_DB, DB_MODELS, Masternode, Chunk, ChunkMnDistance, ChunkMnRanked
