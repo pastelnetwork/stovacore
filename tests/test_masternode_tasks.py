@@ -1,8 +1,8 @@
-import random
 import unittest
-
+from unittest.mock import patch
 from core_modules.database import MASTERNODE_DB, DB_MODELS, Masternode, Chunk, ChunkMnDistance, ChunkMnRanked
-from pynode.tasks import index_new_chunks, recalculate_mn_chunk_ranking_table, get_missing_chunk_ids
+from pynode.tasks import index_new_chunks, recalculate_mn_chunk_ranking_table, get_missing_chunk_ids, \
+    refresh_masternode_list
 
 
 class TestXORDistanceTask(unittest.TestCase):
@@ -73,3 +73,37 @@ class TestCalculateRankingTableTask(unittest.TestCase):
         recalculate_mn_chunk_ranking_table()
         chunks = get_missing_chunk_ids(pastel_id)
         self.assertEqual(len(chunks), 2)
+
+
+class MockedBlockchain:
+    def masternode_list(self):
+        return {
+            'mn4': {
+                'extKey': 'jXZVtBmehoxYPotVrLdByFNNcB8jsryXhFPgqRa95i2x1mknbzSef1oGjnzfiwRtzReimfugvg41VtA7qGfDZR',
+                'extAddress': '18.216.28.255:4444'
+            },
+            'mn5': {
+                'extKey': 'jXY39ehN4BWWpXLt4Q2zpcmypSAN9saWCweGRtJTxK87ktftjigfJwE6X9JoVfBduDjzEG4uBVR8Es6jVFMAbW',
+                'extAddress': '18.191.111.96:4444'
+            },
+            'mn6': {
+                'extKey': 'jXa2jiukvPktEdPvGo5nCLaMHxFRLneXMUNLGU4AUkuMmFq6ADerSJZg3Htd7rGjZo6HM92CgUFW1LjEwrKubd',
+                'extAddress': '18.222.118.140:4444'
+            }
+        }
+
+
+def get_mocked_bc_connection():
+    return MockedBlockchain()
+
+
+class RefreshMNListTestCase(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    @patch('cnode_connection.get_blockchain_connection', side_effect=get_mocked_bc_connection)
+    def test_refresh_mn_list(self, mocked_get_blockchain_connection):
+        # refresh_masternode_list()
+        a = mocked_get_blockchain_connection()
+
+        print(a.masternode_list())
