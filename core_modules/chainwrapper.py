@@ -12,12 +12,6 @@ from core_modules.settings import NetWorkSettings
 from cnode_connection import get_blockchain_connection
 
 
-class BlockChainTicket:
-    def __init__(self, tickettype, data):
-        self.tickettype = tickettype
-        self.data = data
-
-
 class ChainWrapper:
     def __init__(self, artregistry):
         self.__logger = initlogging('', __name__)
@@ -54,7 +48,6 @@ class ChainWrapper:
         return None, None
 
     def get_block_distance(self, atxid, btxid):
-        # TODO: clean up this interface
         if type(atxid) == bytes:
             atxid = bytes_to_hex(atxid)
         if type(btxid) == bytes:

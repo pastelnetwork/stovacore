@@ -8,7 +8,7 @@ from cnode_connection import get_blockchain_connection
 from core_modules.artregistry import ArtRegistry
 from core_modules.blackbox_modules.luby import decode as luby_decode, NotEnoughChunks
 from core_modules.chainwrapper import ChainWrapper
-from core_modules.http_rpc import RPCException, RPCClient
+from core_modules.rpc_client import RPCException, RPCClient
 from core_modules.masternode_ticketing import IDRegistrationClient, TransferRegistrationClient, \
     TradeRegistrationClient
 from core_modules.masternode_ticketing import FinalIDTicket, FinalTradeTicket, FinalTransferTicket, \

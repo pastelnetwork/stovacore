@@ -450,7 +450,7 @@ class Signature(TicketModelBase):
 
 
 class MasterNodeSignedTicket(TicketModelBase):
-    def validate(self, chainwrapper):
+    def validate(self, chainwrapperchainwrapper):
         # validate that the author is correct and pubkeys match MNs
         if self.signature_author.pubkey != self.ticket.author:
             raise ValueError("Signature pubkey does not match regticket.author!")

@@ -5,18 +5,11 @@ from peewee import DoesNotExist, IntegrityError
 
 from core_modules.database import Masternode, Chunk, ChunkMnDistance, Regticket, ChunkMnRanked, MASTERNODE_DB
 from core_modules.logger import initlogging
-from core_modules.artregistry import ArtRegistry
-from core_modules.autotrader import AutoTrader
-from core_modules.blockchain import NotEnoughConfirmations
-from core_modules.chainwrapper import ChainWrapper
-from core_modules.chunkmanager import ChunkManager, get_chunkmanager
-from core_modules.chunkmanager_modules.chunkmanager_rpc import ChunkManagerRPC
-from core_modules.ticket_models import FinalActivationTicket, FinalTransferTicket, FinalTradeTicket, RegistrationTicket
-from core_modules.http_rpc import RPCException, RPCServer
-from pynode.masternode_communication import MasternodeManager
-from core_modules.masternode_ticketing import ArtRegistrationServer
+from core_modules.chunkmanager import get_chunkmanager
+from core_modules.ticket_models import RegistrationTicket
+from core_modules.rpc_client import RPCException
 from core_modules.settings import NetWorkSettings
-from core_modules.helpers import get_pynode_digest_int, bytes_to_chunkid, chunkid_to_hex
+from core_modules.helpers import get_pynode_digest_int, chunkid_to_hex
 from cnode_connection import get_blockchain_connection
 
 mnl_logger = initlogging('', __name__)
@@ -353,51 +346,3 @@ async def run_ping_test_forever(self):
                 mnl_logger.warning("PING FAILED for node %s (%s != %s)" % (mn, data, response_data))
             else:
                  mnl_logger.debug("PING SUCCESS for node %s for chunk: %s" % (mn, data))
-
-
-
-class MasterNodeLogic:
-    def __init__(self):
-
-        self.__logger = initlogging('', __name__)
-
-        # the art registry
-        self.__artregistry = ArtRegistry()
-
-        # set up ChainWrapper
-        self.__chainwrapper = ChainWrapper(self.__artregistry)
-
-        # the automatic trader
-        self.__autotrader = AutoTrader(self.__artregistry)
-
-        # masternode manager
-        self.__mn_manager = MasternodeManager()
-
-        self.__chunkmanager_rpc = ChunkManagerRPC(self.__mn_manager)
-
-        # art registration server
-        self.__artregistrationserver = ArtRegistrationServer(self.__chainwrapper)
-
-        # start rpc server
-        self.__rpcserver = RPCServer()
-
-        self.__rpcserver.add_callback("SPOTCHECK_REQ", "SPOTCHECK_RESP",
-                                      self.__chunkmanager_rpc.receive_rpc_spotcheck)
-        self.__rpcserver.add_callback("FETCHCHUNK_REQ", "FETCHCHUNK_RESP",
-                                      self.__chunkmanager_rpc.receive_rpc_fetchchunk)
-
-        self.__rpcserver.add_callback("IMAGEDOWNLOAD_REQ", "IMAGEDOWNLOAD_RESP",
-                                      self.__chunkmanager_rpc.receive_rpc_download_image)
-
-        self.__artregistrationserver.register_rpcs(self.__rpcserver)
-
-        # we like to enable/disable this from masternodedaemon
-        self.issue_random_tests_forever = self.__chunkmanager_rpc.issue_random_tests_forever
-
-                # TODO: track successes/errors
-
-    async def run_rpc_server(self):
-        await self.__rpcserver.run_server()
-
-    async def stop_rpc_server(self):
-        await self.__rpcserver.stop_server()

@@ -1,4 +1,4 @@
-from core_modules.http_rpc import RPCClient
+from core_modules.rpc_client import RPCClient
 from cnode_connection import get_blockchain_connection
 
 

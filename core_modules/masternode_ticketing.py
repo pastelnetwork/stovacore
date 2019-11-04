@@ -111,31 +111,24 @@ class ArtRegistrationServer:
         signed_ticket.validate(ticket)
         return signed_ticket
 
-    def register_rpcs(self, rpcserver):
-        rpcserver.add_callback("REGTICKET_REQ", "REGTICKET_RESP",
-                               self.masternode_validate_registration_ticket)
-        rpcserver.add_callback("IMAGE_UPLOAD_MN0_REQ", "IMAGE_UPLOAD_MN0_RESP",
-                               self.masternode_image_upload_request_mn0)
-        rpcserver.add_callback("IMAGE_UPLOAD_REQ", "IMAGE_UPLOAD_RESP",
-                               self.masternode_image_upload_request)
-
-        rpcserver.add_callback("TXID_10_REQ", "TXID_10_RESP",
-                               self.masternode_validate_txid_upload_code_image,
-                               coroutine=True)
-        rpcserver.add_callback("REGTICKET_MN0_CONFIRM_REQ", "REGTICKET_MN0_CONFIRM_RESP",
-                               self.masternode_mn0_confirm)
-
-        rpcserver.add_callback("REGTICKET_STATUS_REQ", "REGTICKET_STATUS_RESP",
-                               self.regticket_status)
-
-        # callbacks below are not used right now.
-        # TODO: inspect and remove if not needed
-        rpcserver.add_callback("SIGNREGTICKET_REQ", "SIGNREGTICKET_RESP",
-                               self.masternode_sign_registration_ticket)
-        rpcserver.add_callback("SIGNACTTICKET_REQ", "SIGNACTTICKET_RESP",
-                               self.masternode_sign_activation_ticket)
-        rpcserver.add_callback("PLACEONBLOCKCHAIN_REQ", "PLACEONBLOCKCHAIN_RESP",
-                               self.masternode_place_ticket_on_blockchain)
+    @property
+    def rpc_handler_list(self):
+        return [("REGTICKET_REQ", "REGTICKET_RESP",
+                 self.masternode_validate_registration_ticket),
+                ("IMAGE_UPLOAD_MN0_REQ", "IMAGE_UPLOAD_MN0_RESP",
+                 self.masternode_image_upload_request_mn0),
+                ("IMAGE_UPLOAD_REQ", "IMAGE_UPLOAD_RESP",
+                 self.masternode_image_upload_request),
+                ("TXID_10_REQ", "TXID_10_RESP",
+                 self.masternode_validate_txid_upload_code_image,
+                 True),
+                ("REGTICKET_MN0_CONFIRM_REQ", "REGTICKET_MN0_CONFIRM_RESP",
+                 self.masternode_mn0_confirm),
+                ("REGTICKET_STATUS_REQ", "REGTICKET_STATUS_RESP",
+                 self.regticket_status),
+                ("PLACEONBLOCKCHAIN_REQ", "PLACEONBLOCKCHAIN_RESP",
+                 self.masternode_place_ticket_on_blockchain)
+                ]
 
     def masternode_sign_registration_ticket(self, data, *args, **kwargs):
         # parse inputs
@@ -296,8 +289,9 @@ class ArtRegistrationServer:
                     self.masternode_place_image_data_in_chunkstorage(regticket, regticket_db.image_data)
 
                     # write final ticket into blockchain
-                    bc_response = get_blockchain_connection().register_art_ticket(final_ticket.serialize_base64(), get_blockchain_connection().pastelid,
-                                                                 regticket.base64_imagedatahash)
+                    bc_response = get_blockchain_connection().register_art_ticket(final_ticket.serialize_base64(),
+                                                                                  get_blockchain_connection().pastelid,
+                                                                                  regticket.base64_imagedatahash)
                     return bc_response
                     # TODO: store image into chunkstorage - later, when activation happens
                     # TODO: extract all this into separate function

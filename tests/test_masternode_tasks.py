@@ -2,7 +2,7 @@ import random
 import unittest
 
 from core_modules.database import MASTERNODE_DB, DB_MODELS, Masternode, Chunk, ChunkMnDistance, ChunkMnRanked
-from pynode.masternode_logic import index_new_chunks, recalculate_mn_chunk_ranking_table, get_missing_chunk_ids
+from pynode.tasks import index_new_chunks, recalculate_mn_chunk_ranking_table, get_missing_chunk_ids
 
 
 class TestXORDistanceTask(unittest.TestCase):

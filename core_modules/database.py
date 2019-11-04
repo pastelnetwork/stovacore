@@ -3,7 +3,7 @@ from peewee import (Model, SqliteDatabase, BlobField, DateTimeField, DecimalFiel
                     ForeignKeyField)
 
 from core_modules.helpers import bytes_to_chunkid
-from core_modules.http_rpc import RPCClient
+from core_modules.rpc_client import RPCClient
 
 MASTERNODE_DB = SqliteDatabase(None)
 
