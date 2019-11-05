@@ -1,8 +1,8 @@
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 from core_modules.database import MASTERNODE_DB, DB_MODELS, Masternode, Chunk, ChunkMnDistance, ChunkMnRanked
 from pynode.tasks import index_new_chunks, recalculate_mn_chunk_ranking_table, get_missing_chunk_ids, \
-    refresh_masternode_list
+    refresh_masternode_list, update_masternode_list
 
 
 class TestXORDistanceTask(unittest.TestCase):
@@ -74,10 +74,7 @@ class TestCalculateRankingTableTask(unittest.TestCase):
         chunks = get_missing_chunk_ids(pastel_id)
         self.assertEqual(len(chunks), 2)
 
-
-class MockedBlockchain:
-    def masternode_list(self):
-        return {
+mn_list = {
             'mn4': {
                 'extKey': 'jXZVtBmehoxYPotVrLdByFNNcB8jsryXhFPgqRa95i2x1mknbzSef1oGjnzfiwRtzReimfugvg41VtA7qGfDZR',
                 'extAddress': '18.216.28.255:4444'
@@ -93,17 +90,36 @@ class MockedBlockchain:
         }
 
 
-def get_mocked_bc_connection():
-    return MockedBlockchain()
-
-
 class RefreshMNListTestCase(unittest.TestCase):
     def setUp(self):
-        pass
+        MASTERNODE_DB.init(':memory:')
+        MASTERNODE_DB.connect(reuse_if_open=True)
+        MASTERNODE_DB.create_tables(DB_MODELS)
 
-    @patch('cnode_connection.get_blockchain_connection', side_effect=get_mocked_bc_connection)
-    def test_refresh_mn_list(self, mocked_get_blockchain_connection):
-        # refresh_masternode_list()
-        a = mocked_get_blockchain_connection()
+    @patch('cnode_connection._blockchain')
+    @patch('cnode_connection.BlockChain')
+    def test_refresh_masternode_list(self, BC_Class, bc_obj):
+        bc_obj.masternode_list.return_value = mn_list
+        refresh_masternode_list()
+        self.assertEqual(Masternode.select().count(), 3)
+        self.assertEqual(ChunkMnDistance.select().count(), 0)
 
-        print(a.masternode_list())
+    @patch('cnode_connection._blockchain')
+    @patch('cnode_connection.BlockChain')
+    def test_calculate_xor_distances_for_masternodes(self, BC_Class, bc_obj):
+        bc_obj.masternode_list.return_value = mn_list
+        for i in range(3):
+            Chunk.create(chunk_id='1231231231231231232323934384834890089238429382938429384934{}'.format(i),
+                         image_hash=b'asdasdasd')
+        refresh_masternode_list()
+        self.assertEqual(Masternode.select().count(), 3)
+        self.assertEqual(ChunkMnDistance.select().count(), 9)
+
+
+# TODO:
+#      - chunk_fetcher_task
+#      - test `get_missing_chunk_ids`
+#      - test `get_chunk_owners`
+
+# TODO:
+#  Test RPC Server
