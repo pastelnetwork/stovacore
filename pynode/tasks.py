@@ -168,7 +168,7 @@ def move_confirmed_chunks_to_persistant_storage():
      - fetch each chunk from DB, if it's confirmed - move to persistant storage.
     """
 
-    for chunk_id in get_chunkmanager().index_temp_storage:
+    for chunk_id in get_chunkmanager().index_temp_storage():
         chunk_db = Chunk.get(chunk_id=chunk_id)
         if chunk_db.confirmed:
             # move to persistant storge
@@ -220,7 +220,11 @@ def get_missing_chunk_ids(pastel_id=None):
     if not pastel_id:
         pastel_id = get_blockchain_connection().pastelid
     # return chunks that we're owner of but don't have it in the storage
-    current_mn_id = Masternode.get(pastel_id=pastel_id).id
+    try:
+        current_mn_id = Masternode.get(pastel_id=pastel_id).id
+    except DoesNotExist:
+        return []
+
     chunks_ranked_qs = ChunkMnRanked.select().join(Chunk).where(
         (ChunkMnRanked.masternode_id == current_mn_id) & (Chunk.stored == False))
     return [c.chunk.chunk_id for c in chunks_ranked_qs]

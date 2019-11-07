@@ -2,7 +2,8 @@ import unittest
 from unittest.mock import patch, Mock
 from core_modules.database import MASTERNODE_DB, DB_MODELS, Masternode, Chunk, ChunkMnDistance, ChunkMnRanked
 from pynode.tasks import index_new_chunks, recalculate_mn_chunk_ranking_table, get_missing_chunk_ids, \
-    refresh_masternode_list, update_masternode_list
+    refresh_masternode_list, update_masternode_list, move_confirmed_chunks_to_persistant_storage, \
+    get_and_proccess_new_activation_tickets
 
 
 class TestXORDistanceTask(unittest.TestCase):
@@ -116,10 +117,31 @@ class RefreshMNListTestCase(unittest.TestCase):
         self.assertEqual(ChunkMnDistance.select().count(), 9)
 
 
-# TODO:
-#      - chunk_fetcher_task
-#      - test `get_missing_chunk_ids`
-#      - test `get_chunk_owners`
+class TmpStorageTaskTestCase(unittest.TestCase):
+    @patch('core_modules.chunkmanager._chunkmanager')
+    def test_tmp_storage_task(self, chunkmanager):
+        chunkmanager.index_temp_storage = Mock(return_value=[])
+        move_confirmed_chunks_to_persistant_storage()
+        chunkmanager.index_temp_storage.assert_called()
 
-# TODO:
-#  Test RPC Server
+
+# get_and_proccess_new_activation_tickets
+class ProcessNewActTicketsTaskTestCase(unittest.TestCase):
+    # @patch('core_modules.chunkmanager._chunkmanager')
+    def test_tmp_storage_task(self):
+        get_and_proccess_new_activation_tickets()
+        # chunkmanager.index_temp_storage = Mock(return_value=[])
+        # move_confirmed_chunks_to_persistant_storage()
+        # chunkmanager.index_temp_storage.assert_called()
+
+
+class GetMissingChunkTestCase(unittest.TestCase):
+    def setUp(self):
+        MASTERNODE_DB.init(':memory:')
+        MASTERNODE_DB.connect(reuse_if_open=True)
+        MASTERNODE_DB.create_tables(DB_MODELS)
+
+    @patch('cnode_connection._blockchain')
+    def test_get_missin_chunk_empty_db(self, bc):
+        bc.pastelid = 'Somerandompastelid'
+        get_missing_chunk_ids()
