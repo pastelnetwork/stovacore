@@ -74,7 +74,8 @@ NetWorkSettings.MAX_TICKET_SIZE = 75 * 1024  # 75kbyte
 NetWorkSettings.IMAGE_MAX_SIZE = 100 * 1024 * 1024  # 100MB
 # FIXME: MAX_REGISTRATION_BLOCK_DISTANCE increased from 3 to 10 cause ticket validation function is too slow for 3 blocks.
 # NetWorkSettings.MAX_REGISTRATION_BLOCK_DISTANCE = 3  # 3 blocks
-NetWorkSettings.MAX_REGISTRATION_BLOCK_DISTANCE = 10  # 3 blocks
+# NetWorkSettings.MAX_REGISTRATION_BLOCK_DISTANCE = 10  # 3 blocks
+NetWorkSettings.MAX_REGISTRATION_BLOCK_DISTANCE = 10000000  # 3 blocks
 
 NetWorkSettings.THUMBNAIL_DIMENSIONS = (240, 240)
 NetWorkSettings.THUMBNAIL_MAX_SIZE = 100 * 1024  # 100 kb

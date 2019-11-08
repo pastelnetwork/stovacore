@@ -235,6 +235,10 @@ class ArtRegistrationServer:
         try:
             # Verify that given upload_code exists
             # !!!! - regticket with same artists_pk and image_hash may already exists
+            # FIXME: move to separate function
+            #  def verify_regticket(artist_pk, image_hash):
+            #      ...
+
             regticket_db_set = Regticket.select().where(Regticket.artist_pk == artist_pk,
                                                         Regticket.image_hash == image_hash)
             if len(regticket_db_set) == 0:
@@ -270,28 +274,44 @@ class ArtRegistrationServer:
                             format(current_block, regticket.blocknum)
                         regticket_db.error = error_msg
                         raise Exception(error_msg)
-                    # Tcreate final ticket
+
+                    artist_signature = Signature(
+                        serialized=regticket_db.artists_signature_ticket)
+                    mn0_signature = Signature(dictionary={
+                        "signature": get_blockchain_connection().pastelid_sign(
+                            base64.b64encode(
+                                regticket_db.regticket).decode()),
+                        "pastelid": get_blockchain_connection().pastelid
+                    })
+                    mn1_signature = Signature(
+                        serialized=regticket_db.mn1_serialized_signature)
+                    mn2_signature = Signature(
+                        serialized=regticket_db.mn2_serialized_signature)
+
                     final_ticket = generate_final_regticket(regticket,
-                                                            Signature(
-                                                                serialized=regticket_db.artists_signature_ticket),
-                                                            (
-                                                                Signature(dictionary={
-                                                                    "signature": get_blockchain_connection().pastelid_sign(
-                                                                        base64.b64encode(
-                                                                            regticket_db.regticket).decode()),
-                                                                    "pastelid": get_blockchain_connection().pastelid
-                                                                }), Signature(
-                                                                    serialized=regticket_db.mn1_serialized_signature),
-                                                                Signature(
-                                                                    serialized=regticket_db.mn2_serialized_signature)))
+                                                            artist_signature,
+                                                            (mn0_signature, mn1_signature, mn2_signature)
+                                                            )
 
                     # store image and thumbnail in chunkstorage
                     self.masternode_place_image_data_in_chunkstorage(regticket, regticket_db.image_data)
 
+                    signatures_dict = {
+                        "artist": {artist_signature.pastelid: artist_signature.signature},
+                        "mn2": {mn1_signature.pastelid: mn1_signature.signature},
+                        "mn3": {mn2_signature.pastelid: mn2_signature.signature}
+                    }
+
                     # write final ticket into blockchain
-                    bc_response = get_blockchain_connection().register_art_ticket(final_ticket.serialize_base64(),
-                                                                                  get_blockchain_connection().pastelid,
-                                                                                  regticket.base64_imagedatahash)
+                    art_ticket_data = {
+                        'base64_data': final_ticket.serialize_base64(),
+                        'signatures_dict': signatures_dict,
+                        'key1': artist_signature.pastelid,
+                        'key2': regticket.base64_imagedatahash,
+                        'art_block': regticket.blocknum,
+                        'fee': int(regticket_db.localfee)
+                    }
+                    bc_response = get_blockchain_connection().register_art_ticket(**art_ticket_data)
                     return bc_response
                     # TODO: store image into chunkstorage - later, when activation happens
                     # TODO: extract all this into separate function

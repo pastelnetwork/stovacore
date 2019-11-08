@@ -1,3 +1,5 @@
+import json
+
 import time
 
 from http.client import CannotSendRequest, RemoteDisconnected
@@ -213,7 +215,7 @@ class BlockChain:
         if blocknum is None:
             result = self.__call_jsonrpc("masternode", "workers")
         else:
-            result = self.__call_jsonrpc("masternode", "workers", str(blocknum))
+            result = self.__call_jsonrpc("masternode", "workers", blocknum)
         # cNode returns data with the following format:
         # {<block_number>: [{node_data1, node_data2, node_data3}]}
         # FIXME: only for testing while `masternode workers` result is not up to date
@@ -268,8 +270,26 @@ class BlockChain:
     def pastelid_newkey(self, passphrase):
         return self.__call_jsonrpc("pastelid", "newkey", passphrase)
 
-    def register_art_ticket(self, base64_data, key1, key2):
-        return self.__call_jsonrpc("tickets", "register", "art", base64_data, key1, key2)
+    def register_art_ticket(self, base64_data, signatures_dict, key1, key2, art_block, fee):
+        """
+        :param base64_data: Base64 encoded original ticket created by the artist.
+        :param signatures_dict: Signatures (base64) and PastelIDs of the author and verifying masternodes (MN2 and MN3)
+        as JSON:
+            {
+                "artist":{"authorsPastelID": "authorsSignature"},
+                "mn2":{"mn2PastelID":"mn2Signature"},
+                "mn3":{"mn3PastelID":"mn3Signature"}
+            }
+
+        :param key1: The first key to search ticket.
+        :param key2: The second key to search ticket.
+        :param art_block: The block number when the ticket was created by the wallet. (int)
+        :param fee: The agreed upon storag fee.
+         :return:
+        """
+        parameters = [base64_data, json.dumps(signatures_dict), self.pastelid, self.passphrase, key1, key2, art_block,
+                      fee]
+        return self.__call_jsonrpc("tickets", "register", "art", *parameters)
 
     def search_chain(self, confirmations=NetWorkSettings.REQUIRED_CONFIRMATIONS):
         blockcount = self.getblockcount() - 1
