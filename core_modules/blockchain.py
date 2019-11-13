@@ -56,10 +56,15 @@ class BlockChain:
             self.pastelid = pastelid
 
     def get_or_create_pastel_id(self):
+        # FIXME: when fetching list of pastelID need to check `registered` or `status` flag if
+        #  the given pastelid is registered
+        #  if not - register.
         pastelid_list = self.pastelid_list()
 
         if not len(pastelid_list):
             result = self.pastelid_newkey(self.passphrase)
+            response = self.mnid_register(result['pastelid'], self.passphrase)
+            self.__logger.warn('Registered mnid {}, txid: {}'.format(result['pastelid'], response['txid']))
             return result['pastelid']
         else:
             return pastelid_list[0]['PastelID']
@@ -269,6 +274,9 @@ class BlockChain:
 
     def pastelid_newkey(self, passphrase):
         return self.__call_jsonrpc("pastelid", "newkey", passphrase)
+
+    def mnid_register(self, pastelid, passphrase):
+        return self.__call_jsonrpc("tickets", "register", "mnid", pastelid, passphrase)
 
     def register_art_ticket(self, base64_data, signatures_dict, key1, key2, art_block, fee):
         """
