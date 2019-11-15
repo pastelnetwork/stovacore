@@ -1,9 +1,14 @@
+import json
+
 from peewee import (Model, SqliteDatabase, BlobField, DateTimeField, DecimalField, BooleanField, IntegerField,
                     CharField,
                     ForeignKeyField)
 
+from cnode_connection import get_blockchain_connection
 from core_modules.helpers import bytes_to_chunkid
 from core_modules.rpc_client import RPCClient
+from core_modules.settings import NetWorkSettings
+from core_modules.ticket_models import RegistrationTicket, Signature
 
 MASTERNODE_DB = SqliteDatabase(None)
 
@@ -39,6 +44,44 @@ class Regticket(Model):
     class Meta:
         database = MASTERNODE_DB
         table_name = 'regticket'
+
+    def write_to_blockchain(self):
+        ticket = RegistrationTicket(serialized=self.regticket)
+        current_block = get_blockchain_connection().getblockcount()
+        # verify if confirmation receive for 5 blocks or less from regticket creation.
+        if current_block - ticket.blocknum > NetWorkSettings.MAX_CONFIRMATION_DISTANCE_IN_BLOCKS:
+            self.status = REGTICKET_STATUS_ERROR
+            error_msg = 'Second confirmation received too late - current block {}, regticket block: {}'. \
+                format(current_block, ticket.blocknum)
+            self.error = error_msg
+            raise Exception(error_msg)
+
+        artist_signature = Signature(
+            serialized=self.artists_signature_ticket)
+        mn2_signature = Signature(
+            serialized=self.mn1_serialized_signature)
+        mn3_signature = Signature(
+            serialized=self.mn2_serialized_signature)
+
+        signatures_dict = {
+            "artist": {artist_signature.pastelid: artist_signature.signature},
+            "mn2": {mn2_signature.pastelid: mn2_signature.signature},
+            "mn3": {mn3_signature.pastelid: mn3_signature.signature}
+        }
+
+        # write final ticket into blockchain
+        art_ticket_data = {
+            'base64_data': ticket.serialize_base64(),
+            'signatures_dict': signatures_dict,
+            'key1': artist_signature.pastelid,
+            'key2': ticket.base64_imagedatahash,
+            'art_block': ticket.blocknum,
+            'fee': int(self.localfee)
+        }
+        with open('debug_data.json', 'w') as f:
+            f.write(json.dumps(art_ticket_data))
+        bc_response = get_blockchain_connection().register_art_ticket(**art_ticket_data)
+        return bc_response
 
 
 # FIXME: probably this field should be stored in DB (if we need them at all). then were in old implementation

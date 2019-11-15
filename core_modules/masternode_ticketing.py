@@ -25,19 +25,6 @@ from core_modules.logger import initlogging
 mn_ticket_logger = initlogging('Logger', __name__)
 
 
-def generate_final_regticket(ticket, signature, mn_signatures):
-    # create combined registration ticket
-    final_ticket = FinalRegistrationTicket(dictionary={
-        "ticket": ticket.to_dict(),
-        "signature_author": signature.to_dict(),
-        "signature_1": mn_signatures[0].to_dict(),
-        "signature_2": mn_signatures[1].to_dict(),
-        "signature_3": mn_signatures[2].to_dict(),
-        "nonce": str(uuid.uuid4()),
-    })
-    return final_ticket
-
-
 def is_burn_10_tx_height_valid(regticket, txid):
     regticket = RegistrationTicket(serialized=regticket.regticket)
     raw_tx_data = get_blockchain_connection().getrawtransaction(txid, verbose=1)
@@ -122,8 +109,8 @@ class ArtRegistrationServer:
                 ("TXID_10_REQ", "TXID_10_RESP",
                  self.masternode_validate_txid_upload_code_image,
                  True),
-                ("REGTICKET_MN0_CONFIRM_REQ", "REGTICKET_MN0_CONFIRM_RESP",
-                 self.masternode_mn0_confirm),
+                ("REGTICKET_MN1_CONFIRM_REQ", "REGTICKET_MN1_CONFIRM_RESP",
+                 self.masternode_mn1_confirm),
                 ("REGTICKET_STATUS_REQ", "REGTICKET_STATUS_RESP",
                  self.regticket_status),
                 ("PLACEONBLOCKCHAIN_REQ", "PLACEONBLOCKCHAIN_RESP",
@@ -226,100 +213,47 @@ class ArtRegistrationServer:
             raise Exception('Given upload code DOES NOT exists with required public key')
         return {'status': regticket_db.status, 'error': regticket_db.error}
 
-    def masternode_mn0_confirm(self, data, *args, **kwargs):
+    def masternode_mn1_confirm(self, data, *args, **kwargs):
         # parse inputs
         artist_pk, image_hash, serialized_signature = data
         sender_id = kwargs.get('sender_id')
         MASTERNODE_DB.connect(reuse_if_open=True)
-        mn_ticket_logger.info('masternode_mn0_confirm: received confirmation from {}'.format(sender_id))
-        try:
-            # Verify that given upload_code exists
-            # !!!! - regticket with same artists_pk and image_hash may already exists
-            # FIXME: move to separate function
-            #  def verify_regticket(artist_pk, image_hash):
-            #      ...
+        mn_ticket_logger.info('masternode_mn1_confirm: received confirmation from {}'.format(sender_id))
 
-            regticket_db_set = Regticket.select().where(Regticket.artist_pk == artist_pk,
-                                                        Regticket.image_hash == image_hash)
-            if len(regticket_db_set) == 0:
-                raise Exception('Regticket not found for given artist ID and image hash')
+        regticket_db_set = Regticket.select().where(Regticket.artist_pk == artist_pk,
+                                                    Regticket.image_hash == image_hash)
+        if len(regticket_db_set) == 0:
+            raise Exception('Regticket not found for given artist ID and image hash')
 
-            if len(regticket_db_set) > 2:
-                regticket_db = regticket_db_set[-1]
-                Regticket.delete().where(Regticket.id < regticket_db.id)
-            else:
-                regticket_db = regticket_db_set[0]
+        if len(regticket_db_set) > 2:
+            regticket_db = regticket_db_set[-1]
+            Regticket.delete().where(Regticket.id < regticket_db.id)
+        else:
+            regticket_db = regticket_db_set[0]
 
-            if regticket_db.is_valid_mn1 is None:
-                # first confirmation has came
-                regticket_db.is_valid_mn1 = True
-                regticket_db.mn1_pk = sender_id
-                regticket_db.mn1_serialized_signature = serialized_signature
+        if regticket_db.is_valid_mn1 is None:
+            # first confirmation has came
+            regticket_db.is_valid_mn1 = True
+            regticket_db.mn1_pk = sender_id
+            regticket_db.mn1_serialized_signature = serialized_signature
+            regticket_db.save()
+        else:
+            if regticket_db.is_valid_mn2 is None:
+                if regticket_db.mn1_pk == sender_id:
+                    raise Exception('I already have confirmation from this masternode')
+                # second confirmation has came
+                regticket_db.is_valid_mn2 = True
+                regticket_db.mn2_pk = sender_id
+                regticket_db.mn2_serialized_signature = serialized_signature
                 regticket_db.save()
+                regticket = RegistrationTicket(serialized=regticket_db.regticket)
+                # store image and thumbnail in chunkstorage
+                self.masternode_place_image_data_in_chunkstorage(regticket, regticket_db.image_data)
+
+                txid = regticket_db.write_to_blockchain()
+                return txid
             else:
-                if regticket_db.is_valid_mn2 is None:
-                    if regticket_db.mn1_pk == sender_id:
-                        raise Exception('I already have confirmation from this masternode')
-                    # second confirmation has came
-                    regticket_db.is_valid_mn2 = True
-                    regticket_db.mn2_pk = sender_id
-                    regticket_db.mn2_serialized_signature = serialized_signature
-                    regticket_db.save()
-                    regticket = RegistrationTicket(serialized=regticket_db.regticket)
-                    current_block = get_blockchain_connection().getblockcount()
-                    # verify if confirmation receive for 5 blocks or less from regticket creation.
-                    if current_block - regticket.blocknum > NetWorkSettings.MAX_CONFIRMATION_DISTANCE_IN_BLOCKS:
-                        regticket_db.status = REGTICKET_STATUS_ERROR
-                        error_msg = 'Second confirmation received too late - current block {}, regticket block: {}'. \
-                            format(current_block, regticket.blocknum)
-                        regticket_db.error = error_msg
-                        raise Exception(error_msg)
-
-                    artist_signature = Signature(
-                        serialized=regticket_db.artists_signature_ticket)
-                    mn0_signature = Signature(dictionary={
-                        "signature": get_blockchain_connection().pastelid_sign(
-                            base64.b64encode(
-                                regticket_db.regticket).decode()),
-                        "pastelid": get_blockchain_connection().pastelid
-                    })
-                    mn1_signature = Signature(
-                        serialized=regticket_db.mn1_serialized_signature)
-                    mn2_signature = Signature(
-                        serialized=regticket_db.mn2_serialized_signature)
-
-                    final_ticket = generate_final_regticket(regticket,
-                                                            artist_signature,
-                                                            (mn0_signature, mn1_signature, mn2_signature)
-                                                            )
-
-                    # store image and thumbnail in chunkstorage
-                    self.masternode_place_image_data_in_chunkstorage(regticket, regticket_db.image_data)
-
-                    signatures_dict = {
-                        "artist": {artist_signature.pastelid: artist_signature.signature},
-                        "mn2": {mn1_signature.pastelid: mn1_signature.signature},
-                        "mn3": {mn2_signature.pastelid: mn2_signature.signature}
-                    }
-
-                    # write final ticket into blockchain
-                    art_ticket_data = {
-                        'base64_data': final_ticket.serialize_base64(),
-                        'signatures_dict': signatures_dict,
-                        'key1': artist_signature.pastelid,
-                        'key2': regticket.base64_imagedatahash,
-                        'art_block': regticket.blocknum,
-                        'fee': int(regticket_db.localfee)
-                    }
-                    bc_response = get_blockchain_connection().register_art_ticket(**art_ticket_data)
-                    return bc_response
-                    # TODO: store image into chunkstorage - later, when activation happens
-                    # TODO: extract all this into separate function
-                else:
-                    raise Exception('All 2 confirmations received for a given ticket')
-        except DoesNotExist:
-            mn_ticket_logger.warn('Given upload code DOES NOT exists with required public key')
-            raise Exception('Given upload code DOES NOT exists with required public key')
+                raise Exception('All 2 confirmations received for a given ticket')
         mn_ticket_logger.info('Confirmation from MN received')
         return 'Validation passed'
 
@@ -348,8 +282,8 @@ class ArtRegistrationServer:
             mn_signed_regticket = self.__generate_signed_ticket(regticket)
             # TODO: run task and return without waiting for result (as if it was in Celery)
             # TODO: handle errors/exceptions
-            response = await mn0.call_masternode("REGTICKET_MN0_CONFIRM_REQ",
-                                                 "REGTICKET_MN0_CONFIRM_RESP",
+            response = await mn0.call_masternode("REGTICKET_MN1_CONFIRM_REQ",
+                                                 "REGTICKET_MN1_CONFIRM_RESP",
                                                  [regticket.author, regticket.imagedata_hash,
                                                   mn_signed_regticket.serialize()])
             # We return success status cause validation on this node has passed. However exception may happen when
@@ -357,31 +291,6 @@ class ArtRegistrationServer:
             return response
         else:
             return 'Validation passed'
-
-    def masternode_sign_activation_ticket(self, data, *args, **kwargs):
-        # parse inputs
-        signature_serialized, activationticket_serialized, image_serialized = data
-        signed_actticket = Signature(serialized=signature_serialized)
-        image = ImageData(serialized=image_serialized)
-        activation_ticket = ActivationTicket(serialized=activationticket_serialized)
-
-        # test image data for validity in a jailed environment
-        converter = JailedImageParser(image.image)
-        converter.parse()
-
-        # validate client's signature on the ticket - so only original client can activate
-        require_true(signed_actticket.pubkey == activation_ticket.author)
-        signed_actticket.validate(activation_ticket)
-
-        # validate activation ticket
-        activation_ticket.validate(self.__chainwrapper, image)
-
-        # sign activation ticket
-        ticket_signed_by_mn = Signature(dictionary={
-            "signature": get_blockchain_connection().pastelid_sign(base64.b64encode(activationticket_serialized)),
-            "pastelid": get_blockchain_connection().pastelid,
-        })
-        return ticket_signed_by_mn.serialize()
 
     def masternode_place_ticket_on_blockchain(self, data, *args, **kwargs):
         tickettype, ticket_serialized = data

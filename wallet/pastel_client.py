@@ -63,29 +63,6 @@ class PastelClient:
             return result
 
     # Image registration methods
-    async def register_image(self, image_field, image_data):
-        # get the registration object
-        artreg = ArtRegistrationClient(self.__chainwrapper)
-
-        # register image
-        # TODO: fill these out properly
-        task = artreg.register_image(
-            image_data=image_data,
-            artist_name="Example Artist",
-            artist_website="exampleartist.com",
-            artist_written_statement="This is only a test",
-            artwork_title=image_field,
-            artwork_series_name="Examples and Tests collection",
-            artwork_creation_video_youtube_url="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-            artwork_keyword_set="example, testing, sample",
-            total_copies=10
-        )
-
-        result = await task
-        actticket_txid = result
-        final_actticket = self.__chainwrapper.retrieve_ticket(actticket_txid, validate=True)
-        return actticket_txid, final_actticket.to_dict()
-
     async def image_registration_step_2(self, title, image_data):
         artreg = ArtRegistrationClient(self.__chainwrapper)
 
