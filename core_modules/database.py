@@ -73,7 +73,7 @@ class Regticket(Model):
         art_ticket_data = {
             'base64_data': ticket.serialize_base64(),
             'signatures_dict': signatures_dict,
-            'key1': artist_signature.pastelid,
+            'key1': ticket.base64_imagedatahash,  # artist_signature.pastelid,
             'key2': ticket.base64_imagedatahash,
             'art_block': ticket.blocknum,
             'fee': int(self.localfee)
