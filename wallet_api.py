@@ -68,6 +68,7 @@ async def image_registration_step_3(request):
     regticket_id = data['regticket_id']
 
     response = await get_pastel_client().image_registration_step_3(regticket_id)
+    # return ticket height ticket fee pastelid and passphrase
     print('Img registration step 3 response: {}'.format(response), file=sys.stderr)
     return web.json_response(response)
 

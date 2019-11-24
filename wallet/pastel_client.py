@@ -129,18 +129,27 @@ class PastelClient:
                 txid = mn2_response[0]['txid']
             else:
                 raise Exception('Txid not found neither in mn1 nor in mn2 response!')
-            return {'status': 'SUCCESS', 'txid': txid}
+            return {
+                'status': 'SUCCESS',
+                'txid': txid,
+                'fee': regticket_db.worker_fee,
+                'blocknum': regticket_db.blocknum,
+                'pastel_id': self.pastelid,
+                'passphrase': self.passphrase
+            }
         else:
             # some error happened, return details
             return {
-                'status': 'SUCCESS' if mn0_response[1] and mn1_response[1] and mn2_response[1] else 'ERROR',
-                'mn_data': {
-                    'mn0': {'status': 'SUCCESS' if mn0_response[1] else 'ERROR',
-                            'msg': mn0_response[0]},
-                    'mn1': {'status': 'SUCCESS' if mn1_response[1] else 'ERROR',
-                            'msg': mn1_response[0]},
-                    'mn2': {'status': 'SUCCESS' if mn2_response[1] else 'ERROR',
-                            'msg': mn2_response[0]}
+                'status': 'ERROR',
+                'msg': {
+                    'mn_data': {
+                        'mn0': {'status': 'SUCCESS' if mn0_response[1] else 'ERROR',
+                                'msg': mn0_response[0]},
+                        'mn1': {'status': 'SUCCESS' if mn1_response[1] else 'ERROR',
+                                'msg': mn1_response[0]},
+                        'mn2': {'status': 'SUCCESS' if mn2_response[1] else 'ERROR',
+                                'msg': mn2_response[0]}
+                    }
                 }
             }
 
