@@ -169,7 +169,12 @@ def move_confirmed_chunks_to_persistant_storage():
     """
 
     for chunk_id in get_chunkmanager().index_temp_storage():
-        chunk_db = Chunk.get(chunk_id=chunk_id)
+        try:
+            chunk_db = Chunk.get(chunk_id=chunk_id)
+        except DoesNotExist:
+            mnl_logger.warn('Chunk with id {} does not exist in DB but exist in local storage'.format(chunk_id))
+            get_chunkmanager().rm_from_temp_storage(chunk_id)
+            continue
         if chunk_db.confirmed:
             # move to persistant storge
             get_chunkmanager().move_to_persistant_storage(chunk_id)

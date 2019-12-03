@@ -109,6 +109,13 @@ function start_cnode()
     source start_mn.sh &
 }
 
+function clear_tmp_storage()
+{
+    cd /home/animecoinuser/StoVaCore
+    rm -rf tmpstorage
+    mkdir tmpstorage
+}
+
 
 case $1 in
     "start") start;;
@@ -121,4 +128,5 @@ case $1 in
     "stop_cnode") stop_cnode;;
     "start_cnode") start_cnode;;
     "cnode_status") cnode_status;;
+    "clear_tmp_storage") clear_tmp_storage;;
 esac

@@ -31,6 +31,9 @@ class ChunkManager:
     def index_temp_storage(self):
         return self.__tmpstorage.index()
 
+    def rm_from_temp_storage(self, chunk_id):
+        self.__tmpstorage.delete(chunk_id)
+
     def move_to_persistant_storage(self, chunk_id):
         chunk_data = self.__tmpstorage.get(chunk_id)
         self.__storage.put(chunk_id, chunk_data)
