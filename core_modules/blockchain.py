@@ -223,16 +223,6 @@ class BlockChain:
             result = self.__call_jsonrpc("masternode", "workers", blocknum)
         # cNode returns data with the following format:
         # {<block_number>: [{node_data1, node_data2, node_data3}]}
-        return list(result.values())[0]
-
-    def masternode_workers(self, blocknum=None):
-        if blocknum is None:
-            result = self.__call_jsonrpc("masternode", "workers")
-        else:
-            result = self.__call_jsonrpc("masternode", "workers", blocknum)
-        # cNode returns data with the following format:
-        # {<block_number>: [{node_data1, node_data2, node_data3}]}
-        # FIXME: only for testing while `masternode workers` result is not up to date
         # return list(result.values())[0]
         return [
             # mn4

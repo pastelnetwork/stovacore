@@ -133,11 +133,8 @@ class ArtRegistrationClient:
                                           serialized_signature=regticket_signature.serialize(),
                                           image_hash=image.get_artwork_hash())
 
-        mn0, mn1, mn2 = get_masternode_ordering()[:3]
-        art_reg_client_logger.debug(
-            'Received to 3 masternodes: {}, {}, {}'.format(MASTERNODE_NAMES.get(mn0.server_ip),
-                                                           MASTERNODE_NAMES.get(mn1.server_ip),
-                                                           MASTERNODE_NAMES.get(mn2.server_ip)))
+        mn0 = get_masternode_ordering()[0]
+        art_reg_client_logger.debug('Top masternode received: {}'.format(MASTERNODE_NAMES.get(mn0.server_ip)))
         upload_code = await mn0.call_masternode("REGTICKET_REQ", "REGTICKET_RESP",
                                                 [regticket.serialize(), regticket_signature.serialize()])
         worker_fee = await mn0.call_masternode("IMAGE_UPLOAD_MN0_REQ", "IMAGE_UPLOAD_MN0_RESP",

@@ -274,10 +274,8 @@ class ArtRegistrationServer:
 
         # if we're on mn1 or mn2:
         if regticket_db.localfee is None:
-            mn0, mn1, mn2 = get_masternode_ordering(regticket.blocknum)[:3]
-            mn_ticket_logger.warn('ordering: {}, {}, {}'.format(MASTERNODE_NAMES.get(mn0.server_ip),
-                                                                MASTERNODE_NAMES.get(mn1.server_ip),
-                                                                MASTERNODE_NAMES.get(mn2.server_ip)))
+            mn0 = get_masternode_ordering(regticket.blocknum)[0]
+            mn_ticket_logger.warn('ordering: {}'.format(MASTERNODE_NAMES.get(mn0.server_ip)))
             # Send confirmation to MN0
             mn_signed_regticket = self.__generate_signed_ticket(regticket)
             # TODO: run task and return without waiting for result (as if it was in Celery)
