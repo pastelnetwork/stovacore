@@ -218,9 +218,9 @@ class BlockChain:
 
     def masternode_top(self, blocknum=None):
         if blocknum is None:
-            result = self.__call_jsonrpc("masternode", "workers")
+            result = self.__call_jsonrpc("masternode", "top")
         else:
-            result = self.__call_jsonrpc("masternode", "workers", blocknum)
+            result = self.__call_jsonrpc("masternode", "top", blocknum)
         # cNode returns data with the following format:
         # {<block_number>: [{node_data1, node_data2, node_data3}]}
         # return list(result.values())[0]
