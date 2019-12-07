@@ -59,24 +59,6 @@ class ChainWrapper:
         height_b = int(block_b["height"])
         return abs(height_a-height_b)
 
-    def store_ticket(self, ticket):
-        if type(ticket) == FinalIDTicket:
-            identifier = b'idticket'
-        elif type(ticket) == FinalRegistrationTicket:
-            identifier = b'regticket'
-        elif type(ticket) == FinalActivationTicket:
-            identifier = b'actticket'
-        elif type(ticket) == FinalTransferTicket:
-            identifier = b'transticket'
-        elif type(ticket) == FinalTradeTicket:
-            identifier = b'tradeticket'
-        else:
-            raise TypeError("Ticket type invalid: %s" % type(ticket))
-
-        encoded_data = identifier + ticket.serialize()
-
-        return get_blockchain_connection().store_data_in_utxo(encoded_data)
-
     def retrieve_ticket(self, txid, validate=False):
         try:
             raw_ticket_data = get_blockchain_connection().retrieve_data_from_utxo(txid)

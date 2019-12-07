@@ -113,8 +113,6 @@ class ArtRegistrationServer:
                  self.masternode_mn1_confirm),
                 ("REGTICKET_STATUS_REQ", "REGTICKET_STATUS_RESP",
                  self.regticket_status),
-                ("PLACEONBLOCKCHAIN_REQ", "PLACEONBLOCKCHAIN_RESP",
-                 self.masternode_place_ticket_on_blockchain)
                 ]
 
     def masternode_sign_registration_ticket(self, data, *args, **kwargs):
@@ -289,21 +287,6 @@ class ArtRegistrationServer:
             return response
         else:
             return 'Validation passed'
-
-    def masternode_place_ticket_on_blockchain(self, data, *args, **kwargs):
-        tickettype, ticket_serialized = data
-        if tickettype == "regticket":
-            ticket = FinalRegistrationTicket(serialized=ticket_serialized)
-        elif tickettype == "actticket":
-            ticket = FinalActivationTicket(serialized=ticket_serialized)
-        else:
-            raise TypeError("Invalid ticket type: %s" % tickettype)
-
-        # validate signed ticket
-        ticket.validate(self.__chainwrapper)
-
-        # place ticket on the blockchain
-        return self.__chainwrapper.store_ticket(ticket)
 
     def masternode_place_image_data_in_chunkstorage(self, regticket, regticket_image_data):
         """

@@ -327,16 +327,6 @@ class BlockChain:
             for txid in block["tx"]:
                 yield txid
 
-    def store_data_in_utxo(self, input_data):
-        while True:
-            try:
-                txid = store_data_in_utxo(self.__jsonrpc, input_data)
-            except BrokenPipeError:
-                self.__reconnect()
-            else:
-                break
-        return txid
-
     def retrieve_data_from_utxo(self, blockchain_transaction_id):
         while True:
             try:
