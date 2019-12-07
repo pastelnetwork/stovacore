@@ -128,6 +128,7 @@ class TmpStorageTaskTestCase(unittest.TestCase):
 # get_and_proccess_new_activation_tickets
 class ProcessNewActTicketsTaskTestCase(unittest.TestCase):
     # @patch('core_modules.chunkmanager._chunkmanager')
+    @unittest.skip('Until activation tickets parsing will be implemented')
     def test_tmp_storage_task(self):
         get_and_proccess_new_activation_tickets()
         # chunkmanager.index_temp_storage = Mock(return_value=[])

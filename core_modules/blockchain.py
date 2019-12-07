@@ -216,6 +216,15 @@ class BlockChain:
             }
         }
 
+    def masternode_top(self, blocknum=None):
+        if blocknum is None:
+            result = self.__call_jsonrpc("masternode", "workers")
+        else:
+            result = self.__call_jsonrpc("masternode", "workers", blocknum)
+        # cNode returns data with the following format:
+        # {<block_number>: [{node_data1, node_data2, node_data3}]}
+        return list(result.values())[0]
+
     def masternode_workers(self, blocknum=None):
         if blocknum is None:
             result = self.__call_jsonrpc("masternode", "workers")
@@ -236,7 +245,7 @@ class BlockChain:
                 "lastseen": 1569486643,
                 "activeseconds": 7837959,
                 "extAddress": "18.216.28.255:4444",
-                "extKey": "jXZVtBmehoxYPotVrLdByFNNcB8jsryXhFPgqRa95i2x1mknbzSef1oGjnzfiwRtzReimfugvg41VtA7qGfDZR",
+                "extKey": "jXZWTjviQnvqMx39H4AgTYm4bswEfR79UYgccJtDq4D5qXshStEypFNcPQhGbf46pQWkURuHFvtiTFUCu7GdSa",
                 "extCfg": ""
             },
             # mn5
@@ -249,7 +258,7 @@ class BlockChain:
                 "lastseen": 1569486926,
                 "activeseconds": 7838259,
                 "extAddress": "18.191.111.96:4444",
-                "extKey": "jXY39ehN4BWWpXLt4Q2zpcmypSAN9saWCweGRtJTxK87ktftjigfJwE6X9JoVfBduDjzEG4uBVR8Es6jVFMAbW",
+                "extKey": "jXZDyqqMDXSz1ycBLCZJ82U2GCSL7m8KTet3i685pFroMdjGaPvdCmVZWrkxoKn1H7wSHibVEohHV7u5juDrne",
                 "extCfg": ""
             },
             # mn6
@@ -262,7 +271,7 @@ class BlockChain:
                 "lastseen": 1569486686,
                 "activeseconds": 7837992,
                 "extAddress": "18.222.118.140:4444",
-                "extKey": "jXa2jiukvPktEdPvGo5nCLaMHxFRLneXMUNLGU4AUkuMmFq6ADerSJZg3Htd7rGjZo6HM92CgUFW1LjEwrKubd",
+                "extKey": "jXZpYBdkMuN9zpCj8BJjTFF1RV54824WstxS816GgM2V1myd5EzwnGmREG1zzbLGWf2syYhFoYhg7gjdd2mkoE",
                 "extCfg": ""
             }
         ]

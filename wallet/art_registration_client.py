@@ -133,7 +133,7 @@ class ArtRegistrationClient:
                                           serialized_signature=regticket_signature.serialize(),
                                           image_hash=image.get_artwork_hash())
 
-        mn0, mn1, mn2 = get_masternode_ordering()
+        mn0, mn1, mn2 = get_masternode_ordering()[:3]
         art_reg_client_logger.debug(
             'Received to 3 masternodes: {}, {}, {}'.format(MASTERNODE_NAMES.get(mn0.server_ip),
                                                            MASTERNODE_NAMES.get(mn1.server_ip),
@@ -152,7 +152,7 @@ class ArtRegistrationClient:
         with open(regticket_db.path_to_image, 'rb') as f:
             image_data = f.read()
 
-        mn0, mn1, mn2 = get_masternode_ordering(regticket_db.blocknum)
+        mn0, mn1, mn2 = get_masternode_ordering(regticket_db.blocknum)[:3]
 
         async def send_regticket_to_mn(mn, serialized_regticket, serialized_signature, img_data):
             """

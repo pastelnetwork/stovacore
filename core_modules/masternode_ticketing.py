@@ -274,7 +274,7 @@ class ArtRegistrationServer:
 
         # if we're on mn1 or mn2:
         if regticket_db.localfee is None:
-            mn0, mn1, mn2 = get_masternode_ordering(regticket.blocknum)
+            mn0, mn1, mn2 = get_masternode_ordering(regticket.blocknum)[:3]
             mn_ticket_logger.warn('ordering: {}, {}, {}'.format(MASTERNODE_NAMES.get(mn0.server_ip),
                                                                 MASTERNODE_NAMES.get(mn1.server_ip),
                                                                 MASTERNODE_NAMES.get(mn2.server_ip)))

@@ -97,7 +97,7 @@ class PastelClient:
         regticket_db.burn_tx_id = burn_10_percent_txid
         regticket_db.save()
 
-        mn0, mn1, mn2 = get_masternode_ordering(regticket_db.blocknum)
+        mn0, mn1, mn2 = get_masternode_ordering(regticket_db.blocknum)[:3]
 
         async def send_txid_10_req_to_mn(mn, data):
             """

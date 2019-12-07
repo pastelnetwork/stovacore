@@ -8,7 +8,7 @@ def get_masternode_ordering(blocknum=None):
     return list of RPCClients.
     """
     mn_rpc_clients = []
-    workers = get_blockchain_connection().masternode_workers(blocknum)
+    workers = get_blockchain_connection().masternode_top(blocknum)
     for node in workers:
         remote_pastelid = node['extKey']
         ip, py_rpc_port = node['extAddress'].split(':')
