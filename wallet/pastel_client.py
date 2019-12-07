@@ -1,20 +1,13 @@
 import asyncio
-import random
 import uuid
 
 from bitcoinrpc.authproxy import JSONRPCException
 
 from cnode_connection import get_blockchain_connection
 from core_modules.artregistry import ArtRegistry
-from core_modules.blackbox_modules.luby import decode as luby_decode, NotEnoughChunks
 from core_modules.chainwrapper import ChainWrapper
 from core_modules.rpc_client import RPCException, RPCClient
-from core_modules.masternode_ticketing import IDRegistrationClient, TransferRegistrationClient, \
-    TradeRegistrationClient
-from core_modules.masternode_ticketing import FinalIDTicket, FinalTradeTicket, FinalTransferTicket, \
-    FinalActivationTicket, FinalRegistrationTicket
 from core_modules.logger import initlogging
-from core_modules.helpers import bytes_from_hex, require_true, bytes_to_chunkid
 from utils.utils import get_masternode_ordering
 from wallet.art_registration_client import ArtRegistrationClient
 from wallet.client_node_manager import ClientNodeManager
@@ -163,141 +156,3 @@ class PastelClient:
                 image_data = response['image_data']
                 break
         return image_data
-
-    # TODO: Methods below are not currently used. Need to inspect and probably remove
-    def __get_identities(self):
-        addresses = []
-        for unspent in get_blockchain_connection().listunspent():
-            if unspent["address"] not in addresses:
-                addresses.append(unspent["address"])
-
-        identity_txid, identity_ticket = self.__chainwrapper.get_identity_ticket(self.__pubkey)
-        all_identities = list(
-            (txid, ticket.to_dict()) for txid, ticket in self.__chainwrapper.get_tickets_by_type("identity"))
-        return addresses, all_identities, identity_txid, {} if identity_ticket is None else identity_ticket.to_dict()
-
-    def __register_identity(self, address):
-        regclient = IDRegistrationClient(self.__privkey, self.__pubkey, self.__chainwrapper)
-        regclient.register_id(address)
-
-    def __browse(self, txid):
-        artworks = self.__artregistry.get_all_artworks()
-
-        tickets, ticket = [], None
-        if txid == "":
-            for txid, ticket in self.__chainwrapper.all_ticket_iterator():
-                if type(ticket) == FinalIDTicket:
-                    tickets.append((txid, "identity", ticket.to_dict()))
-                if type(ticket) == FinalRegistrationTicket:
-                    tickets.append((txid, "regticket", ticket.to_dict()))
-                if type(ticket) == FinalActivationTicket:
-                    tickets.append((txid, "actticket", ticket.to_dict()))
-                if type(ticket) == FinalTransferTicket:
-                    tickets.append((txid, "transticket", ticket.to_dict()))
-                if type(ticket) == FinalTradeTicket:
-                    tickets.append((txid, "tradeticket", ticket.to_dict()))
-        else:
-            # get and process ticket as new node
-            ticket = self.__chainwrapper.retrieve_ticket(txid)
-
-        if ticket is not None:
-            ticket = ticket.to_dict()
-        return artworks, tickets, ticket
-
-    def __get_artworks_owned_by_me(self):
-        return self.__artregistry.get_art_owned_by(self.__pubkey)
-
-    def __get_my_trades_for_artwork(self, artid_hex):
-        artid = bytes_from_hex(artid_hex)
-        return self.__artregistry.get_my_trades_for_artwork(self.__pubkey, artid)
-
-    def __register_transfer_ticket(self, recipient_pubkey_hex, imagedata_hash_hex, copies):
-        recipient_pubkey = bytes_from_hex(recipient_pubkey_hex)
-        imagedata_hash = bytes_from_hex(imagedata_hash_hex)
-        transreg = TransferRegistrationClient(self.__privkey, self.__pubkey, self.__chainwrapper, self.__artregistry)
-        transreg.register_transfer(recipient_pubkey, imagedata_hash, copies)
-
-    def __get_artwork_info(self, artid_hex):
-        artid = bytes_from_hex(artid_hex)
-
-        ticket = self.__artregistry.get_ticket_for_artwork(artid)
-        if ticket is not None:
-            # extract the regticket
-            regticket = self.__chainwrapper.retrieve_ticket(ticket.ticket.registration_ticket_txid)
-            ticket = regticket.ticket.to_dict()
-        else:
-            ticket = {}
-
-        art_owners = self.__artregistry.get_art_owners(artid)
-
-        open_tickets, closed_tickets = [], []
-        for tradeticket in self.__artregistry.get_art_trade_tickets(artid):
-            created, txid, done, status, tickettype, regticket = tradeticket
-            if done is not True:
-                open_tickets.append(tradeticket)
-            else:
-                closed_tickets.append(tradeticket)
-
-        return ticket, art_owners, open_tickets, closed_tickets
-
-    async def __register_trade_ticket(self, imagedata_hash_hex, tradetype, copies, price, expiration):
-        imagedata_hash = bytes_from_hex(imagedata_hash_hex)
-
-        # We do this here to prevent creating a ticket we know now as invalid. However anything
-        # might happen before this ticket makes it to the network, so this check can't be put in validate()
-        if tradetype == "ask":
-            # make sure we have enough remaining copies left if we are asking
-            require_true(self.__artregistry.enough_copies_left(imagedata_hash,
-                                                               self.__pubkey,
-                                                               copies))
-        else:
-            # not a very thorough check, as we might have funds locked in collateral addresses
-            # if this is the case we will fail later when trying to move the funds
-            if get_blockchain_connection().getbalance() < price:
-                raise ValueError("Not enough money in wallet!")
-
-        # watched address is the address we are using to receive the funds in asks and send the collateral to in bids
-        watched_address = get_blockchain_connection().getnewaddress()
-
-        transreg = TradeRegistrationClient(self.__privkey, self.__pubkey, blockchain, self.__chainwrapper,
-                                           self.__artregistry)
-        await transreg.register_trade(imagedata_hash, tradetype, watched_address, copies, price, expiration)
-
-    async def __download_image(self, artid_hex):
-        artid = bytes_from_hex(artid_hex)
-
-        ticket = self.__artregistry.get_ticket_for_artwork(artid)
-        if ticket is not None:
-            finalregticket = self.__chainwrapper.retrieve_ticket(ticket.ticket.registration_ticket_txid)
-            regticket = finalregticket.ticket
-            lubyhashes = regticket.lubyhashes.copy()
-
-            lubychunks = []
-            while True:
-                # fetch chunks 5 at a time
-                # TODO: maybe turn this into a parameter or a settings variable
-                rpcs = []
-                while len(rpcs) < 15 and len(lubyhashes) > 0:
-                    lubyhash = lubyhashes.pop(0)
-                    rpcs.append(self.__get_chunk_id(lubyhash.hex()))
-
-                # if we ran out of chunks, abort
-                if len(rpcs) == 0:
-                    break
-
-                chunks = await asyncio.gather(*rpcs)
-                for chunk in chunks:
-                    lubychunks.append(chunk)
-
-                self.__logger.debug("Fetched luby chunks, total chunks: %s" % len(lubychunks))
-
-                try:
-                    decoded = luby_decode(lubychunks)
-                except NotEnoughChunks:
-                    self.__logger.debug("Luby decode failed with NotEnoughChunks!")
-                else:
-                    self.__logger.debug("Luby decode successful!")
-                    return decoded
-
-            self.__logger.warning("Could not get enough Luby chunks to reconstruct image!")
-            raise RuntimeError("Could not get enough Luby chunks to reconstruct image!")

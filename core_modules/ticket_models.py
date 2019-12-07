@@ -265,24 +265,6 @@ class RegistrationTicket(TicketModelBase):
         # validate that art hash doesn't exist:
         # TODO: move this artwork index logic into chainwrapper
         fingerprint_db = {}
-        if NetWorkSettings.LONG_REGTICKET_VALIDATION_ENABLED:
-            for txid, ticket in chainwrapper.all_ticket_iterator():
-                if type(ticket) == FinalRegistrationTicket:
-                    ticket.validate(chainwrapper)
-                else:
-                    continue
-
-                regticket = ticket.ticket
-
-                # collect fingerprints
-                # TODO: only collect this for activated regtickets and tickets not older than X blocks
-                fingerprint_db[regticket.imagedata_hash] = (
-                    "DUMMY_PATH", regticket.fingerprints)  # TODO: do we need this?
-
-                # validate that this art hash does not yet exist on the blockchain
-                # TODO: only prohibit registration when this was registered in the past X blocks
-                # TODO: if regticket is activated: prohibit registration forever
-                require_true(regticket.imagedata_hash != self.imagedata_hash)
 
         # validate that fingerprints are not dupes
         if len(fingerprint_db) > 0:
@@ -296,64 +278,6 @@ class RegistrationTicket(TicketModelBase):
     @property
     def base64_imagedatahash(self):
         return base64.b64encode(self.imagedata_hash).decode()
-
-
-class ActivationTicket(TicketModelBase):
-    methods = {
-        # mandatory fields for Final Ticket
-        "author": PastelIDField(),
-        "order_block_txid": TXIDField(),
-
-        "registration_ticket_txid": TXIDField(),
-    }
-
-    def validate(self, chainwrapper, image):
-        # TODO:
-        # X validate that this ticket references a valid regticket
-        #   X regticket is on chain
-        #   X regticket is not yet activated
-        #   X regticket signatures are valid
-        # X validate metadata:
-        #   X fingerprints matches image
-        #   X lubyhashes matches image
-        #   X thumbnailhash matches image
-        # X validate image
-        #   X image actually hashes to imagedata_hash in the regticket
-        #   X image is sfw
-        #   X luby chunks generate the image
-
-        # TODO: check that final_regticket ticket is not activated yet
-
-        # validate image
-        image.validate()
-
-        # get registration ticket
-        final_regticket = chainwrapper.retrieve_ticket(self.registration_ticket_txid)
-
-        # validate final ticket
-        final_regticket.validate(chainwrapper)
-
-        # validate registration ticket
-        regticket = final_regticket.ticket
-
-        # validate that the authors match
-        require_true(regticket.author == self.author)
-
-        # validate that imagehash, fingerprints, lubyhashes and thumbnailhash indeed belong to the image
-        require_true(regticket.fingerprints == image.generate_fingerprints())  # TODO: is this deterministic?
-        require_true(regticket.lubyhashes == image.get_luby_hashes())
-        require_true(regticket.lubyseeds == image.get_luby_seeds())
-        require_true(regticket.thumbnailhash == image.get_thumbnail_hash())
-
-        # validate that MN order matches between registration ticket and activation ticket
-        require_true(regticket.order_block_txid == self.order_block_txid)
-
-        # image hash matches regticket hash
-        require_true(regticket.imagedata_hash == image.get_artwork_hash())
-
-        # run nsfw check
-        if get_nsfw_detector().is_nsfw(image.image):
-            raise ValueError("Image is NSFW, score: %s" % get_nsfw_detector().get_score(image.image))
 
 
 class TradeTicket(TicketModelBase):
@@ -534,14 +458,4 @@ class FinalRegistrationTicket(MasterNodeSignedTicket):
         "nonce": UUIDField(),
     }
 
-
-class FinalActivationTicket(MasterNodeSignedTicket):
-    methods = {
-        "ticket": ActivationTicket,
-        "signature_author": Signature,
-        "signature_1": Signature,
-        "signature_2": Signature,
-        "signature_3": Signature,
-        "nonce": UUIDField(),
-    }
 # ===== END ===== #

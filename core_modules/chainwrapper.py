@@ -20,33 +20,6 @@ class ChainWrapper:
         # nonces stores the nonces we have already seen
         self.__nonces = set()
 
-    def get_tickets_by_type(self, tickettype):
-        if tickettype not in ["identity", "regticket", "actticket", "transticket", "tradeticket"]:
-            raise ValueError("%s is not a valid ticket type!" % tickettype)
-
-        for txid, ticket in self.all_ticket_iterator():
-            if tickettype == "identity":
-                if type(ticket) == FinalIDTicket:
-                    yield txid, ticket
-            elif tickettype == "regticket":
-                if type(ticket) == FinalRegistrationTicket:
-                    yield txid, ticket
-            elif tickettype == "actticket":
-                if type(ticket) == FinalActivationTicket:
-                    yield txid, ticket
-            elif tickettype == "transticket":
-                if type(ticket) == FinalTransferTicket:
-                    yield txid, ticket
-            elif tickettype == "tradeticket":
-                if type(ticket) == FinalTradeTicket:
-                    yield txid, ticket
-
-    def get_identity_ticket(self, pubkey):
-        for txid, ticket in self.get_tickets_by_type("identity"):
-            if ticket.ticket.public_key == pubkey:
-                return txid, ticket
-        return None, None
-
     def get_block_distance(self, atxid, btxid):
         if type(atxid) == bytes:
             atxid = bytes_to_hex(atxid)
@@ -58,83 +31,6 @@ class ChainWrapper:
         height_a = int(block_a["height"])
         height_b = int(block_b["height"])
         return abs(height_a-height_b)
-
-    def retrieve_ticket(self, txid, validate=False):
-        try:
-            raw_ticket_data = get_blockchain_connection().retrieve_data_from_utxo(txid)
-        except JSONRPCException as exc:
-            if exc.code == -8:
-                # parameter 1 must be hexadecimal string
-                return None
-            else:
-                raise
-
-        if raw_ticket_data.startswith(b'idticket'):
-            ticket = FinalIDTicket(serialized=raw_ticket_data[len(b'idticket'):])
-            if validate:
-                ticket.validate(self)
-        elif raw_ticket_data.startswith(b'regticket'):
-            ticket = FinalRegistrationTicket(serialized=raw_ticket_data[len(b'regticket'):])
-            if validate:
-                ticket.validate(self)
-        elif raw_ticket_data.startswith(b'actticket'):
-            ticket = FinalActivationTicket(serialized=raw_ticket_data[len(b'actticket'):])
-            if validate:
-                ticket.validate(self)
-        elif raw_ticket_data.startswith(b'transticket'):
-            ticket = FinalTransferTicket(serialized=raw_ticket_data[len(b'transticket'):])
-            if validate:
-                ticket.validate(self)
-        elif raw_ticket_data.startswith(b'tradeticket'):
-            ticket = FinalTradeTicket(serialized=raw_ticket_data[len(b'tradeticket'):])
-            if validate:
-                ticket.validate(self)
-        else:
-            raise ValueError("TXID %s is not a valid ticket: %s" % (txid, raw_ticket_data))
-
-        return ticket
-
-    def all_ticket_iterator(self):
-        for txid in get_blockchain_connection().search_chain():
-            try:
-                ticket = self.retrieve_ticket(txid)
-            except Exception as exc:
-                # self.__logger.debug("ERROR parsing txid %s: %s" % (txid, exc))
-                continue
-            else:
-                # if we didn't manage to get a good ticket back (bad txid)
-                if ticket is None:
-                    continue
-            yield txid, ticket
-
-    def get_transactions_for_block(self, blocknum, confirmations=NetWorkSettings.REQUIRED_CONFIRMATIONS):
-        for txid in get_blockchain_connection().get_txids_for_block(blocknum, confirmations):
-            try:
-                ticket = self.retrieve_ticket(txid, validate=False)
-            except JSONRPCException as exc:
-                continue
-            except Exception as exc:
-                yield txid, "transaction", get_blockchain_connection().getrawtransaction(txid, 1)
-            else:
-                # validate the tickets, only return them if we ran the validator
-                if type(ticket) == FinalActivationTicket:
-                    ticket.validate(self)
-                elif type(ticket) == FinalTransferTicket:
-                    ticket.validate(self)
-                elif type(ticket) == FinalTradeTicket:
-                    ticket.validate(self)
-                else:
-                    continue
-
-                ret = txid, "ticket", ticket
-
-                # TODO: implement an on-disk validation cache, so we can speed up this process and
-                # avoid re-parsing the tickets on each run
-
-                # mark nonce as used
-                self.__nonces.add(ticket.nonce)
-
-                yield ret
 
     async def move_funds_to_new_wallet(self, my_public_key, collateral_address, copies, price):
         amount_to_send = Decimal(copies) * Decimal(price)

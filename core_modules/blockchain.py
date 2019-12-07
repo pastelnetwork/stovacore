@@ -5,8 +5,6 @@ import time
 from http.client import CannotSendRequest, RemoteDisconnected
 from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 
-from core_modules.blackbox_modules.blockchain import store_data_in_utxo, \
-    retrieve_data_from_utxo
 from core_modules.settings import NetWorkSettings
 from core_modules.logger import initlogging
 
@@ -326,10 +324,3 @@ class BlockChain:
         else:
             for txid in block["tx"]:
                 yield txid
-
-    def retrieve_data_from_utxo(self, blockchain_transaction_id):
-        while True:
-            try:
-                return retrieve_data_from_utxo(self.__jsonrpc, blockchain_transaction_id)
-            except BrokenPipeError:
-                self.__reconnect()

@@ -88,13 +88,6 @@ class ArtRegistrationClient:
     def __rpc_mn_store_image(self, regticket_txid, image, mn):
         mn.masternode_place_image_data_in_chunkstorage(regticket_txid, image.serialize())
 
-    def __wait_for_ticket_on_blockchain(self, regticket_txid):
-        new_ticket = self.__chainwrapper.retrieve_ticket(regticket_txid)
-
-        # validate new ticket
-        new_ticket.validate(self.__chainwrapper)
-        return new_ticket
-
     async def get_workers_fee(self, image_data, artist_name=None, artist_website=None, artist_written_statement=None,
                               artwork_title=None, artwork_series_name=None, artwork_creation_video_youtube_url=None,
                               artwork_keyword_set=None, total_copies=None):
