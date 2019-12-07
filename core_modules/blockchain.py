@@ -5,7 +5,6 @@ import time
 from http.client import CannotSendRequest, RemoteDisconnected
 from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 
-from core_modules.settings import NetWorkSettings
 from core_modules.logger import initlogging
 
 
@@ -296,31 +295,9 @@ class BlockChain:
                       fee]
         return self.__call_jsonrpc("tickets", "register", "art", *parameters)
 
-    def search_chain(self, confirmations=NetWorkSettings.REQUIRED_CONFIRMATIONS):
-        blockcount = self.getblockcount() - 1
-        for blocknum in range(1, blockcount + 1):
-            for txid in self.get_txids_for_block(blocknum, confirmations=confirmations):
-                yield txid
-
     def pastelid_sign(self, base64data):
         response = self.__call_jsonrpc("pastelid", "sign", base64data, self.pastelid, self.passphrase)
         return response['signature']
 
     def pastelid_verify(self, base64data, signature, pasteid_to_verify):
         return self.__call_jsonrpc("pastelid", "verify", base64data, signature, pasteid_to_verify)
-
-    def get_txids_for_block(self, blocknum, confirmations):
-        try:
-            block = self.getblock(str(blocknum))
-        except JSONRPCException as exc:
-            if exc.code == -8:
-                # Block height out of range
-                raise NotEnoughConfirmations
-            else:
-                raise
-
-        if block["confirmations"] < confirmations:
-            raise NotEnoughConfirmations
-        else:
-            for txid in block["tx"]:
-                yield txid
