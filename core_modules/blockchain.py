@@ -194,7 +194,7 @@ class BlockChain:
 
     def list_tickets(self, ticket_type):
         """
-        ticket_type - one of (id, art, conf, trade)
+        ticket_type - one of (id, art, act, trade, down)
         """
         return self.__call_jsonrpc("tickets", "list", ticket_type)
 

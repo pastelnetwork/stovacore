@@ -155,5 +155,10 @@ class ChunkMnRanked(Model):
         database = MASTERNODE_DB
         table_name = 'chunkmnranked'
 
+
+class ActivationTicket(Model):
+    txid = CharField(unique=True)
+
+
 # TODO: when adding new model - add it to the following list as well. it's used for table creation.
-DB_MODELS = [Regticket, Chunk, Masternode, ChunkMnDistance, ChunkMnRanked]
+DB_MODELS = [Regticket, Chunk, Masternode, ChunkMnDistance, ChunkMnRanked, ActivationTicket]
