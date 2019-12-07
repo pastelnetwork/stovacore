@@ -4,6 +4,7 @@ from core_modules.database import MASTERNODE_DB, DB_MODELS, Masternode, Chunk, C
 from pynode.tasks import index_new_chunks, recalculate_mn_chunk_ranking_table, get_missing_chunk_ids, \
     refresh_masternode_list, update_masternode_list, move_confirmed_chunks_to_persistant_storage, \
     get_and_proccess_new_activation_tickets
+from tests.ticket_data.actticket import ACTTICKET_DATA
 
 
 class TestXORDistanceTask(unittest.TestCase):
@@ -125,11 +126,17 @@ class TmpStorageTaskTestCase(unittest.TestCase):
         chunkmanager.index_temp_storage.assert_called()
 
 
-# get_and_proccess_new_activation_tickets
 class ProcessNewActTicketsTaskTestCase(unittest.TestCase):
-    # @patch('core_modules.chunkmanager._chunkmanager')
-    @unittest.skip('Until activation tickets parsing will be implemented')
-    def test_tmp_storage_task(self):
+    def setUp(self):
+        MASTERNODE_DB.init(':memory:')
+        MASTERNODE_DB.connect(reuse_if_open=True)
+        MASTERNODE_DB.create_tables(DB_MODELS)
+
+    @patch('pynode.tasks.get_blockchain_connection')
+    # @unittest.skip('Until activation tickets parsing will be implemented')
+    def test_process_act_ticket_task(self, get_blockchain_connection):
+        get_blockchain_connection().list_tickets.return_value = ['asdasd']
+        get_blockchain_connection().get_ticket.return_value = ACTTICKET_DATA
         get_and_proccess_new_activation_tickets()
         # chunkmanager.index_temp_storage = Mock(return_value=[])
         # move_confirmed_chunks_to_persistant_storage()

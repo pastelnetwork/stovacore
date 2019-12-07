@@ -160,6 +160,10 @@ class ActivationTicket(Model):
     txid = CharField(unique=True)
     height = IntegerField()
 
+    class Meta:
+        database = MASTERNODE_DB
+        table_name = 'act_ticket'
+
 
 # TODO: when adding new model - add it to the following list as well. it's used for table creation.
 DB_MODELS = [Regticket, Chunk, Masternode, ChunkMnDistance, ChunkMnRanked, ActivationTicket]

@@ -124,7 +124,8 @@ def get_and_proccess_new_activation_tickets():
     # get tickets
     # FIXME: use `height` param when it will be implemented on cNode
     act_tickets_txids = get_blockchain_connection().list_tickets('act')  # list
-    mnl_logger.warn('Process act ticket: {} txids fetched'.format(len(act_tickets_txids)))
+    mnl_logger.warning('result {}'.format(act_tickets_txids))
+    mnl_logger.warning('Process act ticket: {} txids fetched'.format(len(act_tickets_txids)))
 
     for txid in act_tickets_txids:
         if ActivationTicket.select().where(ActivationTicket.txid == txid).count() != 0:

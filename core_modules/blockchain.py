@@ -193,6 +193,7 @@ class BlockChain:
         """
         ticket_type - one of (id, art, act, trade, down)
         """
+        self.__logger.warning('called with {}'.format(ticket_type))
         return self.__call_jsonrpc("tickets", "list", ticket_type)
 
     def get_ticket(self, txid):
