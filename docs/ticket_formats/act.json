@@ -1,0 +1,26 @@
+{
+  "height": 2973,
+  "ticket": {
+    "art_ticket": "actticket data",
+    "artist_height": 2972,
+    "key1": "fvtERdilLZ41RHef3A9kfdgTyEfE2dbARPYgH6pejXEsJxVC7gINXNWY3VKO9KzgQ6IEzo4ILbw0Li5EPCGQ/w==",
+    "key2": "fvtERdilLZ41RHef3A9kfdgTyEfE2dbARPYgH6pejXEsJxVC7gINXNWY3VKO9KzgQ6IEzo4ILbw0Li5EPCGQ/w==",
+    "signatures": {
+      "artist": {
+        "jXYkVBYXgERkwdDfEq86d5JYgWnAkDZCGuoMoWMe5NiqRx3Bpw6pxb5d9kvwdUArxebJcbmoPhMQvzJRj1a4c8": "aBw2cXKJCP1pNZICEKOMO8c3fKsNNZye1llutkijaud+O4anBeyYUCWsZSzIaGvGKBztXnShQt0AHyaBS+RqKfsyBo6xnWP8CAoS4POjCjduzLeJC6GAGviV8xdFDVeS63l+rsPOJo692ONN1k+BYSwA"
+      },
+      "mn1": {
+        "jXZWTjviQnvqMx39H4AgTYm4bswEfR79UYgccJtDq4D5qXshStEypFNcPQhGbf46pQWkURuHFvtiTFUCu7GdSa": "1jr9zWA0hjAZ47WkgXjcaXDVoFnNyP1NjIupMvTmztWCEj7xJ/atZosOMxou2klvgVOQVcHo24SAxubxySshWZFr68qOy7XWgfVZpEgtknzjQOQ1356VoZTgYWqU9+3khhsESA0t3A7hkD2MHWWpTgEA"
+      },
+      "mn2": {
+        "jXZDyqqMDXSz1ycBLCZJ82U2GCSL7m8KTet3i685pFroMdjGaPvdCmVZWrkxoKn1H7wSHibVEohHV7u5juDrne": "MnFj0JZF37y3Aub9D3YcEKSZuuFlm8OjeoHaV9czJlYBTrCugxt3DeumdQXf3dpaM082ub4gBHYA0ya4XhcYBSlT2knMwy6xsPDBhkYQVjAAdOrYsjoCIaxGYZEoS2subCCpe6YkJXuN14AMVeJhVjgA"
+      },
+      "mn3": {
+        "jXZpYBdkMuN9zpCj8BJjTFF1RV54824WstxS816GgM2V1myd5EzwnGmREG1zzbLGWf2syYhFoYhg7gjdd2mkoE": "LKi04978rAg1EAztYlT0ETUMLUFGWSTtHMUR91OZh1tXcJf5crJnjd0ff/IlI6fpuD+N07/N96SAUEXZwCRk89vqOEEo4ir4u6OAE1GUDoO56bVnKpEjsnsdDF1POOQ/DWV0rEhQzyh6k4+/VdqHYRUA"
+      }
+    },
+    "storage_fee": 100,
+    "type": "art-reg"
+  },
+  "txid": "77996c90fd99ee60788333da62f7586e2f7b1c61d399484c2379927cba8f1356"
+}

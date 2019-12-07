@@ -1,9 +1,11 @@
 import asyncio
+import base64
 import random
 
 from peewee import DoesNotExist, IntegrityError
 
-from core_modules.database import Masternode, Chunk, ChunkMnDistance, Regticket, ChunkMnRanked, MASTERNODE_DB
+from core_modules.database import Masternode, Chunk, ChunkMnDistance, Regticket, ChunkMnRanked, MASTERNODE_DB, \
+    ActivationTicket
 from core_modules.logger import initlogging
 from core_modules.chunkmanager import get_chunkmanager
 from core_modules.ticket_models import RegistrationTicket
@@ -108,8 +110,7 @@ def index_new_chunks():
 
 
 def get_registration_ticket_from_act_ticket(act_ticket):
-    # TODO: implement
-    return RegistrationTicket()
+    return RegistrationTicket(serialized=base64.b64decode(act_ticket['ticket']['art_ticket']))
 
 
 def get_and_proccess_new_activation_tickets():
@@ -121,18 +122,14 @@ def get_and_proccess_new_activation_tickets():
      (which will be used by another chunk-processing tasks).
     """
     # get tickets
-    # FIXME: make sure that we get only new, unprocessed tickets here
-    # tickets = get_blockchain_connection().list_tickets('conf')
-    # TODO: Output of this task: current masternode get new chunk IDs into its local DB.
-    # TODO: Then it calculates distances, fetches required chunks (or moves them to the persistent storage).
-    tickets = [
-        {
-            'txid': '',
-            'pastelid': '',
-            'regticket_txid': ''
-        }
-    ]
-    for ticket in tickets:
+    # FIXME: use `height` param when it will be implemented on cNode
+    act_tickets_txids = get_blockchain_connection().list_tickets('act')  # list
+    mnl_logger.warn('Process act ticket: {} txids fetched'.format(len(act_tickets_txids)))
+
+    for txid in act_tickets_txids:
+        if ActivationTicket.select().where(ActivationTicket.txid == txid).count() != 0:
+            continue
+        ticket = get_blockchain_connection().get_ticket(txid)
         # fetch regticket from activation ticket
         # store regticket in local DB if not exist
         # get list of chunk ids, add to local DB (Chunk table)
@@ -159,6 +156,9 @@ def get_and_proccess_new_activation_tickets():
                 chunk = Chunk.get_by_hash(chunkhash=chunkhash)
             chunk.confirmed = True
             chunk.save()
+
+        # write processed act ticket to DB
+        ActivationTicket.create(txid=txid, height=ticket['height'])
 
 
 def move_confirmed_chunks_to_persistant_storage():

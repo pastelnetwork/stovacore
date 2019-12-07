@@ -158,6 +158,7 @@ class ChunkMnRanked(Model):
 
 class ActivationTicket(Model):
     txid = CharField(unique=True)
+    height = IntegerField()
 
 
 # TODO: when adding new model - add it to the following list as well. it's used for table creation.
