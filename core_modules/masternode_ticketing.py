@@ -304,11 +304,10 @@ class ArtRegistrationServer:
             "lubychunks": ImageData.generate_luby_chunks(regticket_image_data, seeds=regticket.lubyseeds),
             "thumbnail": ImageData.generate_thumbnail(regticket_image_data),
         })
-
-        thumbnail_hash = imagedata.get_thumbnail_hash()
+        thumbnail_chunk_id = bytes_to_chunkid(regticket.imagedata_hash)
 
         # store thumbnail
-        self.__chunkmanager.store_chunk_in_temp_storage(bytes_to_chunkid(thumbnail_hash), imagedata.thumbnail)
+        self.__chunkmanager.store_chunk_in_temp_storage(thumbnail_chunk_id, imagedata.thumbnail)
         artwork_hash = imagedata.get_artwork_hash()
         # store chunks
         for chunkhash, chunkdata in zip(imagedata.get_luby_hashes(), imagedata.lubychunks):

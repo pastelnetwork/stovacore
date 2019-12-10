@@ -106,7 +106,7 @@ class Chunk(Model):
     @classmethod
     def create_from_hash(cls, chunkhash, artwork_hash, stored=False):
         chunkhash_int = bytes_to_chunkid(chunkhash)
-        Chunk.create(chunk_id=str(chunkhash_int), image_hash=artwork_hash, stored=stored)
+        return Chunk.create(chunk_id=str(chunkhash_int), image_hash=artwork_hash, stored=stored)
 
     @classmethod
     def get_by_hash(cls, chunkhash):

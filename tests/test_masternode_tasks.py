@@ -1,6 +1,7 @@
 import unittest
 from unittest.mock import patch, Mock
-from core_modules.database import MASTERNODE_DB, DB_MODELS, Masternode, Chunk, ChunkMnDistance, ChunkMnRanked
+from core_modules.database import MASTERNODE_DB, DB_MODELS, Masternode, Chunk, ChunkMnDistance, ChunkMnRanked, \
+    ActivationTicket
 from pynode.tasks import index_new_chunks, recalculate_mn_chunk_ranking_table, get_missing_chunk_ids, \
     refresh_masternode_list, update_masternode_list, move_confirmed_chunks_to_persistant_storage, \
     get_and_proccess_new_activation_tickets
@@ -98,18 +99,17 @@ class RefreshMNListTestCase(unittest.TestCase):
         MASTERNODE_DB.connect(reuse_if_open=True)
         MASTERNODE_DB.create_tables(DB_MODELS)
 
-    @patch('cnode_connection._blockchain')
-    @patch('cnode_connection.BlockChain')
-    def test_refresh_masternode_list(self, BC_Class, bc_obj):
-        bc_obj.masternode_list.return_value = mn_list
+    @patch('cnode_connection.BlockChain', autospec=True)
+    def test_refresh_masternode_list(self, bc_obj):
+        bc_obj.return_value.masternode_list.return_value = mn_list
+        self.assertEqual(Masternode.select().count(), 0)
         refresh_masternode_list()
         self.assertEqual(Masternode.select().count(), 3)
         self.assertEqual(ChunkMnDistance.select().count(), 0)
 
-    @patch('cnode_connection._blockchain')
-    @patch('cnode_connection.BlockChain')
-    def test_calculate_xor_distances_for_masternodes(self, BC_Class, bc_obj):
-        bc_obj.masternode_list.return_value = mn_list
+    @patch('cnode_connection.BlockChain', autospec=True)
+    def test_calculate_xor_distances_for_masternodes(self, bc_obj):
+        bc_obj.return_value.masternode_list.return_value = mn_list
         for i in range(3):
             Chunk.create(chunk_id='1231231231231231232323934384834890089238429382938429384934{}'.format(i),
                          image_hash=b'asdasdasd')
@@ -119,9 +119,9 @@ class RefreshMNListTestCase(unittest.TestCase):
 
 
 class TmpStorageTaskTestCase(unittest.TestCase):
-    @patch('core_modules.chunkmanager._chunkmanager')
+    @patch('core_modules.chunkmanager._chunkmanager', autospec=True)
     def test_tmp_storage_task(self, chunkmanager):
-        chunkmanager.index_temp_storage = Mock(return_value=[])
+        chunkmanager.return_value.index_temp_storage.return_value = []
         move_confirmed_chunks_to_persistant_storage()
         chunkmanager.index_temp_storage.assert_called()
 
@@ -132,15 +132,31 @@ class ProcessNewActTicketsTaskTestCase(unittest.TestCase):
         MASTERNODE_DB.connect(reuse_if_open=True)
         MASTERNODE_DB.create_tables(DB_MODELS)
 
-    @patch('pynode.tasks.get_blockchain_connection')
-    # @unittest.skip('Until activation tickets parsing will be implemented')
-    def test_process_act_ticket_task(self, get_blockchain_connection):
+    @patch('pynode.tasks.get_blockchain_connection', autospec=True)
+    def test_task(self, get_blockchain_connection):
+        get_blockchain_connection().list_tickets.return_value = ['asdasd']
+        get_blockchain_connection().get_ticket.return_value = ACTTICKET_DATA
+        self.assertEqual(Chunk.select().count(), 0)
+        self.assertEqual(ActivationTicket.select().count(), 0)
+        get_and_proccess_new_activation_tickets()
+        self.assertEqual(ActivationTicket.select().count(), 1)
+        self.assertEqual(Chunk.select().count(), 3)
+
+    @patch('pynode.tasks.get_blockchain_connection', autospec=True)
+    def test_process_twice(self, get_blockchain_connection):
         get_blockchain_connection().list_tickets.return_value = ['asdasd']
         get_blockchain_connection().get_ticket.return_value = ACTTICKET_DATA
         get_and_proccess_new_activation_tickets()
-        # chunkmanager.index_temp_storage = Mock(return_value=[])
-        # move_confirmed_chunks_to_persistant_storage()
-        # chunkmanager.index_temp_storage.assert_called()
+        get_and_proccess_new_activation_tickets()
+        self.assertEqual(ActivationTicket.select().count(), 1)
+        self.assertEqual(Chunk.select().count(), 3)
+
+    @patch('pynode.tasks.get_blockchain_connection', autospec=True)
+    def test_no_act_ticket(self, get_blockchain_connection):
+        get_blockchain_connection().list_tickets.return_value = []
+        get_and_proccess_new_activation_tickets()
+        self.assertEqual(ActivationTicket.select().count(), 0)
+        self.assertEqual(Chunk.select().count(), 0)
 
 
 class GetMissingChunkTestCase(unittest.TestCase):

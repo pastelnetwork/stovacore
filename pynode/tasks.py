@@ -124,8 +124,6 @@ def get_and_proccess_new_activation_tickets():
     # get tickets
     # FIXME: use `height` param when it will be implemented on cNode
     act_tickets_txids = get_blockchain_connection().list_tickets('act')  # list
-    mnl_logger.warning('result {}'.format(act_tickets_txids))
-    mnl_logger.warning('Process act ticket: {} txids fetched'.format(len(act_tickets_txids)))
 
     for txid in act_tickets_txids:
         if ActivationTicket.select().where(ActivationTicket.txid == txid).count() != 0:
@@ -135,18 +133,17 @@ def get_and_proccess_new_activation_tickets():
         # store regticket in local DB if not exist
         # get list of chunk ids, add to local DB (Chunk table)
         regticket = get_registration_ticket_from_act_ticket(ticket)
-        try:
-            regticket_db = Regticket.get(image_hash=regticket.imagedata_hash)
-            regticket_db.confirmed = True
-            regticket_db.save()
-        except DoesNotExist:
-            regticket_db = Regticket.create(
-                artist_pk=regticket.author,
-                image_hash=regticket.imagedata_hash,
-                regticket=regticket.serialize(),
-                confirmed=True
-            )
         chunk_hashes = regticket.lubyhashes  # this is list of bytes objects
+
+        # add thumbnail chunk
+        # thumbnail should always fit in one chunk, and we use image_hash as base for thumbnail chunks id
+        try:
+            chunk = Chunk.create_from_hash(chunkhash=regticket.imagedata_hash, artwork_hash=regticket.imagedata_hash)
+        except IntegrityError:  # if Chunk with such chunkhash already exist
+            chunk = Chunk.get_by_hash(chunkhash=regticket.imagedata_hash)
+        chunk.confirmed = True
+        chunk.save()
+
         for chunkhash in chunk_hashes:
             # FIXME: it can be speed up with bulk_update and bulk_create
             # if chunk exists - mark it as confirmed
