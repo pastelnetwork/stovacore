@@ -93,10 +93,11 @@ def masternode_place_image_data_in_chunkstorage(regticket, regticket_image_data)
         "lubychunks": ImageData.generate_luby_chunks(regticket_image_data, seeds=regticket.lubyseeds),
         "thumbnail": ImageData.generate_thumbnail(regticket_image_data),
     })
-
-    # store thumbnail
-    get_chunkmanager().store_chunk_in_temp_storage(get_pynode_digest_int(imagedata.thumbnail), imagedata.thumbnail)
     artwork_hash = imagedata.get_artwork_hash()
+    # store thumbnail
+    get_chunkmanager().store_chunk_in_temp_storage(bytes_to_chunkid(regticket.thumbnailhash), imagedata.thumbnail)
+    Chunk.create_from_hash(chunkhash=regticket.thumbnailhash, artwork_hash=artwork_hash, stored=True)
+
     # store chunks
     for chunkhash, chunkdata in zip(imagedata.get_luby_hashes(), imagedata.lubychunks):
         chunkhash_int = bytes_to_chunkid(chunkhash)

@@ -164,6 +164,6 @@ class RegticketImageToChunkStorageTestCase(unittest.TestCase):
         image_data = png_1x1_data
         regticket = get_regticket()
         masternode_place_image_data_in_chunkstorage(regticket, image_data)
-        self.assertEqual(Chunk.select().count(), 1)
+        self.assertEqual(Chunk.select().count(), 2)
 # TODO: add tests emulating the full flow  - put image to the chunkstorage, and receive it using image_hash
 # (not chunk hash, which is different every time when new portion of chunks is generated).
