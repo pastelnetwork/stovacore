@@ -1,4 +1,3 @@
-import base64
 import uuid
 from decimal import Decimal
 
@@ -12,11 +11,11 @@ from core_modules.blackbox_modules.nsfw import get_nsfw_detector
 from core_modules.chunkmanager import get_chunkmanager
 from core_modules.database import Regticket, MASTERNODE_DB, Chunk
 from debug.masternode_conf import MASTERNODE_NAMES
-from utils.utils import get_masternode_ordering
+from utils.mn_ordering import get_masternode_ordering
 from cnode_connection import get_blockchain_connection
 from .ticket_models import RegistrationTicket, Signature, ImageData, IDTicket, FinalIDTicket, TransferTicket, FinalTransferTicket, TradeTicket, \
     FinalTradeTicket
-from core_modules.helpers import require_true, bytes_to_chunkid
+from core_modules.helpers import require_true, bytes_to_chunkid, get_pynode_digest_int
 from core_modules.logger import initlogging
 
 mn_ticket_logger = initlogging('Logger', __name__)
@@ -76,6 +75,38 @@ def is_burn_tx_valid(regticket, txid):
     else:
         regticket.delete()
         return False, (height_err, amount_err)
+
+
+def masternode_place_image_data_in_chunkstorage(regticket, regticket_image_data):
+    """
+    Place image to the chunkstorage. Initially artwork is placed to the so called temporary storage
+    (which exist only on the given masternode and is not distributed to other).
+    After activation ticket will be created (by the wallet) and parsed by current masternode  -
+    masternode will move artwork chunks to regular chunkstorage and start promote chunks to
+    other masternodes, so artwork will be stored distributedly.
+    """
+    # reconstruct image with seeds from regticket.
+    # then and only then chunk set will be identical to what wallet generated (and which hashes
+    # are written to the regticket.lubyhashes).
+    imagedata = ImageData(dictionary={
+        "image": regticket_image_data,
+        "lubychunks": ImageData.generate_luby_chunks(regticket_image_data, seeds=regticket.lubyseeds),
+        "thumbnail": ImageData.generate_thumbnail(regticket_image_data),
+    })
+
+    # store thumbnail
+    get_chunkmanager().store_chunk_in_temp_storage(get_pynode_digest_int(imagedata.thumbnail), imagedata.thumbnail)
+    artwork_hash = imagedata.get_artwork_hash()
+    # store chunks
+    for chunkhash, chunkdata in zip(imagedata.get_luby_hashes(), imagedata.lubychunks):
+        chunkhash_int = bytes_to_chunkid(chunkhash)
+        get_chunkmanager().store_chunk_in_temp_storage(chunkhash_int, chunkdata)
+        mn_ticket_logger.debug('Adding chunk id to DB: {}'.format(chunkhash_int))
+        # keep track of chunks in the local SQLite database.
+        # we should be ably to find all chunks by artwork hash as well.
+
+        # save chunk in database and mark `Stored` = True as we've already stored it in the storage (at least temp).
+        Chunk.create_from_hash(chunkhash=chunkhash, artwork_hash=artwork_hash, stored=True)
 
 
 class ArtRegistrationServer:
@@ -243,7 +274,7 @@ class ArtRegistrationServer:
                 regticket_db.save()
                 regticket = RegistrationTicket(serialized=regticket_db.regticket)
                 # store image and thumbnail in chunkstorage
-                self.masternode_place_image_data_in_chunkstorage(regticket, regticket_db.image_data)
+                masternode_place_image_data_in_chunkstorage(regticket, regticket_db.image_data)
 
                 txid = regticket_db.write_to_blockchain()
                 return txid
@@ -285,37 +316,6 @@ class ArtRegistrationServer:
         else:
             return 'Validation passed'
 
-    def masternode_place_image_data_in_chunkstorage(self, regticket, regticket_image_data):
-        """
-        Place image to the chunkstorage. Initially artwork is placed to the so called temporary storage
-        (which exist only on the given masternode and is not distributed to other).
-        After activation ticket will be created (by the wallet) and parsed by current masternode  -
-        masternode will move artwork chunks to regular chunkstorage and start promote chunks to
-        other masternodes, so artwork will be stored distributedly.
-        """
-        # reconstruct image with seeds from regticket.
-        # then and only then chunk set will be identical to what wallet generated (and which hashes
-        # are written to the regticket.lubyhashes).
-        imagedata = ImageData(dictionary={
-            "image": regticket_image_data,
-            "lubychunks": ImageData.generate_luby_chunks(regticket_image_data, seeds=regticket.lubyseeds),
-            "thumbnail": ImageData.generate_thumbnail(regticket_image_data),
-        })
-        thumbnail_chunk_id = bytes_to_chunkid(regticket.imagedata_hash)
-
-        # store thumbnail
-        self.__chunkmanager.store_chunk_in_temp_storage(thumbnail_chunk_id, imagedata.thumbnail)
-        artwork_hash = imagedata.get_artwork_hash()
-        # store chunks
-        for chunkhash, chunkdata in zip(imagedata.get_luby_hashes(), imagedata.lubychunks):
-            chunkhash_int = bytes_to_chunkid(chunkhash)
-            self.__chunkmanager.store_chunk_in_temp_storage(chunkhash_int, chunkdata)
-            mn_ticket_logger.debug('Adding chunk id to DB: {}'.format(chunkhash_int))
-            # keep track of chunks in the local SQLite database.
-            # we should be ably to find all chunks by artwork hash as well.
-
-            # save chunk in database and mark `Stored` = True as we've already stored it in the storage (at least temp).
-            Chunk.create_from_hash(chunkhash=chunkhash, artwork_hash=artwork_hash, stored=True)
 
 
 class IDRegistrationClient:

@@ -2,16 +2,13 @@ import uuid
 import asyncio
 from datetime import datetime
 
-from aiohttp import ClientConnectorError
-
 from cnode_connection import get_blockchain_connection
-from core_modules.ticket_models import RegistrationTicket, Signature, FinalRegistrationTicket, ActivationTicket, \
-    FinalActivationTicket, ImageData
+from core_modules.ticket_models import RegistrationTicket, Signature, ImageData
 from core_modules.settings import NetWorkSettings
 from core_modules.helpers import require_true
 from core_modules.logger import initlogging
 from debug.masternode_conf import MASTERNODE_NAMES
-from utils.utils import get_masternode_ordering
+from utils.mn_ordering import get_masternode_ordering
 from wallet.database import RegticketDB
 
 art_reg_client_logger = initlogging('Logger', __name__)
@@ -84,9 +81,6 @@ class ArtRegistrationClient:
             # add signature to collected signatures
             signatures.append(mn_signature)
         return signatures
-
-    def __rpc_mn_store_image(self, regticket_txid, image, mn):
-        mn.masternode_place_image_data_in_chunkstorage(regticket_txid, image.serialize())
 
     async def get_workers_fee(self, image_data, artist_name=None, artist_website=None, artist_written_statement=None,
                               artwork_title=None, artwork_series_name=None, artwork_creation_video_youtube_url=None,

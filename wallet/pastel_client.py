@@ -8,7 +8,7 @@ from core_modules.artregistry import ArtRegistry
 from core_modules.chainwrapper import ChainWrapper
 from core_modules.rpc_client import RPCException, RPCClient
 from core_modules.logger import initlogging
-from utils.utils import get_masternode_ordering
+from utils.mn_ordering import get_masternode_ordering
 from wallet.art_registration_client import ArtRegistrationClient
 from wallet.client_node_manager import ClientNodeManager
 from wallet.database import RegticketDB

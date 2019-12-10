@@ -2,12 +2,48 @@ import os
 import stat
 import random
 import unittest
+from unittest.mock import patch
 import shutil
 import tempfile
+import warnings
 
 from core_modules.chunk_storage import ChunkStorage
+from core_modules.database import MASTERNODE_DB, DB_MODELS, Chunk
 from core_modules.helpers import get_pynode_digest_int
 from core_modules.blackbox_modules import luby
+from core_modules.masternode_ticketing import masternode_place_image_data_in_chunkstorage
+from core_modules.ticket_models import RegistrationTicket, ImageData
+from tests.utils import png_1x1_data
+
+
+def get_regticket():
+    image = ImageData(dictionary={
+        "image": png_1x1_data,
+        "lubychunks": ImageData.generate_luby_chunks(png_1x1_data),
+        "thumbnail": ImageData.generate_thumbnail(png_1x1_data),
+    })
+
+    return RegistrationTicket(dictionary={
+        "artist_name": '',
+        "artist_website": '',
+        "artist_written_statement": '',
+
+        "artwork_title": '',
+        "artwork_series_name": '',
+        "artwork_creation_video_youtube_url": '',
+        "artwork_keyword_set": '',
+        "total_copies": 0,
+
+        "fingerprints": image.generate_fingerprints(),
+        "lubyhashes": image.get_luby_hashes(),
+        "lubyseeds": image.get_luby_seeds(),
+        "thumbnailhash": image.get_thumbnail_hash(),
+
+        "author": 'jXZDyqqMDXSz1ycBLCZJ82U2GCSL7m8KTet3i685pFroMdjGaPvdCmVZWrkxoKn1H7wSHibVEohHV7u5juDrne',
+        "order_block_txid": '77996c90fd99ee60788333da62f7586e2f7b1c61d399484c2379927cba8f1356',
+        "blocknum": 500,
+        "imagedata_hash": image.get_artwork_hash(),
+    })
 
 
 class TestChunkStorageInit(unittest.TestCase):
@@ -116,5 +152,18 @@ class TestLuby(unittest.TestCase):
         self.assertEqual(blocks1[0], blocks2[0])
 
 
+class RegticketImageToChunkStorageTestCase(unittest.TestCase):
+    def setUp(self):
+        warnings.simplefilter('ignore')
+        MASTERNODE_DB.init(':memory:')
+        MASTERNODE_DB.connect(reuse_if_open=True)
+        MASTERNODE_DB.create_tables(DB_MODELS)
+
+    @patch('core_modules.chunkmanager.ChunkStorage', autospec=True)
+    def test_place_in_chunkstorage(self, chunkstorage):
+        image_data = png_1x1_data
+        regticket = get_regticket()
+        masternode_place_image_data_in_chunkstorage(regticket, image_data)
+        self.assertEqual(Chunk.select().count(), 1)
 # TODO: add tests emulating the full flow  - put image to the chunkstorage, and receive it using image_hash
 # (not chunk hash, which is different every time when new portion of chunks is generated).
