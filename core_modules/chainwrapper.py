@@ -2,12 +2,9 @@ import asyncio
 import random
 from decimal import Decimal
 
-from bitcoinrpc.authproxy import JSONRPCException
 
 from core_modules.logger import initlogging
 from core_modules.helpers import bytes_to_hex
-from core_modules.ticket_models import FinalIDTicket, FinalActivationTicket, FinalRegistrationTicket,\
-    FinalTransferTicket, FinalTradeTicket
 from core_modules.settings import NetWorkSettings
 from cnode_connection import get_blockchain_connection
 

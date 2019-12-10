@@ -10,16 +10,13 @@ from peewee import DoesNotExist
 
 from core_modules.blackbox_modules.nsfw import get_nsfw_detector
 from core_modules.chunkmanager import get_chunkmanager
-from core_modules.database import Regticket, MASTERNODE_DB, REGTICKET_STATUS_ERROR, Chunk
-from core_modules.settings import NetWorkSettings
+from core_modules.database import Regticket, MASTERNODE_DB, Chunk
 from debug.masternode_conf import MASTERNODE_NAMES
 from utils.utils import get_masternode_ordering
 from cnode_connection import get_blockchain_connection
-from .ticket_models import RegistrationTicket, Signature, FinalRegistrationTicket, ActivationTicket, \
-    FinalActivationTicket, ImageData, IDTicket, FinalIDTicket, TransferTicket, FinalTransferTicket, TradeTicket, \
+from .ticket_models import RegistrationTicket, Signature, ImageData, IDTicket, FinalIDTicket, TransferTicket, FinalTransferTicket, TradeTicket, \
     FinalTradeTicket
 from core_modules.helpers import require_true, bytes_to_chunkid
-from core_modules.jailed_image_parser import JailedImageParser
 from core_modules.logger import initlogging
 
 mn_ticket_logger = initlogging('Logger', __name__)
