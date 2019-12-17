@@ -110,7 +110,9 @@ def index_new_chunks():
 
 
 def get_registration_ticket_from_act_ticket(act_ticket):
-    return RegistrationTicket(serialized=base64.b64decode(act_ticket['ticket']['art_ticket']))
+    regticket_txid = act_ticket['ticket']['reg_txid']
+    ticket = get_blockchain_connection().get_ticket(regticket_txid)
+    return RegistrationTicket(serialized=base64.b64decode(ticket['ticket']['art_ticket']))
 
 
 def get_and_proccess_new_activation_tickets():

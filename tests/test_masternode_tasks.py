@@ -5,7 +5,7 @@ from core_modules.database import MASTERNODE_DB, DB_MODELS, Masternode, Chunk, C
 from pynode.tasks import index_new_chunks, recalculate_mn_chunk_ranking_table, get_missing_chunk_ids, \
     refresh_masternode_list, update_masternode_list, move_confirmed_chunks_to_persistant_storage, \
     get_and_proccess_new_activation_tickets
-from tests.ticket_data.actticket import ACTTICKET_DATA
+from tests.ticket_data.actticket import ACTTICKET_DATA, REGTICKET_DATA
 
 
 class TestXORDistanceTask(unittest.TestCase):
@@ -77,20 +77,21 @@ class TestCalculateRankingTableTask(unittest.TestCase):
         chunks = get_missing_chunk_ids(pastel_id)
         self.assertEqual(len(chunks), 2)
 
+
 mn_list = {
-            'mn4': {
-                'extKey': 'jXZVtBmehoxYPotVrLdByFNNcB8jsryXhFPgqRa95i2x1mknbzSef1oGjnzfiwRtzReimfugvg41VtA7qGfDZR',
-                'extAddress': '18.216.28.255:4444'
-            },
-            'mn5': {
-                'extKey': 'jXY39ehN4BWWpXLt4Q2zpcmypSAN9saWCweGRtJTxK87ktftjigfJwE6X9JoVfBduDjzEG4uBVR8Es6jVFMAbW',
-                'extAddress': '18.191.111.96:4444'
-            },
-            'mn6': {
-                'extKey': 'jXa2jiukvPktEdPvGo5nCLaMHxFRLneXMUNLGU4AUkuMmFq6ADerSJZg3Htd7rGjZo6HM92CgUFW1LjEwrKubd',
-                'extAddress': '18.222.118.140:4444'
-            }
-        }
+    'mn4': {
+        'extKey': 'jXZVtBmehoxYPotVrLdByFNNcB8jsryXhFPgqRa95i2x1mknbzSef1oGjnzfiwRtzReimfugvg41VtA7qGfDZR',
+        'extAddress': '18.216.28.255:4444'
+    },
+    'mn5': {
+        'extKey': 'jXY39ehN4BWWpXLt4Q2zpcmypSAN9saWCweGRtJTxK87ktftjigfJwE6X9JoVfBduDjzEG4uBVR8Es6jVFMAbW',
+        'extAddress': '18.191.111.96:4444'
+    },
+    'mn6': {
+        'extKey': 'jXa2jiukvPktEdPvGo5nCLaMHxFRLneXMUNLGU4AUkuMmFq6ADerSJZg3Htd7rGjZo6HM92CgUFW1LjEwrKubd',
+        'extAddress': '18.222.118.140:4444'
+    }
+}
 
 
 class RefreshMNListTestCase(unittest.TestCase):
@@ -126,6 +127,13 @@ class TmpStorageTaskTestCase(unittest.TestCase):
         chunkmanager.index_temp_storage.assert_called()
 
 
+def get_ticket_side_effect(txid):
+    if txid == '1c6d9708f47489062a0da7e5548ef3b89d67fbd8ba7702ae1e3acc0403376d47':
+        return ACTTICKET_DATA
+    if txid == '77996c90fd99ee60788333da62f7586e2f7b1c61d399484c2379927cba8f1356':
+        return REGTICKET_DATA
+
+
 class ProcessNewActTicketsTaskTestCase(unittest.TestCase):
     def setUp(self):
         MASTERNODE_DB.init(':memory:')
@@ -134,8 +142,9 @@ class ProcessNewActTicketsTaskTestCase(unittest.TestCase):
 
     @patch('pynode.tasks.get_blockchain_connection', autospec=True)
     def test_task(self, get_blockchain_connection):
-        get_blockchain_connection().list_tickets.return_value = ['asdasd']
-        get_blockchain_connection().get_ticket.return_value = ACTTICKET_DATA
+        get_blockchain_connection().list_tickets.return_value = [
+            '1c6d9708f47489062a0da7e5548ef3b89d67fbd8ba7702ae1e3acc0403376d47']
+        get_blockchain_connection().get_ticket.side_effect = get_ticket_side_effect
         self.assertEqual(Chunk.select().count(), 0)
         self.assertEqual(ActivationTicket.select().count(), 0)
         get_and_proccess_new_activation_tickets()
@@ -144,8 +153,9 @@ class ProcessNewActTicketsTaskTestCase(unittest.TestCase):
 
     @patch('pynode.tasks.get_blockchain_connection', autospec=True)
     def test_process_twice(self, get_blockchain_connection):
-        get_blockchain_connection().list_tickets.return_value = ['asdasd']
-        get_blockchain_connection().get_ticket.return_value = ACTTICKET_DATA
+        get_blockchain_connection().list_tickets.return_value = [
+            '1c6d9708f47489062a0da7e5548ef3b89d67fbd8ba7702ae1e3acc0403376d47']
+        get_blockchain_connection().get_ticket.side_effect = get_ticket_side_effect
         get_and_proccess_new_activation_tickets()
         get_and_proccess_new_activation_tickets()
         self.assertEqual(ActivationTicket.select().count(), 1)

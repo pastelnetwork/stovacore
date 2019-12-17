@@ -95,9 +95,8 @@ class Chunk(Model):
     chunk_id = CharField(unique=True)
     image_hash = BlobField()
     indexed = BooleanField(default=False)  # to track fresh added chunks, and calculate XOR distances for them.
-    confirmed = BooleanField(default=False)  # indicates if chunk ID is contained in one
+    confirmed = BooleanField(default=False)  # indicates if chunk ID is contained in one of confirmed registration tickets
     stored = BooleanField(default=False)
-    # of confirmed registration tickets
 
     class Meta:
         database = MASTERNODE_DB
