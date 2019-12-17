@@ -128,10 +128,11 @@ class TmpStorageTaskTestCase(unittest.TestCase):
 
 
 def get_ticket_side_effect(txid):
-    if txid == '1c6d9708f47489062a0da7e5548ef3b89d67fbd8ba7702ae1e3acc0403376d47':
-        return ACTTICKET_DATA
-    if txid == '77996c90fd99ee60788333da62f7586e2f7b1c61d399484c2379927cba8f1356':
-        return REGTICKET_DATA
+    return REGTICKET_DATA
+    # if txid == '1c6d9708f47489062a0da7e5548ef3b89d67fbd8ba7702ae1e3acc0403376d47':
+    #     return ACTTICKET_DATA
+    # if txid == '77996c90fd99ee60788333da62f7586e2f7b1c61d399484c2379927cba8f1356':
+    #     return REGTICKET_DATA
 
 
 class ProcessNewActTicketsTaskTestCase(unittest.TestCase):

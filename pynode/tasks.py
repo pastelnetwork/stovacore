@@ -109,9 +109,9 @@ def index_new_chunks():
         Chunk.bulk_update(chunk_qs, fields=[Chunk.indexed])
 
 
-def get_registration_ticket_from_act_ticket(act_ticket):
-    regticket_txid = act_ticket['ticket']['reg_txid']
-    ticket = get_blockchain_connection().get_ticket(regticket_txid)
+def get_registration_ticket_from_act_ticket(ticket):
+    # regticket_txid = act_ticket['ticket']['reg_txid']
+    # ticket = get_blockchain_connection().get_ticket(regticket_txid)
     return RegistrationTicket(serialized=base64.b64decode(ticket['ticket']['art_ticket']))
 
 
@@ -130,7 +130,7 @@ def get_and_proccess_new_activation_tickets():
     for txid in act_tickets_txids:
         if ActivationTicket.select().where(ActivationTicket.txid == txid).count() != 0:
             continue
-        ticket = get_blockchain_connection().get_ticket(txid)
+        ticket = get_blockchain_connection().get_ticket(txid)  # it's registration ticket here
         # fetch regticket from activation ticket
         # store regticket in local DB if not exist
         # get list of chunk ids, add to local DB (Chunk table)
