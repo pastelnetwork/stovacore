@@ -1,5 +1,6 @@
 import asyncio
 import base64
+import json
 import random
 
 from peewee import DoesNotExist, IntegrityError
@@ -130,7 +131,7 @@ def get_and_proccess_new_activation_tickets():
     for txid in act_tickets_txids:
         if ActivationTicket.select().where(ActivationTicket.txid == txid).count() != 0:
             continue
-        ticket = get_blockchain_connection().get_ticket(txid)  # it's registration ticket here
+        ticket = json.loads(get_blockchain_connection().get_ticket(txid))  # it's registration ticket here
         # fetch regticket from activation ticket
         # store regticket in local DB if not exist
         # get list of chunk ids, add to local DB (Chunk table)
@@ -167,8 +168,9 @@ def move_confirmed_chunks_to_persistant_storage():
      - Goes through chunks in temp storage,
      - fetch each chunk from DB, if it's confirmed - move to persistant storage.
     """
-
+    mnl_logger.warn('Move conf chunks task')
     for chunk_id in get_chunkmanager().index_temp_storage():
+        mnl_logger.warn('Process chunk {}'.format(chunk_id))
         try:
             chunk_db = Chunk.get(chunk_id=chunk_id)
         except DoesNotExist:
@@ -177,6 +179,7 @@ def move_confirmed_chunks_to_persistant_storage():
             continue
         if chunk_db.confirmed:
             # move to persistant storge
+            mnl_logger.warn('Move chunk to persistant storage')
             get_chunkmanager().move_to_persistant_storage(chunk_id)
 
 

@@ -56,7 +56,6 @@ class MasterNodeDaemon:
         loop.create_task(index_new_chunks_task())
 
         # fetch new activation tickets, process chunks from there
-        TODO: implement and uncomment
         loop.create_task(process_new_tickets_task())
 
         # go through temp storage, move confirmed chunks to persistent one
