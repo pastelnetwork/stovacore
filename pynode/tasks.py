@@ -53,7 +53,9 @@ def refresh_masternode_list():
     Update MN list in database, initiate distance calculation for added masternodes
     """
     added, removed = update_masternode_list()
-    calculate_xor_distances_for_masternodes(added)
+    if added:
+        calculate_xor_distances_for_masternodes(added)
+        recalculate_mn_chunk_ranking_table()
 
 
 def calculate_xor_distance(pastelid, chunkid):
@@ -108,6 +110,9 @@ def index_new_chunks():
         for chunk in chunk_qs:
             chunk.indexed = True
         Chunk.bulk_update(chunk_qs, fields=[Chunk.indexed])
+
+        # calculate chunk-mn-ranks as list of chunks was changed
+        recalculate_mn_chunk_ranking_table()
 
 
 def get_registration_ticket_from_act_ticket(ticket):
