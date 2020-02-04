@@ -61,8 +61,10 @@ class TestCalculateRankingTableTask(unittest.TestCase):
         index_new_chunks()
 
     def test_calculate_ranks(self):
+        ChunkMnRanked.delete().execute()
         self.assertEqual(ChunkMnRanked.select().count(), 0)
         recalculate_mn_chunk_ranking_table()
+
         self.assertEqual(ChunkMnRanked.select().count(), 9)
 
     def test_get_missing_chunks(self):
