@@ -206,15 +206,15 @@ class BlockChain:
         # FIXME: only for testing, to limit set of masternodes
         return {
             'mn4': {
-                'extKey': 'jXZVtBmehoxYPotVrLdByFNNcB8jsryXhFPgqRa95i2x1mknbzSef1oGjnzfiwRtzReimfugvg41VtA7qGfDZR',
+                'extKey': 'jXYZ8BWArT1ZTWyNdSqeGH6ELmB5H9kZfZuMtKKtUQpqw7HLY7ugQgZUfQTwhWEkXKuqCT2vm32WHD5YSQivfF',
                 'extAddress': '18.216.28.255:4444'
             },
             'mn5': {
-                'extKey': 'jXY39ehN4BWWpXLt4Q2zpcmypSAN9saWCweGRtJTxK87ktftjigfJwE6X9JoVfBduDjzEG4uBVR8Es6jVFMAbW',
+                'extKey': 'jXXdJaUzJ7UVKqrhj9RKVujA3UpPDewxvJr6P88bxzKEBrJ9RHNTS9JEJrm8qdc23c4f91tGGogd3R3PtCiQjD',
                 'extAddress': '18.191.111.96:4444'
             },
             'mn6': {
-                'extKey': 'jXa2jiukvPktEdPvGo5nCLaMHxFRLneXMUNLGU4AUkuMmFq6ADerSJZg3Htd7rGjZo6HM92CgUFW1LjEwrKubd',
+                'extKey': 'jXZgxQ3UcGtFrxt6Brq38Kvqp5ytMNwW4ADfeHyjGBUMwaBfUrhEa5havzdxFwjv5BXtT1VS5g4Ayk1RsKyCZT',
                 'extAddress': '18.222.118.140:4444'
             }
         }
@@ -238,7 +238,7 @@ class BlockChain:
                 "lastseen": 1569486643,
                 "activeseconds": 7837959,
                 "extAddress": "18.216.28.255:4444",
-                "extKey": "jXZWTjviQnvqMx39H4AgTYm4bswEfR79UYgccJtDq4D5qXshStEypFNcPQhGbf46pQWkURuHFvtiTFUCu7GdSa",
+                "extKey": "jXYZ8BWArT1ZTWyNdSqeGH6ELmB5H9kZfZuMtKKtUQpqw7HLY7ugQgZUfQTwhWEkXKuqCT2vm32WHD5YSQivfF",
                 "extCfg": ""
             },
             # mn5
@@ -251,7 +251,7 @@ class BlockChain:
                 "lastseen": 1569486926,
                 "activeseconds": 7838259,
                 "extAddress": "18.191.111.96:4444",
-                "extKey": "jXZDyqqMDXSz1ycBLCZJ82U2GCSL7m8KTet3i685pFroMdjGaPvdCmVZWrkxoKn1H7wSHibVEohHV7u5juDrne",
+                "extKey": "jXXdJaUzJ7UVKqrhj9RKVujA3UpPDewxvJr6P88bxzKEBrJ9RHNTS9JEJrm8qdc23c4f91tGGogd3R3PtCiQjD",
                 "extCfg": ""
             },
             # mn6
@@ -264,7 +264,7 @@ class BlockChain:
                 "lastseen": 1569486686,
                 "activeseconds": 7837992,
                 "extAddress": "18.222.118.140:4444",
-                "extKey": "jXZpYBdkMuN9zpCj8BJjTFF1RV54824WstxS816GgM2V1myd5EzwnGmREG1zzbLGWf2syYhFoYhg7gjdd2mkoE",
+                "extKey": "jXZgxQ3UcGtFrxt6Brq38Kvqp5ytMNwW4ADfeHyjGBUMwaBfUrhEa5havzdxFwjv5BXtT1VS5g4Ayk1RsKyCZT",
                 "extCfg": ""
             }
         ]
