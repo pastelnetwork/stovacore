@@ -60,7 +60,19 @@ Generate certificate for python masternode https
  Run python masternode:
  - `python3 start_single_masternode.py &`
 
-
+###### Additioal dependencies
+ 
+  - SQLite version 3.25 or higher (for window function support). Currently Ubuntu 18.40 repositories has only SQLite 3.22.
+  Replace SQLite so:
+   - download sources:
+    wget https://www.sqlite.org/2020/sqlite-autoconf-3310100.tar.gz
+    - unpack, build (./configure, make)
+    - backup original
+    sudo mv /usr/lib/x86_64-linux-gnu/libsqlite3.so.0 /usr/lib/x86_64-linux-gnu/libsqlite3.so.0.original
+    - put new version
+    sudo cp libsqlite3.so.0 /usr/lib/x86_64-linux-gnu/
+  
+  
 ### Fetching submodules
 
 This repository uses git submodules feature. To fetch modules run:

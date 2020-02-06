@@ -3,6 +3,7 @@ import base64
 import json
 import random
 
+from bitcoinrpc.authproxy import JSONRPCException
 from peewee import DoesNotExist, IntegrityError
 
 from core_modules.database import Masternode, Chunk, ChunkMnDistance, Regticket, ChunkMnRanked, MASTERNODE_DB, \
@@ -136,7 +137,11 @@ def get_and_proccess_new_activation_tickets():
     for txid in act_tickets_txids:
         if ActivationTicket.select().where(ActivationTicket.txid == txid).count() != 0:
             continue
-        ticket = json.loads(get_blockchain_connection().get_ticket(txid))  # it's registration ticket here
+        try:
+            ticket = json.loads(get_blockchain_connection().get_ticket(txid))  # it's registration ticket here
+        except JSONRPCException as e:
+            mnl_logger.error('Exception while fetching actticket: {}'.format(str(e)))
+            continue
         # fetch regticket from activation ticket
         # store regticket in local DB if not exist
         # get list of chunk ids, add to local DB (Chunk table)
@@ -173,7 +178,6 @@ def move_confirmed_chunks_to_persistant_storage():
      - Goes through chunks in temp storage,
      - fetch each chunk from DB, if it's confirmed - move to persistant storage.
     """
-    mnl_logger.warn('Move conf chunks task')
     for chunk_id in get_chunkmanager().index_temp_storage():
         mnl_logger.warn('Process chunk {}'.format(chunk_id))
         try:
@@ -212,6 +216,7 @@ def recalculate_mn_chunk_ranking_table():
 
     # insert (chunk, masternode, rank) for all chunk-owners in a separate table for convinience
     insert_sql = '''insert into chunkmnranked (chunk_id, masternode_id, rank) {}'''.format(sql)
+    mnl_logger.info('query: {}'.format(insert_sql))
     MASTERNODE_DB.execute_sql(insert_sql)
 
 

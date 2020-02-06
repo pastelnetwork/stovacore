@@ -210,7 +210,7 @@ class BlockChain:
                 'extAddress': '18.216.28.255:4444'
             },
             'mn5': {
-                'extKey': 'jXXdJaUzJ7UVKqrhj9RKVujA3UpPDewxvJr6P88bxzKEBrJ9RHNTS9JEJrm8qdc23c4f91tGGogd3R3PtCiQjD',
+                'extKey': 'jXZEE4PJHBraMHhLj2RSa2vWQnmWFeMY1i7U2CBbfRGR1FiHe11cmCVfsBdgDSaYbKHq6gEDbZwurV6o5r3dvz',
                 'extAddress': '18.191.111.96:4444'
             },
             'mn6': {
@@ -251,7 +251,7 @@ class BlockChain:
                 "lastseen": 1569486926,
                 "activeseconds": 7838259,
                 "extAddress": "18.191.111.96:4444",
-                "extKey": "jXXdJaUzJ7UVKqrhj9RKVujA3UpPDewxvJr6P88bxzKEBrJ9RHNTS9JEJrm8qdc23c4f91tGGogd3R3PtCiQjD",
+                "extKey": "jXZEE4PJHBraMHhLj2RSa2vWQnmWFeMY1i7U2CBbfRGR1FiHe11cmCVfsBdgDSaYbKHq6gEDbZwurV6o5r3dvz",
                 "extCfg": ""
             },
             # mn6
@@ -302,7 +302,11 @@ class BlockChain:
         return self.__call_jsonrpc("tickets", "register", "art", *parameters)
 
     def pastelid_sign(self, base64data):
-        response = self.__call_jsonrpc("pastelid", "sign", base64data, self.pastelid, self.passphrase)
+        try:
+            response = self.__call_jsonrpc("pastelid", "sign", base64data, self.pastelid, self.passphrase)
+        except Exception as e:
+            self.__logger.warning('Probably your passphrase {} is invalid for a current key'.format(self.passphrase))
+            raise e
         return response['signature']
 
     def pastelid_verify(self, base64data, signature, pasteid_to_verify):
