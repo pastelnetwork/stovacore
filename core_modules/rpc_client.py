@@ -86,7 +86,7 @@ class RPCClient:
     async def send_rpc_fetchchunk(self, chunkid):
         await asyncio.sleep(0)
 
-        self.__logger.debug("FETCHCHUNK REQUEST to %s, chunkid: %s" % (self, chunkid_to_hex(chunkid)))
+        self.__logger.debug("FETCHCHUNK REQUEST to {}, chunkid: {}".format(self, chunkid_to_hex(int(chunkid))))
 
         # chunkid is bignum so we need to serialize it
         chunkid_str = chunkid_to_hex(int(chunkid))

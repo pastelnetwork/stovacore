@@ -141,6 +141,8 @@ def get_and_proccess_new_activation_tickets():
             ticket = json.loads(get_blockchain_connection().get_ticket(txid))  # it's registration ticket here
         except JSONRPCException as e:
             mnl_logger.error('Exception while fetching actticket: {}'.format(str(e)))
+            # to avoid processing invalid txid multiple times - write in to the DB with height=-1
+            ActivationTicket.create(txid=txid, height=-1)
             continue
         # fetch regticket from activation ticket
         # store regticket in local DB if not exist
