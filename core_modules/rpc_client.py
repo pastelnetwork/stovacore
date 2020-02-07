@@ -1,4 +1,6 @@
 import asyncio
+import requests
+
 from aiohttp import ClientSession
 
 from core_modules.logger import initlogging
@@ -41,6 +43,12 @@ class RPCClient:
                 msg = await resp.read()
                 return msg
 
+    def __send_rpc_and_wait_for_response_sync(self, msg):
+        url = 'https://{}:{}/'.format(self.__server_ip, self.__server_port)
+        resp = requests.post(url, data=msg, verify=False)
+        self.__logger.info('Returned status code {}'.format(resp.status_code))
+        return resp.content
+
     async def __send_rpc_to_mn(self, response_name, request_packet):
         node_name = self.__name if self.__name else self.__server_ip
         await asyncio.sleep(0)
@@ -62,6 +70,26 @@ class RPCClient:
 
         return response_data
 
+    def __send_rpc_to_mn_sync(self, response_name, request_packet):
+        node_name = self.__name if self.__name else self.__server_ip
+        msg = 'Sending RPC message to {}'.format(node_name)
+        self.__logger.info(msg)
+
+        response_packet = self.__send_rpc_and_wait_for_response_sync(request_packet)
+
+        sender_id, response_msg = verify_and_unpack(response_packet)
+        rpcname, success, response_data = response_msg
+        self.__logger.info('RPC {} from {} success: {}, data: {}'.format(rpcname, node_name, success, response_data))
+
+        if rpcname != response_name:
+            raise ValueError("Spotcheck response has rpc name: %s" % rpcname)
+
+        if success != "SUCCESS":
+            self.__logger.warn('Error from masternode {}'.format(node_name))
+            raise RPCException(response_data)
+
+        return response_data
+
     async def send_rpc_ping(self, data):
         await asyncio.sleep(0)
 
@@ -69,9 +97,31 @@ class RPCClient:
 
         try:
             returned_data = await self.__send_rpc_to_mn("PING_RESP", request_packet)
-        except:
-            self.__logger.warn('Skipping by timout')
-            return None
+        except Exception as e:
+            self.__logger.warn('Skipping by timeout')
+            raise e
+            # return None
+
+        if set(returned_data.keys()) != {"data"}:
+            raise ValueError("RPC parameters are wrong for PING RESP: %s" % returned_data.keys())
+
+        if type(returned_data["data"]) != bytes:
+            raise TypeError("data is not bytes: %s" % type(returned_data["data"]))
+
+        response_data = returned_data["data"]
+
+        return response_data
+
+    def send_rpc_ping_sync(self, data):
+
+        request_packet = self.__return_rpc_packet(self.remote_pastelid, ["PING_REQ", data])
+
+        try:
+            returned_data = self.__send_rpc_to_mn_sync("PING_RESP", request_packet)
+        except Exception as e:
+            self.__logger.warn('Skipping by timeout')
+            raise e
+            # return None
 
         if set(returned_data.keys()) != {"data"}:
             raise ValueError("RPC parameters are wrong for PING RESP: %s" % returned_data.keys())
@@ -84,8 +134,10 @@ class RPCClient:
         return response_data
 
     async def send_rpc_fetchchunk(self, chunkid):
+
         await asyncio.sleep(0)
 
+        self.__logger.info("FETCHCHUNK REQUEST to {} ({})".format(self.__name, self.server_ip))
         self.__logger.debug("FETCHCHUNK REQUEST to {}, chunkid: {}".format(self, chunkid_to_hex(int(chunkid))))
 
         # chunkid is bignum so we need to serialize it

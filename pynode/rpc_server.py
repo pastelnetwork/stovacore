@@ -33,7 +33,7 @@ class RPCServer:
     def add_callback(self, callback_req, callback_resp, callback_function, coroutine=False, allowed_pubkey=None):
         self.__RPCs[callback_req] = [callback_resp, callback_function, coroutine, allowed_pubkey]
 
-    def __receive_rpc_ping(self, data):
+    def __receive_rpc_ping(self, data, *args, **kwargs):
         self.__logger.info('Ping request received')
         if not isinstance(data, bytes):
             raise TypeError("Data must be a bytes!")

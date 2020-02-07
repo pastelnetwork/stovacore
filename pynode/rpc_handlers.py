@@ -2,7 +2,10 @@ from core_modules.blackbox_modules import luby
 from core_modules.chunkmanager import get_chunkmanager
 from core_modules.database import Chunk
 from core_modules.helpers import hex_to_chunkid
+from core_modules.logger import initlogging
 from core_modules.rpc_client import RPCException
+
+rpc_handler_logger = initlogging('RPCHandlerLogger', __name__)
 
 
 def receive_rpc_fetchchunk(data, **kwargs):
@@ -20,8 +23,8 @@ def receive_rpc_fetchchunk(data, **kwargs):
     # fetch chunk from DB, check if we store it
     chunk = Chunk.get(chunk_id=str(chunkid))  # if we dont have chunk - exception will be raised and returned by RPC
     if not chunk.stored:
-        raise RPCException('Given chunk is not stored')
-
+        # raise RPCException('Given chunk is not stored')
+        return {"chunk": None}
     chunk_data = get_chunkmanager().get_chunk_data(chunkid)
 
     return {"chunk": chunk_data}
