@@ -303,29 +303,30 @@ async def chunk_fetcher_task():
             mn = masternode.get_rpc_client()
 
             try:
-                # data = await mn.send_rpc_fetchchunk(chunkid)
-                data = await mn.send_rpc_ping(b'ping')
+                data = await mn.send_rpc_fetchchunk(chunkid)
+                # data = await mn.send_rpc_ping(b'ping')
+                # data = mn.send_rpc_ping_sync(b'ping')
             except RPCException as exc:
                 mnl_logger.info("FETCHCHUNK RPC FAILED for node %s with exception %s" % (mn.id, exc))
                 continue
 
-            # if data is None:
-            #     mnl_logger.info("MN %s returned None for fetchchunk %s" % (mn.id, chunkid))
-            #     # chunk was not found
-            #     continue
-            #
-            # # verify that digest matches
-            # digest = get_pynode_digest_int(data)
-            # if chunkid != str(digest):
-            #     mnl_logger.info("MN %s returned bad chunk for fetchchunk %s, mismatched digest: %s" % (
-            #         mn.id, chunkid, digest))
-            #     continue
-            #
-            # # add chunk to persistant storage and update DB info (`stored` flag) to True
-            # get_chunkmanager().store_chunk_in_storage(int(chunkid), data)
-            # Chunk.update(stored=True).where(Chunk.chunk_id == chunkid)
-            # break
-            #
+            if data is None:
+                mnl_logger.info("MN %s returned None for fetchchunk %s" % (mn.id, chunkid))
+                # chunk was not found
+                continue
+
+            # verify that digest matches
+            digest = get_pynode_digest_int(data)
+            if chunkid != str(digest):
+                mnl_logger.info("MN %s returned bad chunk for fetchchunk %s, mismatched digest: %s" % (
+                    mn.id, chunkid, digest))
+                continue
+
+            # add chunk to persistant storage and update DB info (`stored` flag) to True
+            get_chunkmanager().store_chunk_in_storage(int(chunkid), data)
+            Chunk.update(stored=True).where(Chunk.chunk_id == chunkid)
+            break
+
         # nobody has this chunk
         if not found:
             # TODO: fall back to reconstruct it from luby blocks
