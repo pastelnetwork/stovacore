@@ -17,7 +17,7 @@ DEFAULT_PASTEL_ID_PASSPHRASE = 'putvalidpassphrasehereorreplacewithenvvar'
 
 def update_masternode_conf(pastelid):
     import json
-    with open('/home/animecoinuser/.pastel/testnet3/masternode.conf', 'r') as f:
+    with open('/home/animecoinuser/.pastel/masternode.conf', 'r') as f:
         config_data = f.read()
     json_config_data = json.loads(config_data)
 
@@ -26,7 +26,7 @@ def update_masternode_conf(pastelid):
         return
     json_config_data[mn_key]['extPubKey'] = pastelid
     final_data = json.dumps(json_config_data, indent=4, sort_keys=True)
-    with open('/home/animecoinuser/.pastel/testnet3/masternode.conf', 'w') as f:
+    with open('/home/animecoinuser/.pastel/masternode.conf', 'w') as f:
         f.write(final_data)
 
 
