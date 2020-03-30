@@ -85,20 +85,4 @@ Generate certificate for python masternode https
  - pyNode is running, listening connections on port 4444
 
 ### Tools/scripts
-
- - `update_pynodes.sh` - prepare pyNode distirbution package from content of the current directory. Updates all masternode of testnet (masternodes should be added to local ssh config with names [ mn2, ..., mn11 ]
- - `pynode_control.sh` - helping script, should not be executed directly. It is executed on masternode machine by `pynodes.sh` script
- - `pynodes.sh` - provides start/stop/status functionality for pynodes of the testnet. Connects to testnet machines and executes `pynode_control.sh` fetched from 3rd party host. Return result to the local console. Possible subcommands:
-    - start
-    - status
-    - stop
-    - generate_cert
-    - create_tables
-    - update_requirements
-    - drop_db
-    - stop_cnode
-    - start_cnode
-    - cnode_status
-    - clear_tmp_storage
-
  - `python test_rpc.py` - connects to pyNodes from local `masternodes.conf` file, send ping packet with zeroMQ RPC. If any node hangs with response - it probably requires restart.
