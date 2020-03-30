@@ -13,6 +13,6 @@ aiohttp==3.5.4
 peewee==3.9.6
 Keras-Applications==1.0.2
 Keras-Preprocessing==1.0.1
-
+requests==2.22.0
 # dev
 PyInstaller==3.5

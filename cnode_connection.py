@@ -19,7 +19,7 @@ def connect_to_blockchain_daemon():
             blockchain = BlockChain(user='rt',
                                     password='rt',
                                     ip='127.0.0.1',
-                                    rpcport=9932,
+                                    rpcport=19932,
                                     pastelid=pastelid,
                                     passphrase=passphrase
                                     )
@@ -27,7 +27,7 @@ def connect_to_blockchain_daemon():
             blockchain = BlockChain(user='rt',
                                     password='rt',
                                     ip='127.0.0.1',
-                                    rpcport=9932
+                                    rpcport=19932
                                     )
 
         try:

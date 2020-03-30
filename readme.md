@@ -48,8 +48,7 @@ Recommended instance setup:
  - Get source code: `wget dobrushskiy.name/static/StoVaCore.tar.gz`
  - Unpack: `tar -xzvf StoVaCore.tar.gz`
  - `cd StoVaCore`
- - Install pip: `sudo apt install -y python3-pip`
- - `pip3 install -r requirements.txt`
+ - `./install_pynode.sh` - this will install dependencies
 
 Generate certificate for python masternode https
 
@@ -57,27 +56,25 @@ Generate certificate for python masternode https
  - `cd /home/animecoinuser/.pastel/pynode_https_cert`
  - `openssl req -newkey rsa:2048 -nodes -keyout privkey.pem -x509 -days 36500 -out certificate.pem -subj "/C=US"`
 
+ - Install SQLite 3.25+ (described in section below)
+ 
  Run python masternode:
  - `python3 start_single_masternode.py &`
 
-###### Additioal dependencies
+###### Additinal dependencies
  
   - SQLite version 3.25 or higher (for window function support). Currently Ubuntu 18.40 repositories has only SQLite 3.22.
-  Replace SQLite so:
+  Replace SQLite .SO:
    - download sources:
     wget https://www.sqlite.org/2020/sqlite-autoconf-3310100.tar.gz
     - unpack, build (./configure, make)
+    - ..or download built for ubuntu 18.04 `wget https://dobrushskiy.name/static/libsqlite3.so.0` - it's much faster then building.
     - backup original
     sudo mv /usr/lib/x86_64-linux-gnu/libsqlite3.so.0 /usr/lib/x86_64-linux-gnu/libsqlite3.so.0.original
     - put new version
     sudo cp libsqlite3.so.0 /usr/lib/x86_64-linux-gnu/
   
   
-### Fetching submodules
-
-This repository uses git submodules feature. To fetch modules run:
- - `git submodule init && git submodule update`
-
 ### Install and run pyNode (Ubuntu 18.04)
 
  - `pasteld` should be started and running
@@ -85,7 +82,7 @@ This repository uses git submodules feature. To fetch modules run:
  - `apt install python3-pip`
  - `pip3 install -r requirements.txt`
  - `python start_single_masternode.py &`
- - pyNode is running, listening connections on port 444
+ - pyNode is running, listening connections on port 4444
 
 ### Tools/scripts
 

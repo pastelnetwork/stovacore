@@ -202,22 +202,7 @@ class BlockChain:
         return self.__call_jsonrpc("tickets", "get", txid)
 
     def masternode_list(self):
-        # return self.__call_jsonrpc("masternode", "list", "extra")
-        # FIXME: only for testing, to limit set of masternodes
-        return {
-            'mn4': {
-                'extKey': 'jXYZ8BWArT1ZTWyNdSqeGH6ELmB5H9kZfZuMtKKtUQpqw7HLY7ugQgZUfQTwhWEkXKuqCT2vm32WHD5YSQivfF',
-                'extAddress': '18.216.28.255:4444'
-            },
-            'mn5': {
-                'extKey': 'jXZEE4PJHBraMHhLj2RSa2vWQnmWFeMY1i7U2CBbfRGR1FiHe11cmCVfsBdgDSaYbKHq6gEDbZwurV6o5r3dvz',
-                'extAddress': '18.191.111.96:4444'
-            },
-            'mn6': {
-                'extKey': 'jXZgxQ3UcGtFrxt6Brq38Kvqp5ytMNwW4ADfeHyjGBUMwaBfUrhEa5havzdxFwjv5BXtT1VS5g4Ayk1RsKyCZT',
-                'extAddress': '18.222.118.140:4444'
-            }
-        }
+        return self.__call_jsonrpc("masternode", "list", "extra")
 
     def masternode_top(self, blocknum=None):
         if blocknum is None:
@@ -226,48 +211,7 @@ class BlockChain:
             result = self.__call_jsonrpc("masternode", "top", blocknum)
         # cNode returns data with the following format:
         # {<block_number>: [{node_data1, node_data2, node_data3}]}
-        # return list(result.values())[0]
-        return [
-            # mn4
-            {
-                "rank": "1",
-                "IP:port": "18.216.28.255:19933",
-                "protocol": 170007,
-                "outpoint": "73130f53545e465eacb705b9425439b3c23b45a9b0084c7ec1deb0c9d1225be8-1",
-                "payee": "tPpMnvVmA4Lbab4JHtXmK9Jt9ZFxEgN1Rmj",
-                "lastseen": 1569486643,
-                "activeseconds": 7837959,
-                "extAddress": "18.216.28.255:4444",
-                "extKey": "jXYZ8BWArT1ZTWyNdSqeGH6ELmB5H9kZfZuMtKKtUQpqw7HLY7ugQgZUfQTwhWEkXKuqCT2vm32WHD5YSQivfF",
-                "extCfg": ""
-            },
-            # mn5
-            {
-                "rank": "2",
-                "IP:port": "18.191.111.96:19933",
-                "protocol": 170007,
-                "outpoint": "055b2e9833690e44c62e9c854fe33a770ac427647079ef571a95a3b8a24887fd-0",
-                "payee": "tPgYbXJNTMDjxaZnwgKVtcJ2ZKgdf9WDcZE",
-                "lastseen": 1569486926,
-                "activeseconds": 7838259,
-                "extAddress": "18.191.111.96:4444",
-                "extKey": "jXZEE4PJHBraMHhLj2RSa2vWQnmWFeMY1i7U2CBbfRGR1FiHe11cmCVfsBdgDSaYbKHq6gEDbZwurV6o5r3dvz",
-                "extCfg": ""
-            },
-            # mn6
-            {
-                "rank": "3",
-                "IP:port": "18.222.118.140:19933",
-                "protocol": 170007,
-                "outpoint": "f900925fe119af0438641b10945b9377eb52e06fe108e785fccd3dcd6d8384f4-1",
-                "payee": "tPRcrQ5P4vm3yKFgy3y1Rs3MaYcdVvEsw57",
-                "lastseen": 1569486686,
-                "activeseconds": 7837992,
-                "extAddress": "18.222.118.140:4444",
-                "extKey": "jXZgxQ3UcGtFrxt6Brq38Kvqp5ytMNwW4ADfeHyjGBUMwaBfUrhEa5havzdxFwjv5BXtT1VS5g4Ayk1RsKyCZT",
-                "extCfg": ""
-            }
-        ]
+        return list(result.values())[0]
 
     def pastelid_list(self):
         # response example:
