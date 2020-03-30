@@ -7,7 +7,6 @@ from core_modules.ticket_models import RegistrationTicket, Signature, ImageData
 from core_modules.settings import NetWorkSettings
 from core_modules.helpers import require_true
 from core_modules.logger import initlogging
-from debug.masternode_conf import MASTERNODE_NAMES
 from utils.mn_ordering import get_masternode_ordering
 from wallet.database import RegticketDB
 
@@ -121,7 +120,7 @@ class ArtRegistrationClient:
                                           image_hash=image.get_artwork_hash())
 
         mn0 = get_masternode_ordering()[0]
-        art_reg_client_logger.debug('Top masternode received: {}'.format(MASTERNODE_NAMES.get(mn0.server_ip)))
+        art_reg_client_logger.debug('Top masternode received: {}'.format(mn0.server_ip))
         upload_code = await mn0.call_masternode("REGTICKET_REQ", "REGTICKET_RESP",
                                                 [regticket.serialize(), regticket_signature.serialize()])
         worker_fee = await mn0.call_masternode("IMAGE_UPLOAD_MN0_REQ", "IMAGE_UPLOAD_MN0_RESP",

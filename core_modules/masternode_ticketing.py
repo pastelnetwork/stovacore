@@ -10,7 +10,6 @@ from peewee import DoesNotExist
 from core_modules.blackbox_modules.nsfw import get_nsfw_detector
 from core_modules.chunkmanager import get_chunkmanager
 from core_modules.database import Regticket, MASTERNODE_DB, Chunk
-from debug.masternode_conf import MASTERNODE_NAMES
 from utils.mn_ordering import get_masternode_ordering
 from cnode_connection import get_blockchain_connection
 from .ticket_models import RegistrationTicket, Signature, ImageData, IDTicket, FinalIDTicket, TransferTicket, FinalTransferTicket, TradeTicket, \
@@ -302,7 +301,6 @@ class ArtRegistrationServer:
         # if we're on mn1 or mn2:
         if regticket_db.localfee is None:
             mn0 = get_masternode_ordering(regticket.blocknum)[0]
-            mn_ticket_logger.warn('ordering: {}'.format(MASTERNODE_NAMES.get(mn0.server_ip)))
             # Send confirmation to MN0
             mn_signed_regticket = self.__generate_signed_ticket(regticket)
             # TODO: run task and return without waiting for result (as if it was in Celery)
