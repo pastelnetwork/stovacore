@@ -6,7 +6,6 @@ from aiohttp import ClientSession
 from core_modules.logger import initlogging
 from core_modules.rpc_serialization import pack_and_sign, verify_and_unpack
 from core_modules.helpers import chunkid_to_hex
-from debug.masternode_conf import MASTERNODE_NAMES
 
 
 class RPCException(Exception):
@@ -23,7 +22,7 @@ class RPCClient:
         self.__server_port = server_port
         self.remote_pastelid = remote_pastelid
 
-        self.__name = MASTERNODE_NAMES.get(server_ip)
+        self.__name = ''
         self.__reputation = None
 
     def __str__(self):
