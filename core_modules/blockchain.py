@@ -22,9 +22,9 @@ def update_masternode_conf(pastelid):
     json_config_data = json.loads(config_data)
 
     mn_key = list(json_config_data.keys())[0]
-    if json_config_data[mn_key]['extPubKey'] == pastelid:
+    if json_config_data[mn_key]['extKey'] == pastelid:
         return
-    json_config_data[mn_key]['extPubKey'] = pastelid
+    json_config_data[mn_key]['extKey'] = pastelid
     final_data = json.dumps(json_config_data, indent=4, sort_keys=True)
     with open('/home/animecoinuser/.pastel/testnet3/masternode.conf', 'w') as f:
         f.write(final_data)
