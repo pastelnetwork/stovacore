@@ -1,3 +1,5 @@
+#!/bin/bash
+
 readonly STOPPED=0
 readonly RUNNING=1
 
