@@ -373,45 +373,6 @@ class Signature(TicketModelBase):
             raise ValueError("Invalid signature")
 
 
-class MasterNodeSignedTicket(TicketModelBase):
-    def validate(self, chainwrapperchainwrapper):
-        # validate that the author is correct and pubkeys match MNs
-        if self.signature_author.pubkey != self.ticket.author:
-            raise ValueError("Signature pubkey does not match regticket.author!")
-
-        # prevent nonce reuse
-        require_true(chainwrapper.valid_nonce(self.nonce))
-
-        if NetWorkSettings.VALIDATE_MN_SIGNATURES:
-            # validate masternode order that's in the ticket
-            masternode_ordering = get_blockchain_connection().masternode_top(self.ticket.blocknum)[:3]
-
-            # make sure we got 3 MNs
-            if len(masternode_ordering) != 3:
-                raise ValueError("Incorrect masternode list returned by get_masternode_order: %s" % masternode_ordering)
-
-            # make sure they're unique
-            if len(set([x['IP:port'] for x in masternode_ordering])) != 3:
-                raise ValueError(
-                    "Masternodes are not unique as returned by get_masternode_order: %s" % masternode_ordering)
-
-            if (self.signature_1.pubkey != base64.b64decode(masternode_ordering[0]['extKey']) or
-                    self.signature_2.pubkey != base64.b64decode(masternode_ordering[1]['extKey']) or
-                    self.signature_3.pubkey != base64.b64decode(masternode_ordering[2]['extKey'])):
-                raise ValueError("Invalid pubkey for masternode ordering")
-
-            # validate signatures
-            self.signature_author.validate(self.ticket)
-            self.signature_1.validate(self.ticket)
-            self.signature_2.validate(self.ticket)
-            self.signature_3.validate(self.ticket)
-        else:
-            # we are running in debug mode, do not check signatures
-            pass
-
-        # TODO: make sure the ticket was paid for
-
-
 class SelfSignedTicket(TicketModelBase):
     def validate(self, chainwrapper):
         # validate that the author is correct and pubkeys match MNs
@@ -444,17 +405,6 @@ class FinalTransferTicket(SelfSignedTicket):
     methods = {
         "ticket": TransferTicket,
         "signature": Signature,
-        "nonce": UUIDField(),
-    }
-
-
-class FinalRegistrationTicket(MasterNodeSignedTicket):
-    methods = {
-        "ticket": RegistrationTicket,
-        "signature_author": Signature,
-        "signature_1": Signature,
-        "signature_2": Signature,
-        "signature_3": Signature,
         "nonce": UUIDField(),
     }
 
