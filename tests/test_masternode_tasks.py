@@ -104,16 +104,20 @@ class RefreshMNListTestCase(unittest.TestCase):
         MASTERNODE_DB.create_tables(DB_MODELS)
 
     @patch('cnode_connection.BlockChain', autospec=True)
-    def test_refresh_masternode_list(self, bc_obj):
+    @patch('pynode.tasks.get_blockchain_connection', autospec=True)
+    def test_refresh_masternode_list(self, bc_obj, get_blockchain_connection):
         bc_obj.return_value.masternode_list.return_value = mn_list
+        get_blockchain_connection.return_value.masternode_list.return_value = mn_list
         self.assertEqual(Masternode.select().count(), 0)
         refresh_masternode_list()
         self.assertEqual(Masternode.select().count(), 3)
         self.assertEqual(ChunkMnDistance.select().count(), 0)
 
     @patch('cnode_connection.BlockChain', autospec=True)
-    def test_calculate_xor_distances_for_masternodes(self, bc_obj):
+    @patch('pynode.tasks.get_blockchain_connection', autospec=True)
+    def test_calculate_xor_distances_for_masternodes(self, bc_obj, get_blockchain_connection):
         bc_obj.return_value.masternode_list.return_value = mn_list
+        get_blockchain_connection.return_value.masternode_list.return_value = mn_list
         for i in range(3):
             Chunk.create(chunk_id='1231231231231231232323934384834890089238429382938429384934{}'.format(i),
                          image_hash=b'asdasdasd')

@@ -53,18 +53,25 @@ class TicketModelBase:
           o serialized if you want to pass in msgpack()ed data from the wire
         """
 
-    def __init__(self, dictionary=None, serialized=None):
+    def __init__(self, dictionary=None, serialized=None, serialized_base64=None):
+        """
+        Crappy code - if provide all 3 arguments not clear ( for caller) which will be used.
+        FIXME!
+        """
         # internal data structures
         # TODO: using __dict__ like this is not very elegant
         self.__dict__["__locked"] = False
         self.__data = {}
         # end
 
-        if dictionary is None and serialized is None:
-            raise ValueError("You have to set at least dictionary or serialized")
+        if dictionary is None and serialized is None and serialized_base64 is None:
+            raise ValueError("You have to set at least dictionary or serialized or serialized_base64")
 
         if serialized is not None:
             unserialized = self.unserialize(serialized)
+            dictionary = unserialized
+        elif serialized_base64 is not None:
+            unserialized = self.unserialize_base64(serialized_base64)
             dictionary = unserialized
 
         # validate dictionary
