@@ -13,7 +13,7 @@ from core_modules.helpers import get_pynode_digest_int
 from core_modules.blackbox_modules import luby
 from core_modules.masternode_ticketing import masternode_place_image_data_in_chunkstorage
 from core_modules.ticket_models import RegistrationTicket, ImageData
-from tests.utils import png_1x1_data
+from tests.test_utils import png_1x1_data
 
 
 def get_regticket():

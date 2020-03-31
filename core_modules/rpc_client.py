@@ -15,6 +15,12 @@ class RPCException(Exception):
 class RPCClient:
     def __init__(self, remote_pastelid, server_ip, server_port):
         self.__logger = initlogging('', __name__, level="debug")
+        if not remote_pastelid:
+            raise ValueError('Remove pastelid cannot be empty')
+        if not server_ip:
+            raise ValueError('IP address cannot be empty')
+        if not server_port:
+            raise ValueError('Port cannot be empty')
 
         # variables of the server (the MN)
         self.__server_ip = server_ip

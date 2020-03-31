@@ -7,7 +7,7 @@ from core_modules.model_validators import FingerprintField, LubyChunkField, Luby
     ImageField, ThumbnailField, BytesField, StringField, StringChoiceField, IntegerField, SHA2256Field, SHA3512Field, \
     TXIDField, SignatureField, PubkeyField, BlockChainAddressField, UnixTimeField, NotImplementedType, \
     NotImplementedValidator
-from tests.utils import png_1x1_data
+from tests.test_utils import png_1x1_data
 
 
 class TestFingerprintField(unittest.TestCase):

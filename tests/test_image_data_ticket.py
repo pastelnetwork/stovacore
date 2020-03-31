@@ -1,7 +1,7 @@
 import unittest
 from core_modules.ticket_models import ImageData
 
-from tests.utils import png_1x1_data
+from tests.test_utils import png_1x1_data
 
 
 class TestLuby(unittest.TestCase):
