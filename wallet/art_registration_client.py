@@ -19,7 +19,7 @@ class ArtRegistrationClient:
 
     def __generate_signed_ticket(self, ticket):
         signed_ticket = Signature(dictionary={
-            "signature": get_blockchain_connection().pastelid_sign(ticket.serialize_base64()),
+            "signature": get_blockchain_connection().pastelid_sign(ticket.serialize()),
             "pastelid": get_blockchain_connection().pastelid
         })
 

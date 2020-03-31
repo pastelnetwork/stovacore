@@ -90,7 +90,7 @@ def verify_and_unpack(raw_message_contents):
         tmp["signature"] = b''
         sleep_rand()
         raw_hash = get_pynode_digest_bytes(msgpack.packb(tmp, default=default, use_bin_type=True))
-        verified = get_blockchain_connection().pastelid_verify(base64.b64encode(raw_hash).decode(), signature, sender_id)
+        verified = get_blockchain_connection().pastelid_verify(raw_hash, signature, sender_id)
         sleep_rand()
 
         if not verified:
@@ -126,7 +126,7 @@ def pack_and_sign(receiver_pastel_id, message_body, version=MAX_SUPPORTED_VERSIO
         # serialize container, calculate hash and sign with private key
         # signature is None as this point as we can't know the signature without calculating it
         container_serialized = msgpack.packb(container, default=default, use_bin_type=True)
-        signature = get_blockchain_connection().pastelid_sign(base64.b64encode(get_pynode_digest_bytes(container_serialized)).decode())
+        signature = get_blockchain_connection().pastelid_sign(get_pynode_digest_bytes(container_serialized))
 
         # TODO: serializing twice is not the best solution if we want to work with large messages
 

@@ -1,3 +1,4 @@
+import base64
 import json
 
 import time
@@ -245,7 +246,14 @@ class BlockChain:
                       fee]
         return self.__call_jsonrpc("tickets", "register", "art", *parameters)
 
-    def pastelid_sign(self, base64data):
+    def pastelid_sign(self, data):
+        """
+        :type data: bytes
+        :return: signature
+        :rtype: str
+        """
+        # convert data to base64, then to decode string
+        base64data = base64.b64encode(data).decode()
         try:
             response = self.__call_jsonrpc("pastelid", "sign", base64data, self.pastelid, self.passphrase)
         except Exception as e:
@@ -253,5 +261,12 @@ class BlockChain:
             raise e
         return response['signature']
 
-    def pastelid_verify(self, base64data, signature, pasteid_to_verify):
-        return self.__call_jsonrpc("pastelid", "verify", base64data, signature, pasteid_to_verify)
+    def pastelid_verify(self, data, signature, pastelid_to_verify):
+        """
+        :type data: bytes
+        :return: valid/invalid
+        :rtype: bool
+        """
+        base64data = base64.b64encode(data).decode()
+        response = self.__call_jsonrpc("pastelid", "verify", base64data, signature, pastelid_to_verify)
+        return True if response['verification'] == 'OK' else False

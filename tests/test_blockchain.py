@@ -5,11 +5,13 @@ This module contain system test, which require some setup:
  - Registered pastelID for local cNode
  - Working internet conection.
 """
+import base64
 import json
 import unittest
 import os
 import asyncio
 import random
+import logging
 from cnode_connection import get_blockchain_connection
 from core_modules.ticket_models import RegistrationTicket
 from utils.mn_ordering import get_masternode_ordering
@@ -25,6 +27,7 @@ class BlockchainInteractionTestCase(unittest.TestCase):
         # fill this with created pastelID (should be registered) and passphrase
         os.environ.setdefault('PASTEL_ID', PASTELID)
         os.environ.setdefault('PASSPHRASE', PASSPHRASE)
+        logging.basicConfig(level=logging.DEBUG)
 
     def test_masternode_top(self):
         workers = get_blockchain_connection().masternode_top(None)
@@ -65,3 +68,17 @@ class ImageRegistrationTestCase(unittest.TestCase):
 
         regticket = RegistrationTicket(serialized_base64=regticket_base64)
         self.assertEqual(regticket.blocknum, 4494)
+
+
+class PastelSignVerifyTestCase(unittest.TestCase):
+    def setUp(self):
+        os.environ.setdefault('PASTEL_ID', PASTELID)
+        os.environ.setdefault('PASSPHRASE', PASSPHRASE)
+
+    def test_sign(self):
+        data = b'some data'
+        signature = get_blockchain_connection().pastelid_sign(data)
+        result = get_blockchain_connection().pastelid_verify(data, signature, PASTELID)
+        self.assertEqual(result, True)
+        result = get_blockchain_connection().pastelid_verify(data, 'aaa', PASTELID)
+        self.assertEqual(result, False)

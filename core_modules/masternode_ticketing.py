@@ -116,7 +116,7 @@ class ArtRegistrationServer:
 
     def __generate_signed_ticket(self, ticket):
 
-        signature = get_blockchain_connection().pastelid_sign(ticket.serialize_base64())
+        signature = get_blockchain_connection().pastelid_sign(ticket.serialize())
         signed_ticket = Signature(dictionary={
             "signature": signature,
             "pastelid": get_blockchain_connection().pastelid,
@@ -157,7 +157,7 @@ class ArtRegistrationServer:
         regticket.validate(self.__chainwrapper)
 
         # sign regticket
-        signature = get_blockchain_connection().pastelid_sign(regticket.serialize_base64())
+        signature = get_blockchain_connection().pastelid_sign(regticket.serialize())
         ticket_signed_by_mn = Signature(dictionary={
             "signature": signature,
             "pastelid": get_blockchain_connection().pastelid,
