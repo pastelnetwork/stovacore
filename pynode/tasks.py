@@ -41,8 +41,12 @@ def update_masternode_list():
     fresh_mn_pastelids = set(fresh_mn_list.keys())
     added_pastelids = fresh_mn_pastelids - existing_mn_pastelids
     removed_pastelids = existing_mn_pastelids - fresh_mn_pastelids
-    if len(removed_pastelids):
-        Masternode.delete().where(Masternode.pastel_id.in_(removed_pastelids)).execute()
+
+    # FIXME: uncomment this if cNode will not return empty keys.
+    # cNode returns empty extKey for random masternode, but it does not mean that this MNs should be deleted..
+    # maybe need to delete MN only if it has not responses several times for fetch chunk request
+    # if len(removed_pastelids):
+    #     Masternode.delete().where(Masternode.pastel_id.in_(removed_pastelids)).execute()
 
     if len(added_pastelids):
         data_for_insert = [{'pastel_id': pastelid, 'ext_address': fresh_mn_list[pastelid]} for pastelid in
