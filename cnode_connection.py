@@ -50,3 +50,8 @@ def get_blockchain_connection():
 
 
 basedir = os.getcwd()
+
+
+def reset_blockchain_connection():
+    global _blockchain
+    _blockchain = None

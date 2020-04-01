@@ -1,10 +1,11 @@
-import base64
+from typing import Optional
 
 import nacl.utils
 import time
 import msgpack
 
 from decimal import Decimal
+from copy import copy
 
 from core_modules.blackbox_modules.helpers import sleep_rand
 from core_modules.helpers import get_pynode_digest_bytes
@@ -46,6 +47,30 @@ def ensure_types_for_v1(container):
     timestamp = ensure_type_of_field(container, "timestamp", float)
     signature = ensure_type_of_field(container, "signature", str)
     return sender_id, receiver_id, data, nonce, timestamp, signature
+
+
+def validate_container_format(container: dict) -> bool:
+    ensure_type(container, dict)
+
+    if container.get("version") is None:
+        raise ValueError("version field must be supported in all containers!")
+
+    version = ensure_type_of_field(container, "version", int)
+
+    if version > MAX_SUPPORTED_VERSION:
+        raise NotImplementedError("version %s not implemented, is larger than %s" % (version, MAX_SUPPORTED_VERSION))
+
+    if version == 1:
+        # validate all keys for this version
+        a, b = set(container.keys()), VALID_CONTAINER_KEYS_v1
+        if len(a - b) + len(b - a) > 0:
+            raise KeyError("Keys don't match %s != %s" % (a, b))
+
+        # typecheck all the fields
+        ensure_types_for_v1(container)
+        return True
+    else:
+        raise NotImplementedError("version %s not implemented" % version)
 
 
 def verify_and_unpack(raw_message_contents):
@@ -102,7 +127,7 @@ def verify_and_unpack(raw_message_contents):
         raise NotImplementedError("version %s not implemented" % version)
 
 
-def pack_and_sign(receiver_pastel_id, message_body, version=MAX_SUPPORTED_VERSION):
+def pack_and_sign(receiver_pastel_id: str, message_body: list, version: int = MAX_SUPPORTED_VERSION):
     if version > MAX_SUPPORTED_VERSION:
         raise NotImplementedError("Version %s not supported, latest is :%s" % (version, MAX_SUPPORTED_VERSION))
 
@@ -114,7 +139,7 @@ def pack_and_sign(receiver_pastel_id, message_body, version=MAX_SUPPORTED_VERSIO
             "version": version,
             "sender_id": get_blockchain_connection().pastelid,
             "receiver_id": receiver_pastel_id,
-            "data": message_body,  # here message_body is already serialized with msgpack
+            "data": message_body,
             "nonce": nacl.utils.random(NONCE_LENGTH),
             "timestamp": time.time(),
             "signature": '',
@@ -148,3 +173,76 @@ def pack_and_sign(receiver_pastel_id, message_body, version=MAX_SUPPORTED_VERSIO
         return final
     else:
         raise NotImplementedError("Version %s is not implemented!" % version)
+
+
+class RPCMessage:
+    def __init__(self, data: list, receiver_pastel_id: str, version: int = MAX_SUPPORTED_VERSION,
+                 container: Optional[dict] = None):
+        """
+        Must be created without `container` argument on client side and with one on server side.
+        """
+        self.data = data
+        self.receiver_pastel_id = receiver_pastel_id
+        self.version = version
+        if container and (container['data'] != self.data or container['receiver_id'] != receiver_pastel_id):
+            raise ValueError('Data in container and data/receiver_pastel_id does must match!')
+
+        self.container = container if container is not None else {
+            "version": self.version,
+            "sender_id": get_blockchain_connection().pastelid,
+            "receiver_id": self.receiver_pastel_id,
+            "data": self.data,
+            "nonce": nacl.utils.random(NONCE_LENGTH),
+            "timestamp": time.time(),
+            "signature": '',
+        }
+
+    @staticmethod
+    def reconstruct(serialized: bytes) -> 'RPCMessage':
+        if len(serialized) > NetWorkSettings.RPC_MSG_SIZELIMIT:
+            raise ValueError("Message is too large: %s > %s" % (len(serialized),
+                                                                NetWorkSettings.RPC_MSG_SIZELIMIT))
+
+        container = msgpack.unpackb(serialized, ext_hook=ext_hook, raw=False)
+        if not validate_container_format(container):
+            raise ValueError('Invalid container format')
+
+        # validate receiver id is us
+        if container['receiver_id'] != get_blockchain_connection().pastelid:
+            raise ValueError(
+                "receiver_id is not us (%s != %s)" % (container['receiver_id'], get_blockchain_connection().pastelid))
+
+        require_true(container['timestamp'] > time.time() - 60)
+        require_true(container['timestamp'] < time.time() + 60)
+
+        return RPCMessage(container['data'], container['receiver_id'], container=container)
+
+    def sign(self) -> None:
+        """
+        Adds signature to the container if one not added yet.
+        """
+        if self.container['signature']:
+            return
+        ensure_types_for_v1(self.container)
+        container_serialized = msgpack.packb(self.container, default=default, use_bin_type=True)
+        self.container['signature'] = get_blockchain_connection().pastelid_sign(
+            get_pynode_digest_bytes(container_serialized))
+
+    def pack(self) -> bytes:
+        if not self.container['signature']:
+            self.sign()
+
+        return msgpack.packb(self.container, default=default, use_bin_type=True)
+
+    def verify(self) -> bool:
+        """
+        Verify sender signature
+        """
+        # remove signature from container
+        # msgpack it, get digest, verify
+        container = copy(self.container)
+        signature = container['signature']
+        container['signature'] = ''
+        container_serialized = msgpack.packb(container, default=default, use_bin_type=True)
+        return get_blockchain_connection().pastelid_verify(get_pynode_digest_bytes(container_serialized), signature,
+                                                           container['sender_id'])

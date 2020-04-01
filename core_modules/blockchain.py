@@ -246,11 +246,9 @@ class BlockChain:
                       fee]
         return self.__call_jsonrpc("tickets", "register", "art", *parameters)
 
-    def pastelid_sign(self, data):
+    def pastelid_sign(self, data: bytes) -> str:
         """
-        :type data: bytes
         :return: signature
-        :rtype: str
         """
         # convert data to base64, then to decode string
         base64data = base64.b64encode(data).decode()
@@ -261,11 +259,9 @@ class BlockChain:
             raise e
         return response['signature']
 
-    def pastelid_verify(self, data, signature, pastelid_to_verify):
+    def pastelid_verify(self, data: bytes, signature: str, pastelid_to_verify: str) -> bool:
         """
-        :type data: bytes
-        :return: valid/invalid
-        :rtype: bool
+        :return: Given signature valid/invalid against given data and pastelID.
         """
         base64data = base64.b64encode(data).decode()
         response = self.__call_jsonrpc("pastelid", "verify", base64data, signature, pastelid_to_verify)

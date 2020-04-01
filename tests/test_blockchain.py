@@ -12,26 +12,39 @@ import os
 import asyncio
 import random
 import logging
+
 from cnode_connection import get_blockchain_connection
+from core_modules.rpc_client import RPCClient
+from core_modules.rpc_serialization import verify_and_unpack, pack_and_sign, ensure_types_for_v1, default, RPCMessage
 from core_modules.ticket_models import RegistrationTicket
 from utils.mn_ordering import get_masternode_ordering
+from cnode_connection import reset_blockchain_connection
 
-PASTELID = 'jXaQj8FA9FGP6KzKNKz9bPEX7owTWqF7CeQ2Vy1fT21pEMUeveqBf6DXhRv3o6mBN3AX5bBcTuvafDcepkZ3wp'
+CLIENT_PASTELID = 'jXaQj8FA9FGP6KzKNKz9bPEX7owTWqF7CeQ2Vy1fT21pEMUeveqBf6DXhRv3o6mBN3AX5bBcTuvafDcepkZ3wp'
+SERVER_PASTELID = 'jXaSNRnSiPkz4BettdvJvmgKAFkfQvu4kFrcsRJcsFaBYiMJxo7zrvftPE2bcYGiViW5YLAuiALrtpoD1QbJ39'
 PASSPHRASE = 'taksa'
 
 TXID_LENGTH = 64
 
 
+def switch_pastelid(pastelid: str, passphrase: str):
+    """
+    To emulate situation when we're now on another node and using another pastelID.
+    """
+    reset_blockchain_connection()
+    os.environ['PASTEL_ID'] = pastelid
+    os.environ['PASSPHRASE'] = passphrase
+
+
 class BlockchainInteractionTestCase(unittest.TestCase):
     def setUp(self):
         # fill this with created pastelID (should be registered) and passphrase
-        os.environ.setdefault('PASTEL_ID', PASTELID)
+        os.environ.setdefault('PASTEL_ID', CLIENT_PASTELID)
         os.environ.setdefault('PASSPHRASE', PASSPHRASE)
-        logging.basicConfig(level=logging.DEBUG)
+        # logging.basicConfig(level=logging.DEBUG)
 
     def test_masternode_top(self):
         workers = get_blockchain_connection().masternode_top(None)
-        print(len(workers))
         for node in workers:
             self.assertIn('extKey', node)
             self.assertIn('extAddress', node)
@@ -52,7 +65,7 @@ class BlockchainInteractionTestCase(unittest.TestCase):
 
 class ImageRegistrationTestCase(unittest.TestCase):
     def setUp(self):
-        os.environ.setdefault('PASTEL_ID', PASTELID)
+        os.environ.setdefault('PASTEL_ID', CLIENT_PASTELID)
         os.environ.setdefault('PASSPHRASE', PASSPHRASE)
 
     def test_get_ticket(self):
@@ -72,13 +85,63 @@ class ImageRegistrationTestCase(unittest.TestCase):
 
 class PastelSignVerifyTestCase(unittest.TestCase):
     def setUp(self):
-        os.environ.setdefault('PASTEL_ID', PASTELID)
+        os.environ.setdefault('PASTEL_ID', CLIENT_PASTELID)
         os.environ.setdefault('PASSPHRASE', PASSPHRASE)
 
-    def test_sign(self):
+    def test_sign_verify(self):
         data = b'some data'
         signature = get_blockchain_connection().pastelid_sign(data)
-        result = get_blockchain_connection().pastelid_verify(data, signature, PASTELID)
+        result = get_blockchain_connection().pastelid_verify(data, signature, CLIENT_PASTELID)
         self.assertEqual(result, True)
-        result = get_blockchain_connection().pastelid_verify(data, 'aaa', PASTELID)
+        result = get_blockchain_connection().pastelid_verify(data, 'aaa', CLIENT_PASTELID)
         self.assertEqual(result, False)
+
+
+class RPCClientTestCase(unittest.TestCase):
+    def setUp(self):
+        # fill this with created pastelID (should be registered) and passphrase
+        os.environ['PASTEL_ID'] = CLIENT_PASTELID
+        os.environ['PASSPHRASE'] = PASSPHRASE
+        # logging.basicConfig(level=logging.DEBUG)
+        self.rpc_client = RPCClient(CLIENT_PASTELID, '127.0.0.1', '4444')
+
+    def test_request_packet(self):
+        self.assertRaises(ValueError, self.rpc_client.generate_packet, 'string')
+        self.assertRaises(ValueError, self.rpc_client.generate_packet, {'dict': 'dict'})
+        request_packet = self.rpc_client.generate_packet(['taksa'])
+        self.assertEqual(type(request_packet), bytes)
+        # todo: process package as it's processed on server part
+        sender_id, received_msg = verify_and_unpack(request_packet)
+        print(sender_id)
+        print(received_msg)
+
+    def test_rpcmessage_sign_verify(self):
+        m = RPCMessage(['taksa'], CLIENT_PASTELID)
+        m.sign()
+        self.assertTrue(m.verify())
+
+    def test_pastelid_switch(self):
+        self.assertEqual(get_blockchain_connection().pastelid, CLIENT_PASTELID)
+        switch_pastelid(SERVER_PASTELID, PASSPHRASE)
+        self.assertEqual(get_blockchain_connection().pastelid, SERVER_PASTELID)
+
+    def test_reconstruct(self):
+        data = ['taksa']
+        m = RPCMessage(data, SERVER_PASTELID)
+        packed = m.pack()
+
+        switch_pastelid(SERVER_PASTELID, PASSPHRASE)
+
+        m1 = RPCMessage.reconstruct(packed)
+        self.assertDictEqual(m.container, m1.container)
+        self.assertTrue(m1.verify())
+        self.assertEqual(m1.container['sender_id'], CLIENT_PASTELID)
+        self.assertEqual(m1.container['data'], data)
+
+    def test_reconstruct_wrong_recipient(self):
+        m = RPCMessage(['taksa'], 'some other pastelid')
+        packed = m.pack()
+
+        switch_pastelid(SERVER_PASTELID, PASSPHRASE)
+
+        self.assertRaises(ValueError, RPCMessage.reconstruct, packed)

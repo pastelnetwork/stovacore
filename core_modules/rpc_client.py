@@ -37,6 +37,18 @@ class RPCClient:
     def __eq__(self, other):
         return self.__dict__ == other.__dict__
 
+    def generate_packet(self, data):
+        """
+        :type data: list
+        :param data: data to send
+        :return: encoded packet
+        :rtype: bytes
+        """
+        if type(data) != list:
+            raise ValueError('Data must be a list!')
+
+        return self.__return_rpc_packet(self.remote_pastelid, data)
+
     def __return_rpc_packet(self, sender_id, msg):
         response_packet = pack_and_sign(sender_id, msg)
         return response_packet
@@ -55,22 +67,21 @@ class RPCClient:
         return resp.content
 
     async def __send_rpc_to_mn(self, response_name, request_packet):
-        node_name = self.__name if self.__name else self.__server_ip
         await asyncio.sleep(0)
-        msg = 'Sending RPC message to {}'.format(node_name)
-        self.__logger.info(msg)
+        self.__logger.info('Sending RPC message to {}'.format(self.__server_ip))
 
         response_packet = await self.__send_rpc_and_wait_for_response(request_packet)
 
         sender_id, response_msg = verify_and_unpack(response_packet)
         rpcname, success, response_data = response_msg
-        self.__logger.info('RPC {} from {} success: {}, data: {}'.format(rpcname, node_name, success, response_data))
+        self.__logger.info('RPC {} from {} success: {}, data: {}'.format(rpcname,
+                                                                         self.__server_ip, success, response_data))
 
         if rpcname != response_name:
             raise ValueError("Spotcheck response has rpc name: %s" % rpcname)
 
         if success != "SUCCESS":
-            self.__logger.warn('Error from masternode {}'.format(node_name))
+            self.__logger.warn('Error from masternode {}'.format(self.__server_ip))
             raise RPCException(response_data)
 
         return response_data
@@ -98,7 +109,7 @@ class RPCClient:
     async def send_rpc_ping(self, data):
         await asyncio.sleep(0)
 
-        request_packet = self.__return_rpc_packet(self.remote_pastelid, ["PING_REQ", data])
+        request_packet = self.generate_packet(["PING_REQ", data])
 
         try:
             returned_data = await self.__send_rpc_to_mn("PING_RESP", request_packet)
@@ -119,7 +130,7 @@ class RPCClient:
 
     def send_rpc_ping_sync(self, data):
 
-        request_packet = self.__return_rpc_packet(self.remote_pastelid, ["PING_REQ", data])
+        request_packet = self.generate_packet(["PING_REQ", data])
 
         try:
             returned_data = self.__send_rpc_to_mn_sync("PING_RESP", request_packet)
@@ -147,7 +158,7 @@ class RPCClient:
 
         # chunkid is bignum so we need to serialize it
         chunkid_str = chunkid_to_hex(int(chunkid))
-        request_packet = self.__return_rpc_packet(self.remote_pastelid, ["FETCHCHUNK_REQ", {"chunkid": chunkid_str}])
+        request_packet = self.generate_packet(["FETCHCHUNK_REQ", {"chunkid": chunkid_str}])
 
         response_data = await self.__send_rpc_to_mn("FETCHCHUNK_RESP", request_packet)
 
@@ -163,7 +174,7 @@ class RPCClient:
 
     async def __send_mn_ticket_rpc(self, rpcreq, rpcresp, data):
         await asyncio.sleep(0)
-        request_packet = self.__return_rpc_packet(self.remote_pastelid, [rpcreq, data])
+        request_packet = self.generate_packet([rpcreq, data])
         returned_data = await self.__send_rpc_to_mn(rpcresp, request_packet)
         return returned_data
 

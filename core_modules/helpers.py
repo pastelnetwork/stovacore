@@ -24,9 +24,9 @@ def get_cnode_digest_hex(data):
     return h.hexdigest()
 
 
-def get_pynode_digest_bytes(data):
-    h = PYNODE_HASH_ALGO()
-    h.update(data)
+def get_pynode_digest_bytes(data: bytes) -> bytes:
+    h = PYNODE_HASH_ALGO()  # hashlib.sha3_512
+    h.update(data)  # -> hashlib.sha3_512.update(data)
     return h.digest()
 
 
