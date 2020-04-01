@@ -4,7 +4,7 @@ import requests
 from aiohttp import ClientSession
 
 from core_modules.logger import initlogging
-from core_modules.rpc_serialization import pack_and_sign, verify_and_unpack
+from core_modules.rpc_serialization import RPCMessage
 from core_modules.helpers import chunkid_to_hex
 
 
@@ -46,12 +46,8 @@ class RPCClient:
         """
         if type(data) != list:
             raise ValueError('Data must be a list!')
-
-        return self.__return_rpc_packet(self.remote_pastelid, data)
-
-    def __return_rpc_packet(self, sender_id, msg):
-        response_packet = pack_and_sign(sender_id, msg)
-        return response_packet
+        rpc_message = RPCMessage(data, self.remote_pastelid)
+        return rpc_message.pack()
 
     async def __send_rpc_and_wait_for_response(self, msg):
         url = 'https://{}:{}/'.format(self.__server_ip, self.__server_port)
@@ -72,7 +68,8 @@ class RPCClient:
 
         response_packet = await self.__send_rpc_and_wait_for_response(request_packet)
 
-        sender_id, response_msg = verify_and_unpack(response_packet)
+        rpc_message = RPCMessage.reconstruct(response_packet)
+        sender_id, response_msg = rpc_message.sender_id, rpc_message.data
         rpcname, success, response_data = response_msg
         self.__logger.info('RPC {} from {} success: {}, data: {}'.format(rpcname,
                                                                          self.__server_ip, success, response_data))
@@ -93,7 +90,8 @@ class RPCClient:
 
         response_packet = self.__send_rpc_and_wait_for_response_sync(request_packet)
 
-        sender_id, response_msg = verify_and_unpack(response_packet)
+        rpc_message = RPCMessage.reconstruct(response_packet)
+        sender_id, response_msg = rpc_message.sender_id, rpc_message.data
         rpcname, success, response_data = response_msg
         self.__logger.info('RPC {} from {} success: {}, data: {}'.format(rpcname, node_name, success, response_data))
 

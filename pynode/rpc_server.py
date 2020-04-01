@@ -3,7 +3,7 @@ import ssl
 from aiohttp import web
 
 from core_modules.logger import initlogging
-from core_modules.rpc_serialization import pack_and_sign, verify_and_unpack
+from core_modules.rpc_serialization import RPCMessage
 from core_modules.settings import NetWorkSettings
 from pynode.rpc_handlers import receive_rpc_fetchchunk, receive_rpc_download_image
 
@@ -40,10 +40,6 @@ class RPCServer:
 
         return {"data": data}
 
-    def __return_rpc_packet(self, sender_id, msg):
-        response_packet = pack_and_sign(sender_id, msg)
-        return response_packet
-
     async def __process_local_rpc(self, sender_id, rpcname, data):
         self.__logger.debug("Received RPC %s" % rpcname)
         # get the appropriate rpc function or send back an error
@@ -73,14 +69,16 @@ class RPCServer:
             else:
                 # generate response if everything went well
                 msg = [response_name, "SUCCESS", ret]
-
-        ret = self.__return_rpc_packet(sender_id, msg)
+        rpc_message = RPCMessage(msg, sender_id)
+        ret = rpc_message.pack()
         self.__logger.debug("Done with RPC RPC %s" % rpcname)
         return ret
 
     async def __http_proccess(self, request):
         msg = await request.content.read()
-        sender_id, received_msg = verify_and_unpack(msg)
+        rpc_message = RPCMessage.reconstruct(msg)
+        sender_id, received_msg = rpc_message.sender_id, rpc_message.data
+
         rpcname, data = received_msg
         reply_packet = await self.__process_local_rpc(sender_id, rpcname, data)
 

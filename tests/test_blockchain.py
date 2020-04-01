@@ -15,7 +15,7 @@ import logging
 
 from cnode_connection import get_blockchain_connection
 from core_modules.rpc_client import RPCClient
-from core_modules.rpc_serialization import verify_and_unpack, pack_and_sign, ensure_types_for_v1, default, RPCMessage
+from core_modules.rpc_serialization import RPCMessage
 from core_modules.ticket_models import RegistrationTicket
 from utils.mn_ordering import get_masternode_ordering
 from cnode_connection import reset_blockchain_connection
@@ -100,20 +100,22 @@ class PastelSignVerifyTestCase(unittest.TestCase):
 class RPCClientTestCase(unittest.TestCase):
     def setUp(self):
         # fill this with created pastelID (should be registered) and passphrase
-        os.environ['PASTEL_ID'] = CLIENT_PASTELID
-        os.environ['PASSPHRASE'] = PASSPHRASE
+        switch_pastelid(CLIENT_PASTELID, PASSPHRASE)
         # logging.basicConfig(level=logging.DEBUG)
-        self.rpc_client = RPCClient(CLIENT_PASTELID, '127.0.0.1', '4444')
+        self.rpc_client = RPCClient(SERVER_PASTELID, '127.0.0.1', '4444')
 
-    def test_request_packet(self):
+    def test_generate_reconstruct_request_packet(self):
+        msg = ['taksa']
         self.assertRaises(ValueError, self.rpc_client.generate_packet, 'string')
         self.assertRaises(ValueError, self.rpc_client.generate_packet, {'dict': 'dict'})
-        request_packet = self.rpc_client.generate_packet(['taksa'])
+        request_packet = self.rpc_client.generate_packet(msg)
         self.assertEqual(type(request_packet), bytes)
-        # todo: process package as it's processed on server part
-        sender_id, received_msg = verify_and_unpack(request_packet)
-        print(sender_id)
-        print(received_msg)
+
+        switch_pastelid(SERVER_PASTELID, PASSPHRASE)
+        rpc_message = RPCMessage.reconstruct(request_packet)
+        sender_id, received_msg = rpc_message.sender_id, rpc_message.data
+        self.assertEqual(sender_id, CLIENT_PASTELID)
+        self.assertEqual(received_msg, msg)
 
     def test_rpcmessage_sign_verify(self):
         m = RPCMessage(['taksa'], CLIENT_PASTELID)
