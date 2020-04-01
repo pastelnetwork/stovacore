@@ -176,6 +176,19 @@ class ProcessNewActTicketsTaskTestCase(unittest.TestCase):
         self.assertEqual(ActivationTicket.select().count(), 0)
         self.assertEqual(Chunk.select().count(), 0)
 
+    @patch('pynode.tasks.get_blockchain_connection', autospec=True)
+    def test_list_tickets_act_output_has_pastel_ids(self, get_blockchain_connection):
+        get_blockchain_connection().list_tickets.return_value = [
+            '1c6d9708f47489062a0da7e5548ef3b89d67fbd8ba7702ae1e3acc0403376d47',
+            'jXaQj8FA9FGP6KzKNKz9bPEX7owTWqF7CeQ2Vy1fT21pEMUeveqBf6DXhRv3o6mBN3AX5bBcTuvafDcepkZ3wp'
+        ]
+        get_blockchain_connection().get_ticket.side_effect = get_ticket_side_effect
+        self.assertEqual(Chunk.select().count(), 0)
+        self.assertEqual(ActivationTicket.select().count(), 0)
+        get_and_proccess_new_activation_tickets()
+        self.assertEqual(ActivationTicket.select().count(), 1)
+        self.assertEqual(Chunk.select().count(), 3)
+
 
 class GetMissingChunkTestCase(unittest.TestCase):
     def setUp(self):

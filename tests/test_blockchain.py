@@ -17,14 +17,13 @@ from cnode_connection import get_blockchain_connection
 from core_modules.rpc_client import RPCClient
 from core_modules.rpc_serialization import RPCMessage
 from core_modules.ticket_models import RegistrationTicket
+from pynode.tasks import TXID_LENGTH
 from utils.mn_ordering import get_masternode_ordering
 from cnode_connection import reset_blockchain_connection
 
 CLIENT_PASTELID = 'jXaQj8FA9FGP6KzKNKz9bPEX7owTWqF7CeQ2Vy1fT21pEMUeveqBf6DXhRv3o6mBN3AX5bBcTuvafDcepkZ3wp'
 SERVER_PASTELID = 'jXaSNRnSiPkz4BettdvJvmgKAFkfQvu4kFrcsRJcsFaBYiMJxo7zrvftPE2bcYGiViW5YLAuiALrtpoD1QbJ39'
 PASSPHRASE = 'taksa'
-
-TXID_LENGTH = 64
 
 
 def switch_pastelid(pastelid: str, passphrase: str):

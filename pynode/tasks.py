@@ -18,6 +18,8 @@ from cnode_connection import get_blockchain_connection
 
 mnl_logger = initlogging('', __name__)
 
+TXID_LENGTH = 64
+
 
 def update_masternode_list():
     """
@@ -134,7 +136,7 @@ def get_and_proccess_new_activation_tickets():
     # FIXME: use `height` param when it will be implemented on cNode
     act_tickets_txids = get_blockchain_connection().list_tickets('act')  # list
 
-    for txid in act_tickets_txids:
+    for txid in filter(lambda x: len(x) == TXID_LENGTH, act_tickets_txids):
         if ActivationTicket.select().where(ActivationTicket.txid == txid).count() != 0:
             continue
         try:
@@ -307,11 +309,11 @@ async def chunk_fetcher_task():
                 # data = await mn.send_rpc_ping(b'ping')
                 # data = mn.send_rpc_ping_sync(b'ping')
             except RPCException as exc:
-                mnl_logger.info("FETCHCHUNK RPC FAILED for node %s with exception %s" % (mn.id, exc))
+                mnl_logger.info("FETCHCHUNK RPC FAILED for node %s with exception %s" % (mn.server_ip, exc))
                 continue
 
             if data is None:
-                mnl_logger.info("MN %s returned None for fetchchunk %s" % (mn.id, chunkid))
+                mnl_logger.info("MN %s returned None for fetchchunk %s" % (mn.server_ip, chunkid))
                 # chunk was not found
                 continue
 
@@ -319,7 +321,7 @@ async def chunk_fetcher_task():
             digest = get_pynode_digest_int(data)
             if chunkid != str(digest):
                 mnl_logger.info("MN %s returned bad chunk for fetchchunk %s, mismatched digest: %s" % (
-                    mn.id, chunkid, digest))
+                    mn.server_ip, chunkid, digest))
                 continue
 
             # add chunk to persistant storage and update DB info (`stored` flag) to True
