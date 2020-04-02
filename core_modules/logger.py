@@ -3,7 +3,7 @@ import logging
 loggers = {}
 
 
-def initlogging(logger_name, module, level="debug"):
+def initlogging(logger_name, module, level="error"):
     name = "%s - %s" % (logger_name, module)
 
     # TODO: perhaps this can be done in a more elegant way?
