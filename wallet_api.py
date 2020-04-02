@@ -8,7 +8,6 @@ from utils.create_wallet_tables import create_tables
 from wallet.database import db, RegticketDB
 from wallet.settings import WALLET_DATABASE_FILE
 
-
 APP_DIR = None
 routes = web.RouteTableDef()
 pastel_client = None
@@ -38,6 +37,17 @@ async def image_registration_step_2(request):
     - Store regticket metadata to loca db
     Input {image: path_to_image_file, title: image_title}
     Returns {workers_fee, regticket_id}
+    """
+    # FIXME: current input from electron
+    #  Document
+    #  Pass this data further
+    """
+        const pyApiData = {
+        image: data.filePath,
+        title: data.name,
+        num_copies: data.numCopies,
+        copy_price: data.copyPrice
+    };
     """
     data = await request.json()
     image_path = data['image']
@@ -99,10 +109,20 @@ async def download_image(request):
     return web.json_response({'status': 'error', 'msg': 'Image not found on masternodes'})
 
 
+@routes.get('/artworks_data')
+async def artworks_data(request):
+    return web.json_response([{"name": "First artwork", "numOfCopies": 55, "copyPrice": 999},
+                              {"name": "Second artwork", "numOfCopies": 11, "copyPrice": 1999},
+                              {"name": "Another artwork", "numOfCopies": 2, "copyPrice": 150},
+                              {"name": "Uno mas artwork", "numOfCopies": 55, "copyPrice": 444}
+                              ])
+
+
 @routes.post('/ping')
 async def ping(request):
     get_pastel_client()
     return web.json_response({})
+
 
 app = web.Application()
 app.add_routes(routes)
