@@ -1,4 +1,5 @@
 import asyncio
+import json
 import uuid
 
 from bitcoinrpc.authproxy import JSONRPCException
@@ -8,6 +9,8 @@ from core_modules.artregistry import ArtRegistry
 from core_modules.chainwrapper import ChainWrapper
 from core_modules.rpc_client import RPCException, RPCClient
 from core_modules.logger import initlogging
+from core_modules.ticket_models import RegistrationTicket
+from pynode.tasks import TXID_LENGTH
 from utils.mn_ordering import get_masternode_ordering
 from wallet.art_registration_client import ArtRegistrationClient
 from wallet.client_node_manager import ClientNodeManager
@@ -156,3 +159,27 @@ class PastelClient:
                 image_data = response['image_data']
                 break
         return image_data
+
+    def get_artworks_data(self):
+        result = []
+        act_tickets_txids = get_blockchain_connection().list_tickets('act')  # list
+
+        for txid in filter(lambda x: len(x) == TXID_LENGTH, act_tickets_txids):
+            try:
+                ticket = json.loads(get_blockchain_connection().get_ticket(txid))  # it's registration ticket here
+            except JSONRPCException as e:
+                self.__logger.warn('Error obtain act ticket txid: {}'.format(txid))
+                # to avoid processing invalid txid multiple times - write in to the DB with height=-1
+                continue
+
+            regticket = RegistrationTicket(serialized_base64=ticket['ticket']['art_ticket'])
+            artist_pastelid = list(ticket['ticket']['signatures']['artist'].keys())[0]
+
+            result.append({
+                'artistPastelId': artist_pastelid,
+                'name': regticket.artwork_title,
+                'numOfCopies': regticket.total_copies,
+                # 'copyPrice': regticket.copy_price
+                'copyPrice': 999
+            })
+        return result

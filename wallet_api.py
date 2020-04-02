@@ -111,11 +111,7 @@ async def download_image(request):
 
 @routes.get('/artworks_data')
 async def artworks_data(request):
-    return web.json_response([{"name": "First artwork", "numOfCopies": 55, "copyPrice": 999},
-                              {"name": "Second artwork", "numOfCopies": 11, "copyPrice": 1999},
-                              {"name": "Another artwork", "numOfCopies": 2, "copyPrice": 150},
-                              {"name": "Uno mas artwork", "numOfCopies": 55, "copyPrice": 444}
-                              ])
+    return web.json_response(get_pastel_client().get_artworks_data())
 
 
 @routes.post('/ping')

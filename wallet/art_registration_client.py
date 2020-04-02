@@ -83,7 +83,7 @@ class ArtRegistrationClient:
 
     async def get_workers_fee(self, image_data, artist_name=None, artist_website=None, artist_written_statement=None,
                               artwork_title=None, artwork_series_name=None, artwork_creation_video_youtube_url=None,
-                              artwork_keyword_set=None, total_copies=None):
+                              artwork_keyword_set=None, total_copies=None, copy_price=0):
         image = ImageData(dictionary={
             "image": image_data,
             "lubychunks": ImageData.generate_luby_chunks(image_data),
@@ -102,6 +102,7 @@ class ArtRegistrationClient:
             "artwork_creation_video_youtube_url": artwork_creation_video_youtube_url,
             "artwork_keyword_set": artwork_keyword_set,
             "total_copies": total_copies,
+            # "copy_price": copy_price,
 
             "fingerprints": image.generate_fingerprints(),
             "lubyhashes": image.get_luby_hashes(),

@@ -247,6 +247,7 @@ class RegistrationTicket(TicketModelBase):
         "artwork_creation_video_youtube_url": StringField(minsize=0, maxsize=120),
         "artwork_keyword_set": StringField(minsize=0, maxsize=120),
         "total_copies": IntegerField(minsize=0, maxsize=120),
+        # "copy_price": IntegerField(minsize=0, maxsize=120),
 
         "fingerprints": FingerprintField(),
         "lubyhashes": LubyChunkHashField(),
