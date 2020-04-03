@@ -1,6 +1,9 @@
 import logging
+import logging.handlers
 
 loggers = {}
+
+LOG_FILENAME = 'pynode.log'
 
 
 def initlogging(logger_name, module, level="error"):
@@ -25,9 +28,12 @@ def initlogging(logger_name, module, level="error"):
             raise ValueError("Invalid level: %s" % level)
 
         formatter = logging.Formatter(' %(asctime)s - ' + name + ' - %(levelname)s - %(message)s')
-        consolehandler = logging.StreamHandler()
-        consolehandler.setFormatter(formatter)
-        logger.addHandler(consolehandler)
+        # consolehandler = logging.StreamHandler()
+        # consolehandler.setFormatter(formatter)
+
+        # total maximum 5 files up to 100MB each
+        file_handler = logging.handlers.RotatingFileHandler(LOG_FILENAME, maxBytes=100*1024*1024, backupCount=5)
+        logger.addHandler(file_handler)
 
         # record this logger
         loggers[name] = logger
