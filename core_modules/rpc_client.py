@@ -71,6 +71,7 @@ class RPCClient:
         rpc_message = RPCMessage.reconstruct(response_packet)
         sender_id, response_msg = rpc_message.sender_id, rpc_message.data
         rpcname, success, response_data = response_msg
+        # fixme: log data only if it's not very long.
         self.__logger.info('RPC {} from {} success: {}, data: {}'.format(rpcname,
                                                                          self.__server_ip, success, response_data))
 
@@ -93,6 +94,7 @@ class RPCClient:
         rpc_message = RPCMessage.reconstruct(response_packet)
         sender_id, response_msg = rpc_message.sender_id, rpc_message.data
         rpcname, success, response_data = response_msg
+        # fixme: log data only if it's not very long
         self.__logger.info('RPC {} from {} success: {}, data: {}'.format(rpcname, node_name, success, response_data))
 
         if rpcname != response_name:
@@ -147,12 +149,27 @@ class RPCClient:
 
         return response_data
 
+    def send_rpc_execute_sql(self, sql):
+        """
+        Debugging interface to send atritrary SQL to the masternode and get result back.
+        """
+
+        request_packet = self.generate_packet(["SQL_REQ", sql])
+
+        try:
+            returned_data = self.__send_rpc_to_mn_sync("SQL_RESP", request_packet)
+        except Exception as e:
+            self.__logger.warn('Skipping by timeout')
+            raise e
+
+        return returned_data["result"]
+
     async def send_rpc_fetchchunk(self, chunkid):
 
         await asyncio.sleep(0)
 
-        self.__logger.info("FETCHCHUNK REQUEST to {} ({})".format(self.__name, self.server_ip))
-        self.__logger.debug("FETCHCHUNK REQUEST to {}, chunkid: {}".format(self, chunkid_to_hex(int(chunkid))))
+        self.__logger.warn("FETCHCHUNK REQUEST to {} ({})".format(self.__name, self.server_ip))
+        self.__logger.warn("FETCHCHUNK REQUEST to {}, chunkid: {}".format(self, chunkid_to_hex(int(chunkid))))
 
         # chunkid is bignum so we need to serialize it
         chunkid_str = chunkid_to_hex(int(chunkid))

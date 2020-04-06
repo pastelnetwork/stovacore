@@ -239,7 +239,6 @@ def get_owned_chunks():
 
 def get_missing_chunk_ids(pastel_id=None):
     """
-
     :param pastel_id: str
     :return: list of str chunkd ids (big integer numbers wrapper to string as they're stored in DB
     """

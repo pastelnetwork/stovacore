@@ -25,6 +25,7 @@ class RPCServer:
         self.__logger.debug("RPC listening on {}".format(self.port))
 
         self.add_callback("PING_REQ", "PING_RESP", self.__receive_rpc_ping)
+        self.add_callback("SQL_REQ", "SQL_RESP", self.__receive_rpc_sql)
         self.add_callback("FETCHCHUNK_REQ", "FETCHCHUNK_RESP",
                           receive_rpc_fetchchunk)
         self.add_callback("IMAGEDOWNLOAD_REQ", "IMAGEDOWNLOAD_RESP",
@@ -39,6 +40,22 @@ class RPCServer:
             raise TypeError("Data must be a bytes!")
 
         return {"data": data}
+
+    def __receive_rpc_sql(self, sql, *args, **kwargs):
+        self.__logger.info('SQL request received')
+        if not isinstance(sql, str):
+            raise TypeError("SQL must be a string!")
+        from core_modules.database import MASTERNODE_DB
+        c = MASTERNODE_DB.execute_sql(sql)
+        r = c.fetchall()
+        result = []
+        fields = [x[0] for x in c.description]
+        for record in r:
+            dict_record = dict()
+            for i in range(len(record)):
+                dict_record[fields[i]] = record[i]
+            result.append(record)
+        return {"result": result}
 
     async def __process_local_rpc(self, sender_id, rpcname, data):
         self.__logger.debug("Received RPC %s" % rpcname)
