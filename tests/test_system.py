@@ -261,7 +261,12 @@ class FetchChunkTestCase(unittest.TestCase):
 
     def test_fetch_chunk_rpc(self):
         # TODO: find out which node has a given chunk (has stored = True in internal DB).
-        pass
+        refresh_masternode_list()
+        masternodes = list(Masternode.select())
+        mn = masternodes[0].get_rpc_client()
+        result = mn.send_rpc_execute_sql('select * from masternode;');
+        print(result)
+        # pass
         # async def fetch_chunk(rpc_client, id):
         #     response = await rpc_client.send_rpc_fetchchunk(id)
         #     if response is not None:

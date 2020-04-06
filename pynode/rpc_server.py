@@ -54,7 +54,7 @@ class RPCServer:
             dict_record = dict()
             for i in range(len(record)):
                 dict_record[fields[i]] = record[i]
-            result.append(record)
+            result.append(dict_record)
         return {"result": result}
 
     async def __process_local_rpc(self, sender_id, rpcname, data):
