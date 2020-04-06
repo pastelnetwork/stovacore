@@ -14,6 +14,7 @@ import unittest
 import os
 import asyncio
 import random
+from pprint import pprint
 
 from cnode_connection import get_blockchain_connection
 from core_modules.database import MASTERNODE_DB, DB_MODELS, Masternode, ChunkMnDistance, ChunkMnRanked, Chunk, \
@@ -29,6 +30,12 @@ from cnode_connection import reset_blockchain_connection
 CLIENT_PASTELID = 'jXaQj8FA9FGP6KzKNKz9bPEX7owTWqF7CeQ2Vy1fT21pEMUeveqBf6DXhRv3o6mBN3AX5bBcTuvafDcepkZ3wp'
 SERVER_PASTELID = 'jXaSNRnSiPkz4BettdvJvmgKAFkfQvu4kFrcsRJcsFaBYiMJxo7zrvftPE2bcYGiViW5YLAuiALrtpoD1QbJ39'
 PASSPHRASE = 'taksa'
+
+DISABLED_MASTERNODES = ['51.158.183.93:4444', '51.15.57.47:4444']
+
+
+def disable_invalid_mns():
+    Masternode.update(active=False).where(Masternode.ext_address << DISABLED_MASTERNODES).execute()
 
 
 def switch_pastelid(pastelid: str, passphrase: str):
@@ -162,28 +169,28 @@ class MasternodeFetcherTaskTestCase(unittest.TestCase):
         MASTERNODE_DB.create_tables(DB_MODELS)
 
     def test_masternode_fetcher_task(self):
-        self.assertEqual(Masternode.select().count(), 0)
+        self.assertEqual(Masternode.get_active_nodes().count(), 0)
         update_masternode_list()
-        masternodes = list(Masternode.select())
+        masternodes = list(Masternode.get_active_nodes())
         # update with actual amount of masternodes in the network
         self.assertEqual(len(masternodes), 7)
 
     def test_masternodes_refresh_task_with_no_chunks(self):
-        self.assertEqual(Masternode.select().count(), 0)
+        self.assertEqual(Masternode.get_active_nodes().count(), 0)
         self.assertEqual(ChunkMnDistance.select().count(), 0)
         self.assertEqual(ChunkMnRanked.select().count(), 0)
         refresh_masternode_list()
-        self.assertEqual(Masternode.select().count(), 7)
+        self.assertEqual(Masternode.get_active_nodes().count(), 7)
         self.assertEqual(ChunkMnDistance.select().count(), 0)
         self.assertEqual(ChunkMnRanked.select().count(), 0)
 
     def test_masternodes_refresh_task_with_chunks(self):
         # TODO: add chunks
-        self.assertEqual(Masternode.select().count(), 0)
+        self.assertEqual(Masternode.get_active_nodes().count(), 0)
         self.assertEqual(ChunkMnDistance.select().count(), 0)
         self.assertEqual(ChunkMnRanked.select().count(), 0)
         refresh_masternode_list()
-        self.assertEqual(Masternode.select().count(), 7)
+        self.assertEqual(Masternode.get_active_nodes().count(), 7)
         self.assertEqual(ChunkMnDistance.select().count(), 10)  # FIXME: replace with real values
         self.assertEqual(ChunkMnRanked.select().count(), 10)  # FIXME: replace with real values
 
@@ -220,13 +227,13 @@ class IndexNewChunksTaskTestCase(unittest.TestCase):
 
     def test_index_new_chunks(self):
         self.assertEqual(Chunk.select().count(), 0)
-        self.assertEqual(Masternode.select().count(), 0)
+        self.assertEqual(Masternode.get_active_nodes().count(), 0)
         self.assertEqual(ChunkMnDistance.select().count(), 0)
         self.assertEqual(ChunkMnRanked.select().count(), 0)
         refresh_masternode_list()
         self.assertEqual(ChunkMnDistance.select().count(), 0)
         self.assertEqual(ChunkMnRanked.select().count(), 0)
-        self.assertEqual(Masternode.select().count(), 7)
+        self.assertEqual(Masternode.get_active_nodes().count(), 7)
         get_and_proccess_new_activation_tickets()
         self.assertEqual(Chunk.select().count(), 16)
         self.assertEqual(ActivationTicket.select().count(), 4)
@@ -240,14 +247,56 @@ class IndexNewChunksTaskTestCase(unittest.TestCase):
             self.assertEqual(chunk.confirmed, True)
         chunk_mn_distance = list(ChunkMnDistance.select())
         chunk_mn_ranked = list(ChunkMnRanked.select())
-        self.assertEqual(ChunkMnDistance.select().count(), Masternode.select().count()*Chunk.select().count())
-        self.assertEqual(ChunkMnRanked.select().count(), Masternode.select().count()*Chunk.select().count())
+        self.assertEqual(ChunkMnDistance.select().count(), Masternode.get_active_nodes().count()*Chunk.select().count())
+        self.assertEqual(ChunkMnRanked.select().count(), Masternode.get_active_nodes().count()*Chunk.select().count())
         # verify ranks generated
         ranks = set()
         for cmnr in ChunkMnRanked.select():
             ranks.add(cmnr.rank)
         self.assertEqual(len(ranks), 7)
         print('Ranks : {}'.format(ranks))
+
+
+class SQLRPCTestCase(unittest.TestCase):
+    def setUp(self):
+        switch_pastelid(CLIENT_PASTELID, PASSPHRASE)
+        MASTERNODE_DB.init(':memory:')
+        MASTERNODE_DB.connect(reuse_if_open=True)
+        MASTERNODE_DB.create_tables(DB_MODELS)
+        refresh_masternode_list()
+        disable_invalid_mns()
+
+    def test_sql_rpc(self):
+        masternodes = list(Masternode.get_active_nodes())
+        mn = masternodes[0].get_rpc_client()
+        result = mn.send_rpc_execute_sql('select artist_pk, created, localfee, is_valid_mn0, status, confirmed from regticket;');
+        pprint(result)
+        # self.assertEqual(len(result), 7)
+
+
+class RPCPingAllNodesTestCase(unittest.TestCase):
+    def setUp(self):
+        # warnings.simplefilter('ignore')
+        switch_pastelid(CLIENT_PASTELID, PASSPHRASE)
+        MASTERNODE_DB.init(':memory:')
+        MASTERNODE_DB.connect(reuse_if_open=True)
+        MASTERNODE_DB.create_tables(DB_MODELS)
+        refresh_masternode_list()
+        disable_invalid_mns()
+
+    def test_mn_ordering(self):
+        async def send_ping(rpc_client):
+            msg = bytes(''.join(random.choice('abcdef') for x in range(4)), 'utf8')
+            response = await rpc_client.send_rpc_ping(msg)
+            self.assertEqual(response, msg)
+            print('{} ping OK'.format(rpc_client.server_ip))
+
+        masternodes = Masternode.get_active_nodes()
+
+        # test each client response to ping request
+        for mn in masternodes:
+            client = mn.get_rpc_client()
+            asyncio.run(send_ping(client))
 
 
 class FetchChunkTestCase(unittest.TestCase):
@@ -258,14 +307,19 @@ class FetchChunkTestCase(unittest.TestCase):
         MASTERNODE_DB.connect(reuse_if_open=True)
         MASTERNODE_DB.create_tables(DB_MODELS)
         # logging.basicConfig(level=logging.DEBUG)
+        refresh_masternode_list()
+        disable_invalid_mns()
+
+
+    def test_fetch_all_chunks_all_mns(self):
+        pass
 
     def test_fetch_chunk_rpc(self):
         # TODO: find out which node has a given chunk (has stored = True in internal DB).
-        refresh_masternode_list()
-        masternodes = list(Masternode.select())
+        masternodes = list(Masternode.get_active_nodes())
         mn = masternodes[0].get_rpc_client()
         result = mn.send_rpc_execute_sql('select * from masternode;');
-        print(result)
+        pprint(result)
         # pass
         # async def fetch_chunk(rpc_client, id):
         #     response = await rpc_client.send_rpc_fetchchunk(id)
@@ -276,7 +330,7 @@ class FetchChunkTestCase(unittest.TestCase):
         # refresh_masternode_list()
         # get_and_proccess_new_activation_tickets()
         # # at this point Chunk db records should exist
-        # masternodes = list(Masternode.select())
+        # masternodes = list(Masternode.get_active_nodes())
         # chunks = list(Chunk.select())
         # for m in range(len(masternodes)):
         #     for c in range(len(chunks)):

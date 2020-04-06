@@ -116,6 +116,7 @@ class Chunk(Model):
 class Masternode(Model):
     ext_address = CharField(unique=True)  # ip:port
     pastel_id = CharField(unique=True)
+    active = BooleanField(default=True)  # optionally disable masternode
 
     class Meta:
         database = MASTERNODE_DB
@@ -125,6 +126,10 @@ class Masternode(Model):
         ip, py_rpc_port = self.ext_address.split(':')
         rpc_client = RPCClient(self.pastel_id, ip, py_rpc_port)
         return rpc_client
+
+    @classmethod
+    def get_active_nodes(cls):
+        return Masternode.select().where(Masternode.active == True)
 
 
 class ChunkMnDistance(Model):

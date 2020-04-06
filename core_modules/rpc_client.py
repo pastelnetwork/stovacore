@@ -1,7 +1,7 @@
 import asyncio
 import requests
 
-from aiohttp import ClientSession
+from aiohttp import ClientSession, ClientTimeout
 
 from core_modules.logger import initlogging
 from core_modules.rpc_serialization import RPCMessage
@@ -51,7 +51,7 @@ class RPCClient:
 
     async def __send_rpc_and_wait_for_response(self, msg):
         url = 'https://{}:{}/'.format(self.__server_ip, self.__server_port)
-        async with ClientSession() as session:
+        async with ClientSession(timeout=ClientTimeout(connect=2)) as session:
             async with session.post(url, data=msg, ssl=False) as resp:
                 msg = await resp.read()
                 return msg
@@ -68,7 +68,12 @@ class RPCClient:
 
         response_packet = await self.__send_rpc_and_wait_for_response(request_packet)
 
-        rpc_message = RPCMessage.reconstruct(response_packet)
+        try:
+            rpc_message = RPCMessage.reconstruct(response_packet)
+        except ValueError:
+            self.__logger.warning('Something went wrong when reconstructing message')
+            return None
+
         sender_id, response_msg = rpc_message.sender_id, rpc_message.data
         rpcname, success, response_data = response_msg
         # fixme: log data only if it's not very long.
@@ -114,7 +119,7 @@ class RPCClient:
         try:
             returned_data = await self.__send_rpc_to_mn("PING_RESP", request_packet)
         except Exception as e:
-            self.__logger.warn('Skipping by timeout')
+            self.__logger.warning('Skipping by timeout')
             raise e
             # return None
 

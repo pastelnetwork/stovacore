@@ -37,7 +37,7 @@ def update_masternode_list():
         if len(node['extKey']) > 20 and len(node['extAddress']) > 4:
             fresh_mn_list[node['extKey']] = node['extAddress']
 
-    existing_mn_pastelids = set([mn.pastel_id for mn in Masternode.select()])
+    existing_mn_pastelids = set([mn.pastel_id for mn in Masternode.get_active_nodes()])
     fresh_mn_pastelids = set(fresh_mn_list.keys())
     added_pastelids = fresh_mn_pastelids - existing_mn_pastelids
     removed_pastelids = existing_mn_pastelids - fresh_mn_pastelids
@@ -82,7 +82,7 @@ def calculate_xor_distances_for_masternodes(pastelids):
     """
     `pastelids` - list of pastelids of masternodes. PastelID is a string.
     """
-    mns_db = Masternode.select().where(Masternode.pastel_id.in_(pastelids))
+    mns_db = Masternode.get_active_nodes().where(Masternode.pastel_id.in_(pastelids))
     for mn in mns_db:
         for chunk in Chunk.select():
             # we store chunk.chunk_id as CharField, but essentially it's very long integer (more then 8 bytes,
@@ -98,7 +98,7 @@ def calculate_xor_distances_for_chunks(chunk_ids):
     chunk_ids_str = [str(x) for x in chunk_ids]
     chunks_db = Chunk.select().where(Chunk.chunk_id.in_(chunk_ids_str))
     for chunk in chunks_db:
-        for mn in Masternode.select():
+        for mn in Masternode.get_active_nodes():
             # we store chunk.chunk_id as CharField, but essentially it's very long integer (more then 8 bytes,
             # doesn't fit in database INT type)
             xor_distance = calculate_xor_distance(mn.pastel_id, int(chunk.chunk_id))
@@ -361,8 +361,8 @@ async def run_ping_test_forever(self):
     while True:
         await asyncio.sleep(1)
 
-        Masternode.select()
-        mn = random.sample(Masternode.select())
+        Masternode.get_active_nodes()
+        mn = random.sample(Masternode.get_active_nodes())
         if mn is None:
             continue
 

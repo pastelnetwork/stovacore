@@ -108,9 +108,9 @@ class RefreshMNListTestCase(unittest.TestCase):
     def test_refresh_masternode_list(self, bc_obj, get_blockchain_connection):
         bc_obj.return_value.masternode_list.return_value = mn_list
         get_blockchain_connection.return_value.masternode_list.return_value = mn_list
-        self.assertEqual(Masternode.select().count(), 0)
+        self.assertEqual(Masternode.get_active_nodes().count(), 0)
         refresh_masternode_list()
-        self.assertEqual(Masternode.select().count(), 3)
+        self.assertEqual(Masternode.get_active_nodes().count(), 3)
         self.assertEqual(ChunkMnDistance.select().count(), 0)
 
     @patch('cnode_connection.BlockChain', autospec=True)
@@ -122,7 +122,7 @@ class RefreshMNListTestCase(unittest.TestCase):
             Chunk.create(chunk_id='1231231231231231232323934384834890089238429382938429384934{}'.format(i),
                          image_hash=b'asdasdasd')
         refresh_masternode_list()
-        self.assertEqual(Masternode.select().count(), 3)
+        self.assertEqual(Masternode.get_active_nodes().count(), 3)
         self.assertEqual(ChunkMnDistance.select().count(), 9)
 
 
