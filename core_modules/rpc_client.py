@@ -202,6 +202,16 @@ class RPCClient:
 
         return response_data['image_data']  # bytes. image which is ready to write to the file.
 
+    async def rpc_download_thumbnail(self, thumbnail_hash):
+
+        request_packet = self.generate_packet(["THUMBNAIL_DOWNLOAD_REQ", {'image_hash': thumbnail_hash}])
+        response_data = await self.__send_rpc_to_mn("THUMBNAIL_DOWNLOAD_RESP", request_packet)
+
+        if response_data['status'] == 'ERROR':
+            raise RPCException('Error on IMAGEDOWNLOAD_REQ: {}'.format(response_data['msg']))
+
+        return response_data['image_data']  # bytes. image which is ready to write to the file.
+
     async def __send_mn_ticket_rpc(self, rpcreq, rpcresp, data):
         await asyncio.sleep(0)
         request_packet = self.generate_packet([rpcreq, data])

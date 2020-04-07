@@ -31,6 +31,12 @@ def receive_rpc_fetchchunk(data, **kwargs):
 
 
 def receive_rpc_download_image(data, *args, **kwargs):
+    # fixme: image download logic should be much more complex.
+    #  - masternode receive image download request, generate unique code and return to the client
+    #  - MN has to validate that requestor pastelID is artwork owner pastelID
+    #  - if check passed - collect required chunks from other MNs
+    #  - assemble image and store it locally
+    #  - provide interface for client to poll if image is ready or not.
     image_hash = data['image_hash']
     chunks_db = Chunk.select().where(Chunk.image_hash == image_hash)
     if len(chunks_db) == 0:
@@ -50,4 +56,28 @@ def receive_rpc_download_image(data, *args, **kwargs):
     return {
         "status": "SUCCESS",
         "image_data": image_data
+    }
+
+
+def receive_rpc_download_thumbnail(data, *args, **kwargs):
+    # fixme: maybe if current MN does not stores a given thumbnail - it worth
+    #  to return a list of masternodes which should store it (from ChunkMnRanked table).
+    image_hash = data['image_hash']
+    chunks_db = Chunk.select().where(Chunk.image_hash == image_hash)
+    if len(chunks_db) == 0:
+        return {
+            "status": "ERROR",
+            "mgs": "No chunks for given image"
+        }
+    if len(chunks_db) > 1:
+        return {
+            "status": "ERROR",
+            "mgs": "There {} chunks for thumbnails in DB. should be one.".format(len(chunks_db))
+        }
+
+    thumbnail_data = get_chunkmanager().get_chunk_data(int(chunks_db[0].chunk_id))
+    # thumbnail is not encoded, so no decore is required.
+    return {
+        "status": "SUCCESS",
+        "image_data": thumbnail_data
     }

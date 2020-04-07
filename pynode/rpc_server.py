@@ -5,7 +5,7 @@ from aiohttp import web
 from core_modules.logger import initlogging
 from core_modules.rpc_serialization import RPCMessage
 from core_modules.settings import NetWorkSettings
-from pynode.rpc_handlers import receive_rpc_fetchchunk, receive_rpc_download_image
+from pynode.rpc_handlers import receive_rpc_fetchchunk, receive_rpc_download_image, receive_rpc_download_thumbnail
 
 
 class RPCServer:
@@ -30,6 +30,9 @@ class RPCServer:
                           receive_rpc_fetchchunk)
         self.add_callback("IMAGEDOWNLOAD_REQ", "IMAGEDOWNLOAD_RESP",
                           receive_rpc_download_image)
+
+        self.add_callback("THUMBNAIL_DOWNLOAD_REQ", "THUMBNAIL_DOWNLOAD_RESP",
+                          receive_rpc_download_thumbnail)
 
     def add_callback(self, callback_req, callback_resp, callback_function, coroutine=False, allowed_pubkey=None):
         self.__RPCs[callback_req] = [callback_resp, callback_function, coroutine, allowed_pubkey]

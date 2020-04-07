@@ -396,9 +396,9 @@ class FetchChunkTestCase(unittest.TestCase):
             print('{} has {} confirmed chunks'.format(client.server_ip, chunk_count))
 
     def test_download_regticket_humbnail_by_hash(self):
-        async def try_dl_image(client, hash):
+        async def try_dl_thumbnail(client, hash):
             try:
-                result = await client.rpc_download_image(hash)
+                result = await client.rpc_download_thumbnail(hash)
             except Exception as e:
                 print(e)
                 return
@@ -425,7 +425,7 @@ class FetchChunkTestCase(unittest.TestCase):
             for mn in mns:
                 client = mn.get_rpc_client()
                 print(client.server_ip)
-                asyncio.run(try_dl_image(client, regticket.imagedata_hash))
+                asyncio.run(try_dl_thumbnail(client, regticket.thumbnailhash))
 
             # print(regticket.thumbnailhash)
 
