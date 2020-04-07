@@ -51,7 +51,7 @@ class RPCClient:
 
     async def __send_rpc_and_wait_for_response(self, msg):
         url = 'https://{}:{}/'.format(self.__server_ip, self.__server_port)
-        async with ClientSession(timeout=ClientTimeout(connect=2)) as session:
+        async with ClientSession(timeout=ClientTimeout(connect=10)) as session:
             async with session.post(url, data=msg, ssl=False) as resp:
                 msg = await resp.read()
                 return msg
