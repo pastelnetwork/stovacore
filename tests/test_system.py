@@ -9,7 +9,6 @@ This test are actually not 'refined' tests - they depend on the testnet state.
 Consider it more like manual test which are upgraded with a bit of automation.
 """
 import json
-import logging
 import unittest
 import os
 import asyncio
@@ -185,14 +184,14 @@ class MasternodeFetcherTaskTestCase(unittest.TestCase):
         self.assertEqual(ChunkMnRanked.select().count(), 0)
 
     def test_masternodes_refresh_task_with_chunks(self):
-        # TODO: add chunks
         self.assertEqual(Masternode.get_active_nodes().count(), 0)
         self.assertEqual(ChunkMnDistance.select().count(), 0)
         self.assertEqual(ChunkMnRanked.select().count(), 0)
+        get_and_proccess_new_activation_tickets()
         refresh_masternode_list()
         self.assertEqual(Masternode.get_active_nodes().count(), 7)
-        self.assertEqual(ChunkMnDistance.select().count(), 10)  # FIXME: replace with real values
-        self.assertEqual(ChunkMnRanked.select().count(), 10)  # FIXME: replace with real values
+        self.assertEqual(ChunkMnDistance.select().count(), 112)
+        self.assertEqual(ChunkMnRanked.select().count(), 112)
 
 
 class ProcessNewActTicketsTestCase(unittest.TestCase):
@@ -247,8 +246,9 @@ class IndexNewChunksTaskTestCase(unittest.TestCase):
             self.assertEqual(chunk.confirmed, True)
         chunk_mn_distance = list(ChunkMnDistance.select())
         chunk_mn_ranked = list(ChunkMnRanked.select())
-        self.assertEqual(ChunkMnDistance.select().count(), Masternode.get_active_nodes().count()*Chunk.select().count())
-        self.assertEqual(ChunkMnRanked.select().count(), Masternode.get_active_nodes().count()*Chunk.select().count())
+        self.assertEqual(ChunkMnDistance.select().count(),
+                         Masternode.get_active_nodes().count() * Chunk.select().count())
+        self.assertEqual(ChunkMnRanked.select().count(), Masternode.get_active_nodes().count() * Chunk.select().count())
         # verify ranks generated
         ranks = set()
         for cmnr in ChunkMnRanked.select():
@@ -269,7 +269,8 @@ class SQLRPCTestCase(unittest.TestCase):
     def test_sql_rpc(self):
         masternodes = list(Masternode.get_active_nodes())
         mn = masternodes[0].get_rpc_client()
-        result = mn.send_rpc_execute_sql('select artist_pk, created, localfee, is_valid_mn0, status, confirmed from regticket;');
+        result = mn.send_rpc_execute_sql(
+            'select artist_pk, created, localfee, is_valid_mn0, status, confirmed from regticket;');
         pprint(result)
         # self.assertEqual(len(result), 7)
 
@@ -309,33 +310,56 @@ class FetchChunkTestCase(unittest.TestCase):
         # logging.basicConfig(level=logging.DEBUG)
         refresh_masternode_list()
         disable_invalid_mns()
+        import urllib3
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+    async def fetch_chunk(self, rpc_client, id):
+        response = await rpc_client.send_rpc_fetchchunk(id)
+        if response is not None:
+            print('Received something!')
+        else:
+            print('fetch chunt returned None')
 
-    def test_fetch_all_chunks_all_mns(self):
-        pass
+    async def fetch_chunk_which_exist(self, rpc_client, id):
+        response = await rpc_client.send_rpc_fetchchunk(id)
+        self.assertIsNotNone(response)
 
-    def test_fetch_chunk_rpc(self):
-        # TODO: find out which node has a given chunk (has stored = True in internal DB).
+    async def fetch_chunk_which_does_not_exist(self, rpc_client, id):
+        response = await rpc_client.send_rpc_fetchchunk(id)
+        self.assertIsNone(response)
+
+    @unittest.skip('test almost nothing')
+    def test_fetch_all_chunks_from_all_mns(self):
+        get_and_proccess_new_activation_tickets()
+        self.assertNotEqual(Chunk.select().count(), 0)
+        # at this point Chunk db records should exist
         masternodes = list(Masternode.get_active_nodes())
-        mn = masternodes[0].get_rpc_client()
-        result = mn.send_rpc_execute_sql('select * from masternode;');
-        pprint(result)
-        # pass
-        # async def fetch_chunk(rpc_client, id):
-        #     response = await rpc_client.send_rpc_fetchchunk(id)
-        #     if response is not None:
-        #         from pdb import set_trace; set_trace()
-        #         print('Received something!')
-        #
-        # refresh_masternode_list()
-        # get_and_proccess_new_activation_tickets()
-        # # at this point Chunk db records should exist
-        # masternodes = list(Masternode.get_active_nodes())
-        # chunks = list(Chunk.select())
-        # for m in range(len(masternodes)):
-        #     for c in range(len(chunks)):
-        #         print("fetchin chunk for mn {} chunk {}".format(m, c))
-        #         client = masternodes[m].get_rpc_client()
-        #         asyncio.run(fetch_chunk(client, chunks[c].chunk_id))
-        # # client = masternodes[0].get_rpc_client()
-        # # asyncio.run(fetch_chunk(client, chunks[6].chunk_id))
+        chunks = list(Chunk.select())
+        for m in range(len(masternodes)):
+            for c in range(len(chunks)):
+                print("fetchin chunk for mn {} chunk {}".format(m, c))
+                client = masternodes[m].get_rpc_client()
+                asyncio.run(self.fetch_chunk(client, chunks[c].chunk_id))
+        # client = masternodes[0].get_rpc_client()
+        # asyncio.run(fetch_chunk(client, chunks[6].chunk_id))
+
+    def test_single_chunk_with_rpc_from_masternode(self):
+        get_and_proccess_new_activation_tickets()
+        # get a masternode which we know stores some chunks
+        mn = Masternode.get_active_nodes().where(Masternode.ext_address == '51.15.41.129:4444').get()
+        client = mn.get_rpc_client()
+        # get list of chunk this masternode stores
+        chunks = client.send_rpc_execute_sql('select chunk_id from chunk where stored=true and confirmed=true;')
+        chunk_ids_remote_mn_stores = [x['chunk_id'] for x in chunks]
+
+        # get list of chunk this masternode does not store
+        chunk_ids_remote_mn_doesnt_store = [c.chunk_id for c in
+                                            Chunk.select().where(Chunk.chunk_id.not_in(chunk_ids_remote_mn_stores))]
+
+        # check that masternode returns chunk data for all chunks it stores
+        for c_id in chunk_ids_remote_mn_stores:
+            asyncio.run(self.fetch_chunk_which_exist(client, c_id))
+
+        # check that masternode returns None for chunks it does not stores
+        for c_id in chunk_ids_remote_mn_doesnt_store:
+            asyncio.run(self.fetch_chunk_which_does_not_exist(client, c_id))
