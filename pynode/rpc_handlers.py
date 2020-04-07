@@ -38,7 +38,7 @@ def receive_rpc_download_image(data, *args, **kwargs):
             "status": "ERROR",
             "mgs": "No chunks for given image"
         }
-    chunks = [get_chunkmanager().get_chunk(int(x.chunk_id)) for x in chunks_db]
+    chunks = [get_chunkmanager().get_chunk_data(int(x.chunk_id)) for x in chunks_db]
     try:
         image_data = luby.decode(chunks)
     except luby.NotEnoughChunks:

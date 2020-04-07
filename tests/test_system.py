@@ -22,7 +22,7 @@ from core_modules.rpc_client import RPCClient
 from core_modules.rpc_serialization import RPCMessage
 from core_modules.ticket_models import RegistrationTicket
 from pynode.tasks import TXID_LENGTH, update_masternode_list, refresh_masternode_list, index_new_chunks, \
-    get_and_proccess_new_activation_tickets
+    get_and_proccess_new_activation_tickets, fetch_single_chunk_via_rpc
 from utils.mn_ordering import get_masternode_ordering
 from cnode_connection import reset_blockchain_connection
 
@@ -363,3 +363,70 @@ class FetchChunkTestCase(unittest.TestCase):
         # check that masternode returns None for chunks it does not stores
         for c_id in chunk_ids_remote_mn_doesnt_store:
             asyncio.run(self.fetch_chunk_which_does_not_exist(client, c_id))
+
+    def test_fetch_chunk_with_mn_autoselect(self):
+        chunks_received = 0
+        chunks_failed = 0
+
+        async def fetch_chunk_wrapper(chunkid):
+            nonlocal chunks_received
+            nonlocal chunks_failed
+            result = await fetch_single_chunk_via_rpc(chunkid)
+            if result is None:
+                chunks_failed += 1
+            else:
+                chunks_received += 1
+
+        get_and_proccess_new_activation_tickets()
+        index_new_chunks()
+        total_chunk_count = Chunk.select().where(Chunk.confirmed == True and Chunk.indexed == True).count()
+        idx = 1
+        for c in Chunk.select().where(Chunk.confirmed == True):
+            print('Fetching {} chunk of {}'.format(idx, total_chunk_count))
+            asyncio.run(fetch_chunk_wrapper(c.chunk_id))
+            idx += 1
+        print('{} chunks fetched, {} failed of totally {} chunks'.format(chunks_received, chunks_failed, total_chunk_count))
+
+    def test_print_number_of_configrmed_chunks_in_mn_db(self):
+        mns = Masternode.get_active_nodes()
+        for mn in mns:
+            client = mn.get_rpc_client()
+            result = client.send_rpc_execute_sql('select count(id) from chunk where confirmed=true;')
+            chunk_count = result[0]['count(id)']
+            print('{} has {} confirmed chunks'.format(client.server_ip, chunk_count))
+
+    def test_download_regticket_humbnail_by_hash(self):
+        async def try_dl_image(client, hash):
+            try:
+                result = await client.rpc_download_image(hash)
+            except Exception as e:
+                print(e)
+                return
+            print(client.server_ip)
+            if result is not None:
+                print('Something')
+            else:
+                print('Nothing')
+
+        # get regticket
+        result = get_blockchain_connection().list_tickets("act")
+        act_ticket_txids = list(filter(lambda x: len(x) == TXID_LENGTH, result))
+        get_and_proccess_new_activation_tickets()
+        index_new_chunks()
+        mns = Masternode.get_active_nodes()
+
+        for txid in act_ticket_txids:
+            # get ticket by txid
+            ticket = json.loads(get_blockchain_connection().get_ticket(txid))
+            regticket_base64 = ticket['ticket']['art_ticket']
+
+            regticket = RegistrationTicket(serialized_base64=regticket_base64)
+
+            for mn in mns:
+                client = mn.get_rpc_client()
+                asyncio.run(try_dl_image(client, regticket.imagedata_hash))
+
+            # print(regticket.thumbnailhash)
+
+            # first - make sure thumbnailhash exists in our chunks DB
+            # print(Chunk.select().where(Chunk.image_hash == regticket.thumbnailhash).count())

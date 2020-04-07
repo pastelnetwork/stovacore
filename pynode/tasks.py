@@ -297,46 +297,45 @@ async def index_new_chunks_task():
         index_new_chunks()
 
 
+async def fetch_single_chunk_via_rpc(chunkid):
+    for masternode in get_chunk_owners(chunkid):
+        if masternode.pastel_id == get_blockchain_connection().pastelid:
+            # don't attempt to connect ourselves
+            continue
+
+        mn = masternode.get_rpc_client()
+
+        try:
+            data = await mn.send_rpc_fetchchunk(chunkid)
+        except RPCException as exc:
+            mnl_logger.info("FETCHCHUNK RPC FAILED for node %s with exception %s" % (mn.server_ip, exc))
+            continue
+
+        if data is None:
+            mnl_logger.info("MN %s returned None for fetchchunk %s" % (mn.server_ip, chunkid))
+            # chunk was not found
+            continue
+
+        # if chunk is received:
+        # verify that digest matches
+        digest = get_pynode_digest_int(data)
+        if chunkid != str(digest):
+            mnl_logger.info("MN %s returned bad chunk for fetchchunk %s, mismatched digest: %s" % (
+                mn.server_ip, chunkid, digest))
+            continue
+        return data
+    # nobody has this chunk
+    mnl_logger.error("Unable to fetch chunk %s" %
+                     chunkid_to_hex(int(chunkid)))
+
+
 async def chunk_fetcher_task():
-    async def fetch_single_chunk_via_rpc(chunkid):
-        found = False
-        for masternode in get_chunk_owners(chunkid):
-            if masternode.pastel_id == get_blockchain_connection().pastelid:
-                # don't attempt to connect ourselves
-                continue
-
-            mn = masternode.get_rpc_client()
-
-            try:
-                data = await mn.send_rpc_fetchchunk(chunkid)
-                # data = await mn.send_rpc_ping(b'ping')
-                # data = mn.send_rpc_ping_sync(b'ping')
-            except RPCException as exc:
-                mnl_logger.info("FETCHCHUNK RPC FAILED for node %s with exception %s" % (mn.server_ip, exc))
-                continue
-
-            if data is None:
-                mnl_logger.info("MN %s returned None for fetchchunk %s" % (mn.server_ip, chunkid))
-                # chunk was not found
-                continue
-
-            # verify that digest matches
-            digest = get_pynode_digest_int(data)
-            if chunkid != str(digest):
-                mnl_logger.info("MN %s returned bad chunk for fetchchunk %s, mismatched digest: %s" % (
-                    mn.server_ip, chunkid, digest))
-                continue
-
+    async def fetch_chunk_and_store_it(chunkid):
+        data = fetch_single_chunk_via_rpc(chunkid)
+        if data:
             # add chunk to persistant storage and update DB info (`stored` flag) to True
             get_chunkmanager().store_chunk_in_storage(int(chunkid), data)
             Chunk.update(stored=True).where(Chunk.chunk_id == chunkid)
-            break
-
-        # nobody has this chunk
-        if not found:
-            # TODO: fall back to reconstruct it from luby blocks
-            mnl_logger.error("Unable to fetch chunk %s, luby reconstruction is not yet implemented!" %
-                             chunkid_to_hex(int(chunkid)))
 
     while True:
         await asyncio.sleep(0)
@@ -351,7 +350,7 @@ async def chunk_fetcher_task():
 
         tasks = []
         for missing_chunk in missing_chunks:
-            tasks.append(fetch_single_chunk_via_rpc(missing_chunk))
+            tasks.append(fetch_chunk_and_store_it(missing_chunk))
 
         await asyncio.gather(*tasks)
         await asyncio.sleep(1)
