@@ -167,3 +167,7 @@ class RegticketImageToChunkStorageTestCase(unittest.TestCase):
         self.assertEqual(Chunk.select().count(), 2)
 # TODO: add tests emulating the full flow  - put image to the chunkstorage, and receive it using image_hash
 # (not chunk hash, which is different every time when new portion of chunks is generated).
+
+class ChunkFileNamesTestCase(unittest.TestCase):
+    def test_chunk_id_to_filename(self):
+        pass

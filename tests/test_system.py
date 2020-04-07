@@ -424,6 +424,7 @@ class FetchChunkTestCase(unittest.TestCase):
 
             for mn in mns:
                 client = mn.get_rpc_client()
+                print(client.server_ip)
                 asyncio.run(try_dl_image(client, regticket.imagedata_hash))
 
             # print(regticket.thumbnailhash)

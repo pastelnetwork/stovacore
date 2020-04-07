@@ -157,11 +157,10 @@ def get_and_proccess_new_activation_tickets():
         chunk_hashes = regticket.lubyhashes  # this is list of bytes objects
 
         # add thumbnail chunk
-        # thumbnail should always fit in one chunk, and we use image_hash as base for thumbnail chunks id
         try:
-            chunk = Chunk.create_from_hash(chunkhash=regticket.imagedata_hash, artwork_hash=regticket.imagedata_hash)
+            chunk = Chunk.create_from_hash(chunkhash=regticket.thumbnailhash, artwork_hash=regticket.thumbnailhash)
         except IntegrityError:  # if Chunk with such chunkhash already exist
-            chunk = Chunk.get_by_hash(chunkhash=regticket.imagedata_hash)
+            chunk = Chunk.get_by_hash(chunkhash=regticket.thumbnailhash)
         chunk.confirmed = True
         chunk.save()
 
