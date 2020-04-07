@@ -95,7 +95,7 @@ def masternode_place_image_data_in_chunkstorage(regticket, regticket_image_data)
     artwork_hash = imagedata.get_artwork_hash()
     # store thumbnail
     get_chunkmanager().store_chunk_in_temp_storage(bytes_to_chunkid(regticket.thumbnailhash), imagedata.thumbnail)
-    Chunk.create_from_hash(chunkhash=regticket.thumbnailhash, artwork_hash=artwork_hash, stored=True)
+    Chunk.create_from_hash(chunkhash=regticket.thumbnailhash, artwork_hash=regticket.thumbnailhash, stored=True)
 
     # store chunks
     for chunkhash, chunkdata in zip(imagedata.get_luby_hashes(), imagedata.lubychunks):

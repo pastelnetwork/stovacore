@@ -8,12 +8,16 @@ import tempfile
 import warnings
 
 from core_modules.chunk_storage import ChunkStorage
+from core_modules.chunkmanager import get_chunkmanager
 from core_modules.database import MASTERNODE_DB, DB_MODELS, Chunk
-from core_modules.helpers import get_pynode_digest_int
+from core_modules.helpers import get_pynode_digest_int, bytes_to_chunkid
 from core_modules.blackbox_modules import luby
 from core_modules.masternode_ticketing import masternode_place_image_data_in_chunkstorage
 from core_modules.ticket_models import RegistrationTicket, ImageData
+from pynode.tasks import move_confirmed_chunks_to_persistant_storage
+from tests.test_system import switch_pastelid, CLIENT_PASTELID, PASSPHRASE
 from tests.test_utils import png_1x1_data
+from wallet.art_registration_client import ArtRegistrationClient
 
 
 def get_regticket():
@@ -165,9 +169,66 @@ class RegticketImageToChunkStorageTestCase(unittest.TestCase):
         regticket = get_regticket()
         masternode_place_image_data_in_chunkstorage(regticket, image_data)
         self.assertEqual(Chunk.select().count(), 2)
-# TODO: add tests emulating the full flow  - put image to the chunkstorage, and receive it using image_hash
-# (not chunk hash, which is different every time when new portion of chunks is generated).
+
 
 class ChunkFileNamesTestCase(unittest.TestCase):
+    def setUp(self):
+        # warnings.simplefilter('ignore')
+        # MASTERNODE_DB.init(':memory:')
+        # MASTERNODE_DB.connect(reuse_if_open=True)
+        # MASTERNODE_DB.create_tables(DB_MODELS)
+        switch_pastelid(CLIENT_PASTELID, PASSPHRASE)
+        MASTERNODE_DB.init(':memory:')
+        MASTERNODE_DB.connect(reuse_if_open=True)
+        MASTERNODE_DB.create_tables(DB_MODELS)
+        # cleanup chunk storage
+        from cnode_connection import basedir
+        import shutil
+        try:
+            shutil.rmtree(os.path.join(basedir, "chunkdata"))
+            shutil.rmtree(os.path.join(basedir, "tmpstorage"))
+        except FileNotFoundError:
+            pass
+
     def test_chunk_id_to_filename(self):
-        pass
+        # create regticket
+        regticket = ArtRegistrationClient.generate_regticket(png_1x1_data, 'artist_name', 'artist_website',
+                                                             'artist_written_statement',
+                                                             'artwork_title', 'artwork_series_name',
+                                                             'artwork_creation_video_youtube_url',
+                                                             'artwork_keyword_set', total_copies=99, copy_price=555)
+
+        # emulate what we do on MN0 when storing data to chunkstorage
+        imagedata = ImageData(dictionary={
+            "image": png_1x1_data,
+            "lubychunks": ImageData.generate_luby_chunks(png_1x1_data, seeds=regticket.lubyseeds),
+            "thumbnail": ImageData.generate_thumbnail(png_1x1_data),
+        })
+        artwork_hash = imagedata.get_artwork_hash()
+        self.assertEqual(artwork_hash, regticket.imagedata_hash)
+        masternode_place_image_data_in_chunkstorage(regticket, png_1x1_data)
+        chunkids = list(get_chunkmanager().index_temp_storage())
+
+        # verify that our two chunks are actually in this chunksids list
+        # get image chunks IDs from regticket
+        image_chunkid = bytes_to_chunkid(regticket.lubyhashes[0])  # for very small image this is only 1 hash in list
+        # get thumbnail chunk ID from regticket
+        thumbnail_chunkid = bytes_to_chunkid(regticket.thumbnailhash)
+        self.assertIn(image_chunkid, chunkids)
+        self.assertIn(thumbnail_chunkid, chunkids)
+
+        # good. now we've stored image and thumbnail in tmpstorage.
+        # let's move it to regular storage
+        self.assertEqual(Chunk.select().count(), 2)  # expect 2 chunks - image and thumbnail
+        self.assertEqual(Chunk.select().where(Chunk.confirmed == False).count(), 2)  # expect 2 chunks - image and thumbnail
+        # # set Chunk.confirmed  = True as if we've processed activation ticket
+        Chunk.update(confirmed=True).execute()
+        move_confirmed_chunks_to_persistant_storage()
+
+        # try chunkstorage.get by chunk ID from regticket
+        # in regticket list of lubyhashes are chunks IDs.
+        image_chunk = get_chunkmanager().get_chunk_data(image_chunkid)
+        thmbnail_chunk = get_chunkmanager().get_chunk_data(thumbnail_chunkid)
+        self.assertIsNotNone(image_chunk)
+        print(len(image_chunk))
+        self.assertIsNotNone(thmbnail_chunk)

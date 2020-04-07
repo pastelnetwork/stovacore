@@ -81,9 +81,10 @@ class ArtRegistrationClient:
             signatures.append(mn_signature)
         return signatures
 
-    async def get_workers_fee(self, image_data, artist_name=None, artist_website=None, artist_written_statement=None,
-                              artwork_title=None, artwork_series_name=None, artwork_creation_video_youtube_url=None,
-                              artwork_keyword_set=None, total_copies=None, copy_price=0):
+    @classmethod
+    def generate_regticket(cls, image_data, artist_name=None, artist_website=None, artist_written_statement=None,
+                           artwork_title=None, artwork_series_name=None, artwork_creation_video_youtube_url=None,
+                           artwork_keyword_set=None, total_copies=None, copy_price=0):
         image = ImageData(dictionary={
             "image": image_data,
             "lubychunks": ImageData.generate_luby_chunks(image_data),
@@ -92,7 +93,7 @@ class ArtRegistrationClient:
 
         image.validate()
         blocknum = get_blockchain_connection().getblockcount()
-        regticket = RegistrationTicket(dictionary={
+        return RegistrationTicket(dictionary={
             "artist_name": artist_name,
             "artist_website": artist_website,
             "artist_written_statement": artist_written_statement,
@@ -114,11 +115,22 @@ class ArtRegistrationClient:
             "blocknum": blocknum,
             "imagedata_hash": image.get_artwork_hash(),
         })
+
+    async def get_workers_fee(self, image_data, artist_name=None, artist_website=None, artist_written_statement=None,
+                              artwork_title=None, artwork_series_name=None, artwork_creation_video_youtube_url=None,
+                              artwork_keyword_set=None, total_copies=None, copy_price=0):
+        regticket = ArtRegistrationClient.generate_regticket(image_data, artist_name, artist_website,
+                                                             artist_written_statement,
+                                                             artwork_title, artwork_series_name,
+                                                             artwork_creation_video_youtube_url,
+                                                             artwork_keyword_set, total_copies, copy_price)
+
         regticket_signature = self.__generate_signed_ticket(regticket)
-        regticket_db = RegticketDB.create(created=datetime.now(), blocknum=blocknum,
+
+        regticket_db = RegticketDB.create(created=datetime.now(), blocknum=regticket.blocknum,
                                           serialized_regticket=regticket.serialize(),
                                           serialized_signature=regticket_signature.serialize(),
-                                          image_hash=image.get_artwork_hash())
+                                          image_hash=regticket.imagedata_hash)
 
         mn0 = get_masternode_ordering()[0]
         art_reg_client_logger.debug('Top masternode received: {}'.format(mn0.server_ip))
