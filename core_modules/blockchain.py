@@ -16,21 +16,6 @@ class NotEnoughConfirmations(Exception):
 DEFAULT_PASTEL_ID_PASSPHRASE = 'putvalidpassphrasehereorreplacewithenvvar'
 
 
-def update_masternode_conf(pastelid):
-    import json
-    with open('/home/animecoinuser/.pastel/testnet3/masternode.conf', 'r') as f:
-        config_data = f.read()
-    json_config_data = json.loads(config_data)
-
-    mn_key = list(json_config_data.keys())[0]
-    if json_config_data[mn_key]['extKey'] == pastelid:
-        return
-    json_config_data[mn_key]['extKey'] = pastelid
-    final_data = json.dumps(json_config_data, indent=4, sort_keys=True)
-    with open('/home/animecoinuser/.pastel/testnet3/masternode.conf', 'w') as f:
-        f.write(final_data)
-
-
 class BlockChain:
     def __init__(self, user, password, ip, rpcport, pastelid=None, passphrase=None):
         self.url = "http://%s:%s@%s:%s" % (user, password, ip, rpcport)
@@ -49,7 +34,6 @@ class BlockChain:
         # predefined pastelid
         if not pastelid:
             self.pastelid = self.get_or_create_pastel_id()
-            update_masternode_conf(self.pastelid)
         else:
             self.pastelid = pastelid
 

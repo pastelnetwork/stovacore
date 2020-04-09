@@ -83,6 +83,11 @@ function clear_tmp_storage()
     mkdir tmpstorage
 }
 
+function create_mnid()
+{
+    cd ~/StoVaCore/utils
+    PYTHONPATH=/home/animecoinuser/StoVaCore/ /home/animecoinuser/.virtualenvs/StoVaCore/bin/python create_mnid.py
+}
 
 case $1 in
     "start") start;;
@@ -93,4 +98,5 @@ case $1 in
     "update_requirements") update_requirements;;
     "drop_db") drop_db;;
     "clear_tmp_storage") clear_tmp_storage;;
+    "create_mnid") create_mnid;;
 esac
