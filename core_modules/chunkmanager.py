@@ -54,6 +54,7 @@ class ChunkManager:
         :param chunkid: integer
         :param data: bytes
         """
+        print(123)
         if chunkid != get_pynode_digest_int(data):
             raise ValueError("data does not match chunkid!")
 

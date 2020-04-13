@@ -16,21 +16,26 @@ import random
 from pprint import pprint
 
 from cnode_connection import get_blockchain_connection
+from core_modules.blockchain import DEFAULT_PASTEL_ID_PASSPHRASE
 from core_modules.database import MASTERNODE_DB, DB_MODELS, Masternode, ChunkMnDistance, ChunkMnRanked, Chunk, \
     ActivationTicket
 from core_modules.rpc_client import RPCClient
 from core_modules.rpc_serialization import RPCMessage
 from core_modules.ticket_models import RegistrationTicket
 from pynode.tasks import TXID_LENGTH, update_masternode_list, refresh_masternode_list, index_new_chunks, \
-    get_and_proccess_new_activation_tickets, fetch_single_chunk_via_rpc
+    get_and_proccess_new_activation_tickets, fetch_single_chunk_via_rpc, get_missing_chunk_ids, chunk_fetcher_task_body
 from utils.mn_ordering import get_masternode_ordering
 from cnode_connection import reset_blockchain_connection
 
-CLIENT_PASTELID = 'jXaQj8FA9FGP6KzKNKz9bPEX7owTWqF7CeQ2Vy1fT21pEMUeveqBf6DXhRv3o6mBN3AX5bBcTuvafDcepkZ3wp'
-SERVER_PASTELID = 'jXaSNRnSiPkz4BettdvJvmgKAFkfQvu4kFrcsRJcsFaBYiMJxo7zrvftPE2bcYGiViW5YLAuiALrtpoD1QbJ39'
+CLIENT_PASTELID = 'jXZaYVHWw6czQ7r7oMHJkLjYDs7oSR4KWuSk3PybsWFnR2cjvjVpTMgQc7R2mfqT8eiggCwZb6SiHYRi7FouGh'
+SERVER_PASTELID = 'jXXr3LQbBp7UN9CgmKQpbPJoEqPRBpuvwG4isEprjLymGujXGUsPS6KZmx3aq7B2Sk4HRaMmcRU9aYYovsokcL'
 PASSPHRASE = 'taksa'
+MASTERNODE_NUMBER = 10  # number of masternodes in the network
+CHUNK_NUMBER = 3  # number of chunks in the network
+ACT_TICKET_NUMBER = 1  # number of art activation tickets in the network
 
-DISABLED_MASTERNODES = ['51.158.183.93:4444', '51.15.57.47:4444']
+# DISABLED_MASTERNODES = ['51.158.183.93:4444', '51.15.57.47:4444']
+DISABLED_MASTERNODES = []
 
 
 def disable_invalid_mns():
@@ -90,7 +95,7 @@ class ImageRegistrationTestCase(unittest.TestCase):
         regticket_base64 = ticket['ticket']['art_ticket']
 
         regticket = RegistrationTicket(serialized_base64=regticket_base64)
-        self.assertEqual(regticket.blocknum, 4494)
+        self.assertEqual(regticket.blocknum, 3370)
 
 
 class PastelSignVerifyTestCase(unittest.TestCase):
@@ -172,14 +177,14 @@ class MasternodeFetcherTaskTestCase(unittest.TestCase):
         update_masternode_list()
         masternodes = list(Masternode.get_active_nodes())
         # update with actual amount of masternodes in the network
-        self.assertEqual(len(masternodes), 7)
+        self.assertEqual(len(masternodes), MASTERNODE_NUMBER)
 
     def test_masternodes_refresh_task_with_no_chunks(self):
         self.assertEqual(Masternode.get_active_nodes().count(), 0)
         self.assertEqual(ChunkMnDistance.select().count(), 0)
         self.assertEqual(ChunkMnRanked.select().count(), 0)
         refresh_masternode_list()
-        self.assertEqual(Masternode.get_active_nodes().count(), 7)
+        self.assertEqual(Masternode.get_active_nodes().count(), MASTERNODE_NUMBER)
         self.assertEqual(ChunkMnDistance.select().count(), 0)
         self.assertEqual(ChunkMnRanked.select().count(), 0)
 
@@ -189,9 +194,9 @@ class MasternodeFetcherTaskTestCase(unittest.TestCase):
         self.assertEqual(ChunkMnRanked.select().count(), 0)
         get_and_proccess_new_activation_tickets()
         refresh_masternode_list()
-        self.assertEqual(Masternode.get_active_nodes().count(), 7)
-        self.assertEqual(ChunkMnDistance.select().count(), 112)
-        self.assertEqual(ChunkMnRanked.select().count(), 112)
+        self.assertEqual(Masternode.get_active_nodes().count(), MASTERNODE_NUMBER)
+        self.assertEqual(ChunkMnDistance.select().count(), MASTERNODE_NUMBER * CHUNK_NUMBER)
+        self.assertEqual(ChunkMnRanked.select().count(), MASTERNODE_NUMBER * CHUNK_NUMBER)
 
 
 class ProcessNewActTicketsTestCase(unittest.TestCase):
@@ -212,8 +217,8 @@ class ProcessNewActTicketsTestCase(unittest.TestCase):
         chunks = list(Chunk.select())
         act_tickets = list(ActivationTicket.select())
         # FIXME: validate actual number of chunks/act tickets on the blockchain
-        self.assertEqual(Chunk.select().count(), 16)
-        self.assertEqual(ActivationTicket.select().count(), 4)
+        self.assertEqual(Chunk.select().count(), CHUNK_NUMBER)
+        self.assertEqual(ActivationTicket.select().count(), ACT_TICKET_NUMBER)
 
 
 class IndexNewChunksTaskTestCase(unittest.TestCase):
@@ -232,10 +237,10 @@ class IndexNewChunksTaskTestCase(unittest.TestCase):
         refresh_masternode_list()
         self.assertEqual(ChunkMnDistance.select().count(), 0)
         self.assertEqual(ChunkMnRanked.select().count(), 0)
-        self.assertEqual(Masternode.get_active_nodes().count(), 7)
+        self.assertEqual(Masternode.get_active_nodes().count(), MASTERNODE_NUMBER)
         get_and_proccess_new_activation_tickets()
-        self.assertEqual(Chunk.select().count(), 16)
-        self.assertEqual(ActivationTicket.select().count(), 4)
+        self.assertEqual(Chunk.select().count(), 3)
+        self.assertEqual(ActivationTicket.select().count(), 1)
         for chunk in Chunk.select():
             self.assertEqual(chunk.indexed, False)
             self.assertEqual(chunk.confirmed,
@@ -253,7 +258,7 @@ class IndexNewChunksTaskTestCase(unittest.TestCase):
         ranks = set()
         for cmnr in ChunkMnRanked.select():
             ranks.add(cmnr.rank)
-        self.assertEqual(len(ranks), 7)
+        self.assertEqual(len(ranks), MASTERNODE_NUMBER)
         print('Ranks : {}'.format(ranks))
 
 
@@ -346,7 +351,7 @@ class FetchChunkTestCase(unittest.TestCase):
     def test_single_chunk_with_rpc_from_masternode(self):
         get_and_proccess_new_activation_tickets()
         # get a masternode which we know stores some chunks
-        mn = Masternode.get_active_nodes().where(Masternode.ext_address == '51.15.41.129:4444').get()
+        mn = Masternode.get_active_nodes()[0]
         client = mn.get_rpc_client()
         # get list of chunk this masternode stores
         chunks = client.send_rpc_execute_sql('select chunk_id from chunk where stored=true and confirmed=true;')
@@ -385,15 +390,18 @@ class FetchChunkTestCase(unittest.TestCase):
             print('Fetching {} chunk of {}'.format(idx, total_chunk_count))
             asyncio.run(fetch_chunk_wrapper(c.chunk_id))
             idx += 1
-        print('{} chunks fetched, {} failed of totally {} chunks'.format(chunks_received, chunks_failed, total_chunk_count))
+        self.assertEqual(chunks_received, CHUNK_NUMBER)
+        self.assertEqual(chunks_failed, 0)
 
     def test_print_number_of_configrmed_chunks_in_mn_db(self):
         mns = Masternode.get_active_nodes()
         for mn in mns:
             client = mn.get_rpc_client()
             result = client.send_rpc_execute_sql('select count(id) from chunk where confirmed=true;')
+            result_stored = client.send_rpc_execute_sql('select count(id) from chunk where stored=true;')
             chunk_count = result[0]['count(id)']
-            print('{} has {} confirmed chunks'.format(client.server_ip, chunk_count))
+            stored_count = result_stored[0]['count(id)']
+            print('{} has {} confirmed, {} stored chunks'.format(client.server_ip, chunk_count, stored_count))
 
     def test_download_regticket_humbnail_by_hash(self):
         async def try_dl_thumbnail(client, hash):
@@ -405,6 +413,9 @@ class FetchChunkTestCase(unittest.TestCase):
             print(client.server_ip)
             if result is not None:
                 print('Something')
+                with open('thumbnail.png', 'wb') as th_f:
+                    th_f.write(result)
+
             else:
                 print('Nothing')
 
@@ -431,3 +442,22 @@ class FetchChunkTestCase(unittest.TestCase):
 
             # first - make sure thumbnailhash exists in our chunks DB
             # print(Chunk.select().where(Chunk.image_hash == regticket.thumbnailhash).count())
+
+    def test_get_missing_chunk_ids(self):
+        masternodes = list(Masternode.get_active_nodes())
+        for mn in masternodes:
+            client = mn.get_rpc_client()
+            # sql = "select id from masternode where pastel_id='{}';".format(mn.pastel_id)
+            # print(sql)
+
+            # print(result[0]['id'])
+            sql = '''select c.chunk_id from chunkmnranked r, chunk c where r.masternode_id in 
+            (select id from masternode where pastel_id='{}') and c.stored=false'''.format(mn.pastel_id)
+            result = client.send_rpc_execute_sql(sql)
+            print(result)
+
+    def test_chunk_fetcher_task_body(self):
+        get_and_proccess_new_activation_tickets()
+        refresh_masternode_list()
+        index_new_chunks()
+        asyncio.run(chunk_fetcher_task_body())

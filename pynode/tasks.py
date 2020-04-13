@@ -243,12 +243,12 @@ def get_missing_chunk_ids(pastel_id=None):
     """
     if not pastel_id:
         pastel_id = get_blockchain_connection().pastelid
+    print(pastel_id)
     # return chunks that we're owner of but don't have it in the storage
     try:
         current_mn_id = Masternode.get(pastel_id=pastel_id).id
     except DoesNotExist:
         return []
-
     chunks_ranked_qs = ChunkMnRanked.select().join(Chunk).where(
         (ChunkMnRanked.masternode_id == current_mn_id) & (Chunk.stored == False))
     return [c.chunk.chunk_id for c in chunks_ranked_qs]
@@ -328,30 +328,26 @@ async def fetch_single_chunk_via_rpc(chunkid):
                      chunkid_to_hex(int(chunkid)))
 
 
+async def fetch_chunk_and_store_it(chunkid):
+    data = await fetch_single_chunk_via_rpc(chunkid)
+    if data:
+        # add chunk to persistant storage and update DB info (`stored` flag) to True
+        get_chunkmanager().store_chunk_in_storage(int(chunkid), data)
+        Chunk.update(stored=True).where(Chunk.chunk_id == chunkid)
+
+
+async def chunk_fetcher_task_body():
+    missing_chunks = get_missing_chunk_ids()[:NetWorkSettings.CHUNK_FETCH_PARALLELISM]
+    tasks = []
+    for missing_chunk in missing_chunks:
+        tasks.append(fetch_chunk_and_store_it(missing_chunk))
+
+    await asyncio.gather(*tasks)
+
+
 async def chunk_fetcher_task():
-    async def fetch_chunk_and_store_it(chunkid):
-        data = fetch_single_chunk_via_rpc(chunkid)
-        if data:
-            # add chunk to persistant storage and update DB info (`stored` flag) to True
-            get_chunkmanager().store_chunk_in_storage(int(chunkid), data)
-            Chunk.update(stored=True).where(Chunk.chunk_id == chunkid)
-
     while True:
-        await asyncio.sleep(0)
-
-        # get chunks we are owner but we don't have
-        missing_chunks = get_missing_chunk_ids()[:NetWorkSettings.CHUNK_FETCH_PARALLELISM]
-
-        if len(missing_chunks) == 0:
-            # nothing to do, sleep a little
-            await asyncio.sleep(1)
-            continue
-
-        tasks = []
-        for missing_chunk in missing_chunks:
-            tasks.append(fetch_chunk_and_store_it(missing_chunk))
-
-        await asyncio.gather(*tasks)
+        await chunk_fetcher_task_body()
         await asyncio.sleep(1)
 
 
