@@ -33,21 +33,18 @@ class BlockChain:
         # for wallet API mode - user will change which pastelID use, so wallet_api will create Blockchain object with
         # predefined pastelid
         if not pastelid:
-            self.pastelid = self.get_or_create_pastel_id()
+            self.pastelid = self.get_pastel_id()
         else:
             self.pastelid = pastelid
 
-    def get_or_create_pastel_id(self):
+    def get_pastel_id(self):
         # FIXME: when fetching list of pastelID need to check `registered` or `status` flag if
         #  the given pastelid is registered
         #  if not - register.
         pastelid_list = self.pastelid_list()
 
         if not len(pastelid_list):
-            result = self.pastelid_newkey(self.passphrase)
-            response = self.mnid_register(result['pastelid'], self.passphrase)
-            self.__logger.warn('Registered mnid {}, txid: {}'.format(result['pastelid'], response['txid']))
-            return result['pastelid']
+            raise Exception('There is no pastel IDs on this node. Please register one first.')
         else:
             return pastelid_list[0]['PastelID']
 

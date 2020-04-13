@@ -83,10 +83,16 @@ function clear_tmp_storage()
     mkdir tmpstorage
 }
 
-function create_mnid()
+function create_pastelid()
 {
     cd ~/StoVaCore/utils
-    PYTHONPATH=/home/animecoinuser/StoVaCore/ /home/animecoinuser/.virtualenvs/StoVaCore/bin/python create_mnid.py
+    PYTHONPATH=/home/animecoinuser/StoVaCore/ /home/animecoinuser/.virtualenvs/StoVaCore/bin/python create_pastelid.py
+}
+
+function register_mnid()
+{
+    cd ~/StoVaCore/utils
+    PYTHONPATH=/home/animecoinuser/StoVaCore/ /home/animecoinuser/.virtualenvs/StoVaCore/bin/python register_mnid.py
 }
 
 case $1 in
@@ -98,5 +104,6 @@ case $1 in
     "update_requirements") update_requirements;;
     "drop_db") drop_db;;
     "clear_tmp_storage") clear_tmp_storage;;
-    "create_mnid") create_mnid;;
+    "create_pastelid") create_pastelid;;
+    "register_mnid") register_mnid;;
 esac
