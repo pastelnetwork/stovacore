@@ -24,7 +24,7 @@ mn_ticket_logger = initlogging('Logger', __name__)
 async def is_burn_10_tx_height_valid(regticket, txid):
     regticket = RegistrationTicket(serialized=regticket.regticket)
     sleep_counter = 0
-    while sleep_counter:
+    while True:
         try:
             raw_tx_data = get_blockchain_connection().getrawtransaction(txid, verbose=1)
             break
@@ -46,7 +46,7 @@ async def is_burn_10_tx_amount_valid(regticket, txid):
     networkfee = networkfee_result['networkfee']
     tx_amounts = []
     sleep_counter = 0
-    while sleep_counter:
+    while True:
         try:
             raw_tx_data = get_blockchain_connection().getrawtransaction(txid, verbose=1)
             break
