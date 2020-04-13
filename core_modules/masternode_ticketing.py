@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 from decimal import Decimal
 
@@ -20,9 +21,18 @@ from core_modules.logger import initlogging
 mn_ticket_logger = initlogging('Logger', __name__)
 
 
-def is_burn_10_tx_height_valid(regticket, txid):
+async def is_burn_10_tx_height_valid(regticket, txid):
     regticket = RegistrationTicket(serialized=regticket.regticket)
-    raw_tx_data = get_blockchain_connection().getrawtransaction(txid, verbose=1)
+    sleep_counter = 0
+    while sleep_counter:
+        try:
+            raw_tx_data = get_blockchain_connection().getrawtransaction(txid, verbose=1)
+            break
+        except Exception as ex:
+            await asyncio.sleep(5)
+            if sleep_counter > 10:
+                raise ex
+
     if not raw_tx_data:
         return False, 'Burn 10% txid is invalid'
 
@@ -31,11 +41,20 @@ def is_burn_10_tx_height_valid(regticket, txid):
     return True, None
 
 
-def is_burn_10_tx_amount_valid(regticket, txid):
+async def is_burn_10_tx_amount_valid(regticket, txid):
     networkfee_result = get_blockchain_connection().getnetworkfee()
     networkfee = networkfee_result['networkfee']
     tx_amounts = []
-    raw_tx_data = get_blockchain_connection().getrawtransaction(txid, verbose=1)
+    sleep_counter = 0
+    while sleep_counter:
+        try:
+            raw_tx_data = get_blockchain_connection().getrawtransaction(txid, verbose=1)
+            break
+        except Exception as ex:
+            await asyncio.sleep(5)
+            if sleep_counter > 10:
+                raise ex
+
     for vout in raw_tx_data['vout']:
         tx_amounts.append(vout['value'])
 
@@ -66,9 +85,9 @@ def is_burn_10_tx_amount_valid(regticket, txid):
             return True, None
 
 
-def is_burn_tx_valid(regticket, txid):
-    is_valid_height, height_err = is_burn_10_tx_height_valid(regticket, txid)
-    is_valid_amount, amount_err = is_burn_10_tx_amount_valid(regticket, txid)
+async def is_burn_tx_valid(regticket, txid):
+    is_valid_height, height_err = await is_burn_10_tx_height_valid(regticket, txid)
+    is_valid_amount, amount_err = await is_burn_10_tx_amount_valid(regticket, txid)
     if is_valid_height and is_valid_amount:
         return True, None
     else:
@@ -290,7 +309,7 @@ class ArtRegistrationServer:
         except DoesNotExist:
             mn_ticket_logger.error('Upload code {} not found in DB'.format(upload_code))
             raise ValueError('Given upload code was issued by someone else...')
-        is_valid, errors = is_burn_tx_valid(regticket_db, burn_10_txid)
+        is_valid, errors = await is_burn_tx_valid(regticket_db, burn_10_txid)
         if not is_valid:
             raise ValueError(errors)
         regticket = RegistrationTicket(serialized=regticket_db.regticket)
