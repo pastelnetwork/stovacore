@@ -261,38 +261,41 @@ def get_chunk_owners(chunk_id):
     return [c.masternode for c in ChunkMnRanked.select().where(ChunkMnRanked.chunk == db_chunk)]
 
 
-def download_missing_chunks():
-    # TODO: task which get list of chunks we should own, and download missing
-    #   - calculate list of chunks we should own. it makes sense to cache calculation. (caching is easy, but proper
-    #   cache invalidation is not very..)
-    #   - calculate all owners for a given chunk (select masternode_id from ChunkMnDistance where chunk=<chunk>
-    #   order by distance asc limit 10;
-    pass
-
-
 async def proccess_tmp_storage():
     while True:
         # it should not be called very often. New result will be if there are new act tickets parsed
         await asyncio.sleep(5)
-        move_confirmed_chunks_to_persistant_storage()
+        try:
+            move_confirmed_chunks_to_persistant_storage()
+        except Exception as ex:
+            mnl_logger.error('Exception in process tmp storage task: {}'.format(ex))
 
 
 async def process_new_tickets_task():
     while True:
         await asyncio.sleep(1)
-        get_and_proccess_new_activation_tickets()
+        try:
+            get_and_proccess_new_activation_tickets()
+        except Exception as ex:
+            mnl_logger.error('Exception in process new tickets task: {}'.format(ex))
 
 
 async def masternodes_refresh_task():
     while True:
         await asyncio.sleep(1)
-        refresh_masternode_list()
+        try:
+            refresh_masternode_list()
+        except Exception as ex:
+            mnl_logger.error('Exception in masternode refresh task: {}'.format(ex))
 
 
 async def index_new_chunks_task():
     while True:
         await asyncio.sleep(1)
-        index_new_chunks()
+        try:
+            index_new_chunks()
+        except Exception as ex:
+            mnl_logger.error('Exception in Index new chunks task: {}'.format(ex))
 
 
 async def fetch_single_chunk_via_rpc(chunkid):
@@ -346,7 +349,10 @@ async def chunk_fetcher_task_body(pastel_id=None):
 
 async def chunk_fetcher_task():
     while True:
-        await chunk_fetcher_task_body()
+        try:
+            await chunk_fetcher_task_body()
+        except Exception as ex:
+            mnl_logger.error('Exception in chunk fetcher task: {}'.format(ex))
         await asyncio.sleep(1)
 
 
