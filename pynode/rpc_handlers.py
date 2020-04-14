@@ -63,7 +63,7 @@ def receive_rpc_download_thumbnail(data, *args, **kwargs):
     # fixme: maybe if current MN does not stores a given thumbnail - it worth
     #  to return a list of masternodes which should store it (from ChunkMnRanked table).
     image_hash = data['image_hash']
-    chunks_db = Chunk.select().where(Chunk.image_hash == image_hash)
+    chunks_db = Chunk.select().where(Chunk.image_hash == image_hash, Chunk.stored == True)
     if len(chunks_db) == 0:
         return {
             "status": "ERROR",

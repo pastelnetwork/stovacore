@@ -243,7 +243,6 @@ def get_missing_chunk_ids(pastel_id=None):
     """
     if not pastel_id:
         pastel_id = get_blockchain_connection().pastelid
-    print(pastel_id)
     # return chunks that we're owner of but don't have it in the storage
     try:
         current_mn_id = Masternode.get(pastel_id=pastel_id).id
@@ -333,11 +332,11 @@ async def fetch_chunk_and_store_it(chunkid):
     if data:
         # add chunk to persistant storage and update DB info (`stored` flag) to True
         get_chunkmanager().store_chunk_in_storage(int(chunkid), data)
-        Chunk.update(stored=True).where(Chunk.chunk_id == chunkid)
+        Chunk.update(stored=True).where(Chunk.chunk_id == chunkid).execute()
 
 
-async def chunk_fetcher_task_body():
-    missing_chunks = get_missing_chunk_ids()[:NetWorkSettings.CHUNK_FETCH_PARALLELISM]
+async def chunk_fetcher_task_body(pastel_id=None):
+    missing_chunks = get_missing_chunk_ids(pastel_id)[:NetWorkSettings.CHUNK_FETCH_PARALLELISM]
     tasks = []
     for missing_chunk in missing_chunks:
         tasks.append(fetch_chunk_and_store_it(missing_chunk))

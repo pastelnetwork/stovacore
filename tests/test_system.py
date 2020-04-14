@@ -9,7 +9,9 @@ This test are actually not 'refined' tests - they depend on the testnet state.
 Consider it more like manual test which are upgraded with a bit of automation.
 """
 import json
+import shutil
 import unittest
+from unittest.mock import patch
 import os
 import asyncio
 import random
@@ -17,6 +19,7 @@ from pprint import pprint
 
 from cnode_connection import get_blockchain_connection
 from core_modules.blockchain import DEFAULT_PASTEL_ID_PASSPHRASE
+from core_modules.chunkmanager import get_chunkmanager
 from core_modules.database import MASTERNODE_DB, DB_MODELS, Masternode, ChunkMnDistance, ChunkMnRanked, Chunk, \
     ActivationTicket
 from core_modules.rpc_client import RPCClient
@@ -29,6 +32,8 @@ from cnode_connection import reset_blockchain_connection
 
 CLIENT_PASTELID = 'jXZaYVHWw6czQ7r7oMHJkLjYDs7oSR4KWuSk3PybsWFnR2cjvjVpTMgQc7R2mfqT8eiggCwZb6SiHYRi7FouGh'
 SERVER_PASTELID = 'jXXr3LQbBp7UN9CgmKQpbPJoEqPRBpuvwG4isEprjLymGujXGUsPS6KZmx3aq7B2Sk4HRaMmcRU9aYYovsokcL'
+
+REAL_MN_PASTEL_ID = 'jXaHR8djB7VL6XFisRsGrv7P4fzna1wqdKMAJDHjhPgnh3kUdrRinv9yFowMivDEgAAU34bgm9u6hk98gE88CP'
 PASSPHRASE = 'taksa'
 MASTERNODE_NUMBER = 10  # number of masternodes in the network
 CHUNK_NUMBER = 3  # number of chunks in the network
@@ -318,6 +323,11 @@ class FetchChunkTestCase(unittest.TestCase):
         import urllib3
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+    def tearDown(self) -> None:
+        # clear chunk storage
+        storage_path = get_chunkmanager().get_storage_path()
+        shutil.rmtree(storage_path)
+
     async def fetch_chunk(self, rpc_client, id):
         response = await rpc_client.send_rpc_fetchchunk(id)
         if response is not None:
@@ -457,7 +467,19 @@ class FetchChunkTestCase(unittest.TestCase):
             print(result)
 
     def test_chunk_fetcher_task_body(self):
+        storage_index = list(get_chunkmanager().index_storage())
+        self.assertEqual(len(storage_index), 0)
+
+        self.assertEqual(Chunk.select().where(Chunk.stored == True).count(), 0)
         get_and_proccess_new_activation_tickets()
         refresh_masternode_list()
         index_new_chunks()
-        asyncio.run(chunk_fetcher_task_body())
+        asyncio.run(chunk_fetcher_task_body(pastel_id=REAL_MN_PASTEL_ID))
+        # check that DB flags are 'stored' TODO: fix
+        self.assertEqual(Chunk.select().where(Chunk.stored == True).count(), CHUNK_NUMBER)
+        # check that we have this chunks
+        for chunk in Chunk.select():
+            data = get_chunkmanager().get_chunk_data(int(chunk.chunk_id))
+            self.assertIsNotNone(data)
+        storage_index = list(get_chunkmanager().index_storage())
+        self.assertEqual(len(storage_index), CHUNK_NUMBER)

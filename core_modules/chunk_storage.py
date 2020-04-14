@@ -31,6 +31,9 @@ class ChunkStorage:
 
         return directory_name, fs_file_name
 
+    def get_basedir_path(self):
+        return self.__basedir
+
     def get(self, chunkname, offset=0, length=-1):
         dirname, filename = self.__derive_fs_file_name(chunkname)
 

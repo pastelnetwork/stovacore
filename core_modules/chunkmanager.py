@@ -28,8 +28,14 @@ class ChunkManager:
         # tmp storage
         self.__tmpstorage = ChunkStorage(os.path.join(basedir, "tmpstorage"), mode=0o0700)
 
+    def get_storage_path(self):
+        return self.__storage.get_basedir_path()
+
     def index_temp_storage(self):
         return self.__tmpstorage.index()
+
+    def index_storage(self):
+        return self.__storage.index()
 
     def rm_from_temp_storage(self, chunk_id):
         self.__tmpstorage.delete(chunk_id)
@@ -54,7 +60,6 @@ class ChunkManager:
         :param chunkid: integer
         :param data: bytes
         """
-        print(123)
         if chunkid != get_pynode_digest_int(data):
             raise ValueError("data does not match chunkid!")
 
