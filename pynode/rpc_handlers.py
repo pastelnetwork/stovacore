@@ -67,12 +67,12 @@ def receive_rpc_download_thumbnail(data, *args, **kwargs):
     if len(chunks_db) == 0:
         return {
             "status": "ERROR",
-            "mgs": "No chunks for given image"
+            "msg": "No chunks for given image"
         }
     if len(chunks_db) > 1:
         return {
             "status": "ERROR",
-            "mgs": "There {} chunks for thumbnails in DB. should be one.".format(len(chunks_db))
+            "msg": "There {} chunks for thumbnails in DB. should be one.".format(len(chunks_db))
         }
 
     thumbnail_data = get_chunkmanager().get_chunk_data(int(chunks_db[0].chunk_id))

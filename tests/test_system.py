@@ -413,21 +413,20 @@ class FetchChunkTestCase(unittest.TestCase):
             stored_count = result_stored[0]['count(id)']
             print('{} has {} confirmed, {} stored chunks'.format(client.server_ip, chunk_count, stored_count))
 
-    def test_download_regticket_humbnail_by_hash(self):
+    def test_download_regticket_humbnail_by_hash_from_all_mns(self):
         async def try_dl_thumbnail(client, hash):
+            print(client.server_ip)
             try:
                 result = await client.rpc_download_thumbnail(hash)
             except Exception as e:
                 print(e)
                 return
-            print(client.server_ip)
+
             if result is not None:
-                print('Something')
-                with open('thumbnail.png', 'wb') as th_f:
-                    th_f.write(result)
+                print('Result is not None, has {} bytes'.format(len(result)))
 
             else:
-                print('Nothing')
+                print('result is empty')
 
         # get regticket
         result = get_blockchain_connection().list_tickets("act")
@@ -445,7 +444,6 @@ class FetchChunkTestCase(unittest.TestCase):
 
             for mn in mns:
                 client = mn.get_rpc_client()
-                print(client.server_ip)
                 asyncio.run(try_dl_thumbnail(client, regticket.thumbnailhash))
 
             # print(regticket.thumbnailhash)
