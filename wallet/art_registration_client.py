@@ -82,9 +82,7 @@ class ArtRegistrationClient:
         return signatures
 
     @classmethod
-    def generate_regticket(cls, image_data, artist_name=None, artist_website=None, artist_written_statement=None,
-                           artwork_title=None, artwork_series_name=None, artwork_creation_video_youtube_url=None,
-                           artwork_keyword_set=None, total_copies=None, copy_price=0):
+    def generate_regticket(cls, image_data: bytes, regticket_data: dict):
         image = ImageData(dictionary={
             "image": image_data,
             "lubychunks": ImageData.generate_luby_chunks(image_data),
@@ -94,15 +92,15 @@ class ArtRegistrationClient:
         image.validate()
         blocknum = get_blockchain_connection().getblockcount()
         return RegistrationTicket(dictionary={
-            "artist_name": artist_name,
-            "artist_website": artist_website,
-            "artist_written_statement": artist_written_statement,
+            "artist_name": regticket_data.get('artist_name', ''),
+            "artist_website": regticket_data.get('artist_website', ''),
+            "artist_written_statement": regticket_data.get('artist_written_statement', ''),
 
-            "artwork_title": artwork_title,
-            "artwork_series_name": artwork_series_name,
-            "artwork_creation_video_youtube_url": artwork_creation_video_youtube_url,
-            "artwork_keyword_set": artwork_keyword_set,
-            "total_copies": total_copies,
+            "artwork_title": regticket_data.get('artwork_title', ''),
+            "artwork_series_name": regticket_data.get('artwork_series_name', ''),
+            "artwork_creation_video_youtube_url": regticket_data.get('artwork_creation_video_youtube_url', ''),
+            "artwork_keyword_set": regticket_data.get('artwork_keyword_set', ''),
+            "total_copies": int(regticket_data.get('total_copies', 0)),
             # "copy_price": copy_price,
 
             "fingerprints": image.generate_fingerprints(),
@@ -116,15 +114,7 @@ class ArtRegistrationClient:
             "imagedata_hash": image.get_artwork_hash(),
         })
 
-    async def get_workers_fee(self, image_data, artist_name=None, artist_website=None, artist_written_statement=None,
-                              artwork_title=None, artwork_series_name=None, artwork_creation_video_youtube_url=None,
-                              artwork_keyword_set=None, total_copies=None, copy_price=0):
-        regticket = ArtRegistrationClient.generate_regticket(image_data, artist_name, artist_website,
-                                                             artist_written_statement,
-                                                             artwork_title, artwork_series_name,
-                                                             artwork_creation_video_youtube_url,
-                                                             artwork_keyword_set, total_copies, copy_price)
-
+    async def get_workers_fee(self, image_data, regticket):
         regticket_signature = self.__generate_signed_ticket(regticket)
 
         regticket_db = RegticketDB.create(created=datetime.now(), blocknum=regticket.blocknum,

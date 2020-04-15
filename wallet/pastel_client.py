@@ -60,19 +60,13 @@ class PastelClient:
             return result
 
     # Image registration methods
-    async def image_registration_step_2(self, title, image_data):
-        artreg = ArtRegistrationClient(self.__chainwrapper)
+    async def image_registration_step_2(self, regticket_data: dict, image_data: bytes):
 
+        artreg = ArtRegistrationClient(self.__chainwrapper)
+        regticket = ArtRegistrationClient.generate_regticket(image_data, regticket_data)
         result = await artreg.get_workers_fee(
             image_data=image_data,
-            artist_name="Example Artist",
-            artist_website="exampleartist.com",
-            artist_written_statement="This is only a test",
-            artwork_title=title,
-            artwork_series_name="Examples and Tests collection",
-            artwork_creation_video_youtube_url="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-            artwork_keyword_set="example, testing, sample",
-            total_copies=10
+            regticket=regticket
         )
 
         return result
