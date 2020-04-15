@@ -11,14 +11,12 @@ Consider it more like manual test which are upgraded with a bit of automation.
 import json
 import shutil
 import unittest
-from unittest.mock import patch
 import os
 import asyncio
 import random
 from pprint import pprint
 
 from cnode_connection import get_blockchain_connection
-from core_modules.blockchain import DEFAULT_PASTEL_ID_PASSPHRASE
 from core_modules.chunkmanager import get_chunkmanager
 from core_modules.database import MASTERNODE_DB, DB_MODELS, Masternode, ChunkMnDistance, ChunkMnRanked, Chunk, \
     ActivationTicket
@@ -26,7 +24,7 @@ from core_modules.rpc_client import RPCClient
 from core_modules.rpc_serialization import RPCMessage
 from core_modules.ticket_models import RegistrationTicket
 from pynode.tasks import TXID_LENGTH, update_masternode_list, refresh_masternode_list, index_new_chunks, \
-    get_and_proccess_new_activation_tickets, fetch_single_chunk_via_rpc, get_missing_chunk_ids, chunk_fetcher_task_body
+    get_and_proccess_new_activation_tickets, fetch_single_chunk_via_rpc, chunk_fetcher_task_body
 from utils.mn_ordering import get_masternode_ordering
 from cnode_connection import reset_blockchain_connection
 
@@ -244,7 +242,7 @@ class IndexNewChunksTaskTestCase(unittest.TestCase):
         self.assertEqual(ChunkMnRanked.select().count(), 0)
         self.assertEqual(Masternode.get_active_nodes().count(), MASTERNODE_NUMBER)
         get_and_proccess_new_activation_tickets()
-        self.assertEqual(Chunk.select().count(), 3)
+        self.assertEqual(Chunk.select().count(), CHUNK_NUMBER)
         self.assertEqual(ActivationTicket.select().count(), 1)
         for chunk in Chunk.select():
             self.assertEqual(chunk.indexed, False)
