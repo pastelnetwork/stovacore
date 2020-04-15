@@ -31,6 +31,9 @@ class ChunkManager:
     def get_storage_path(self):
         return self.__storage.get_basedir_path()
 
+    def get_tmp_storage_path(self):
+        return self.__tmpstorage.get_basedir_path()
+
     def index_temp_storage(self):
         return self.__tmpstorage.index()
 

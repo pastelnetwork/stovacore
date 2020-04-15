@@ -36,8 +36,8 @@ SERVER_PASTELID = 'jXXr3LQbBp7UN9CgmKQpbPJoEqPRBpuvwG4isEprjLymGujXGUsPS6KZmx3aq
 REAL_MN_PASTEL_ID = 'jXaHR8djB7VL6XFisRsGrv7P4fzna1wqdKMAJDHjhPgnh3kUdrRinv9yFowMivDEgAAU34bgm9u6hk98gE88CP'
 PASSPHRASE = 'taksa'
 MASTERNODE_NUMBER = 10  # number of masternodes in the network
-CHUNK_NUMBER = 3  # number of chunks in the network
-ACT_TICKET_NUMBER = 1  # number of art activation tickets in the network
+CHUNK_NUMBER = 13  # number of chunks in the network
+ACT_TICKET_NUMBER = 2  # number of art activation tickets in the network
 
 # DISABLED_MASTERNODES = ['51.158.183.93:4444', '51.15.57.47:4444']
 DISABLED_MASTERNODES = []
@@ -326,7 +326,10 @@ class FetchChunkTestCase(unittest.TestCase):
     def tearDown(self) -> None:
         # clear chunk storage
         storage_path = get_chunkmanager().get_storage_path()
-        shutil.rmtree(storage_path)
+        try:
+            shutil.rmtree(storage_path)
+        except FileNotFoundError:
+            pass
 
     async def fetch_chunk(self, rpc_client, id):
         response = await rpc_client.send_rpc_fetchchunk(id)

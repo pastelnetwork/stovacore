@@ -163,6 +163,10 @@ class RegticketImageToChunkStorageTestCase(unittest.TestCase):
         MASTERNODE_DB.connect(reuse_if_open=True)
         MASTERNODE_DB.create_tables(DB_MODELS)
 
+    def tearDown(self) -> None:
+        tmp_storage_path = get_chunkmanager().get_tmp_storage_path()
+        shutil.rmtree(tmp_storage_path)
+
     @patch('core_modules.chunkmanager.ChunkStorage', autospec=True)
     def test_place_in_chunkstorage(self, chunkstorage):
         image_data = png_1x1_data
@@ -189,6 +193,10 @@ class ChunkFileNamesTestCase(unittest.TestCase):
             shutil.rmtree(os.path.join(basedir, "tmpstorage"))
         except FileNotFoundError:
             pass
+
+    def tearDown(self) -> None:
+        tmp_storage_path = get_chunkmanager().get_tmp_storage_path()
+        shutil.rmtree(tmp_storage_path)
 
     def test_chunk_id_to_filename(self):
         # create regticket
