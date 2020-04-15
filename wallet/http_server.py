@@ -3,6 +3,7 @@ import sys
 from aiohttp import web
 
 from wallet.database import RegticketDB
+from wallet.settings import get_artwork_dir
 
 routes = web.RouteTableDef()
 pastel_client = None

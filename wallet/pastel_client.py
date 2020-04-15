@@ -8,6 +8,7 @@ from bitcoinrpc.authproxy import JSONRPCException
 from cnode_connection import get_blockchain_connection, basedir
 from core_modules.artregistry import ArtRegistry
 from core_modules.chainwrapper import ChainWrapper
+from core_modules.helpers import get_pynode_digest_hex
 from core_modules.rpc_client import RPCException, RPCClient
 from core_modules.logger import initlogging
 from core_modules.ticket_models import RegistrationTicket
@@ -185,7 +186,15 @@ class PastelClient:
                 'numOfCopies': regticket.total_copies,
                 # 'copyPrice': regticket.copy_price
                 'copyPrice': 999,
-                'thumbnailPath': thumbnail_path
-
+                'thumbnailPath': thumbnail_path,
+                'artistName': regticket.artist_name,
+                'artistWebsite': regticket.artist_website,
+                'artistWrittenStatement': regticket.artist_written_statement,
+                'artworkSeriesName': regticket.artwork_series_name,
+                'artworkCreationVideoYoutubeUrl': regticket.artwork_creation_video_youtube_url,
+                'artworkKeywordSet': regticket.artwork_keyword_set,
+                'imageHash': get_pynode_digest_hex(regticket.imagedata_hash),
+                'blocknum': regticket.blocknum,
+                'orderBlockTxid': regticket.order_block_txid
             })
         return result
