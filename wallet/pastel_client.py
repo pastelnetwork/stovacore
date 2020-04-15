@@ -1,10 +1,11 @@
 import asyncio
 import json
+import os
 import uuid
 
 from bitcoinrpc.authproxy import JSONRPCException
 
-from cnode_connection import get_blockchain_connection
+from cnode_connection import get_blockchain_connection, basedir
 from core_modules.artregistry import ArtRegistry
 from core_modules.chainwrapper import ChainWrapper
 from core_modules.rpc_client import RPCException, RPCClient
@@ -14,8 +15,8 @@ from pynode.tasks import TXID_LENGTH
 from utils.mn_ordering import get_masternode_ordering
 from wallet.art_registration_client import ArtRegistrationClient
 from wallet.client_node_manager import ClientNodeManager
-from wallet.database import RegticketDB
-from wallet.settings import BURN_ADDRESS
+from wallet.database import RegticketDB, Masternode
+from wallet.settings import BURN_ADDRESS, get_thumbnail_dir
 
 
 def masternodes_by_distance_from_image(image_hash):
@@ -160,9 +161,10 @@ class PastelClient:
                 break
         return image_data
 
-    def get_artworks_data(self):
+    async def get_artworks_data(self):
         result = []
         act_tickets_txids = get_blockchain_connection().list_tickets('act')  # list
+        client = Masternode.select()[0].get_rpc_client()
 
         for txid in filter(lambda x: len(x) == TXID_LENGTH, act_tickets_txids):
             try:
@@ -175,11 +177,21 @@ class PastelClient:
             regticket = RegistrationTicket(serialized_base64=ticket['ticket']['art_ticket'])
             artist_pastelid = list(ticket['ticket']['signatures']['artist'].keys())[0]
 
+            # get thumbnail
+            thumbnail_data = await client.rpc_download_thumbnail(regticket.thumbnailhash)
+
+            thumbnail_filename = '{}.png'.format(txid)
+            thumbnail_path = os.path.join(get_thumbnail_dir(), thumbnail_filename)
+            with open(thumbnail_path, 'wb') as f:
+                f.write(thumbnail_data)
+
             result.append({
                 'artistPastelId': artist_pastelid,
                 'name': regticket.artwork_title,
                 'numOfCopies': regticket.total_copies,
                 # 'copyPrice': regticket.copy_price
-                'copyPrice': 999
+                'copyPrice': 999,
+                'thumbnailPath': thumbnail_path
+
             })
         return result
