@@ -34,6 +34,9 @@ class RPCServer:
         self.add_callback("THUMBNAIL_DOWNLOAD_REQ", "THUMBNAIL_DOWNLOAD_RESP",
                           receive_rpc_download_thumbnail)
 
+        self.add_callback("BID_TICKET_REQ", "BID_TICKET_RESP",
+                          receive_rpc_bid_ticket)
+    
     def add_callback(self, callback_req, callback_resp, callback_function, coroutine=False, allowed_pubkey=None):
         self.__RPCs[callback_req] = [callback_resp, callback_function, coroutine, allowed_pubkey]
 

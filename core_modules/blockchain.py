@@ -227,6 +227,10 @@ class BlockChain:
                       fee]
         return self.__call_jsonrpc("tickets", "register", "art", *parameters)
 
+    def register_trade_bid_ticket(self, base64_data):
+        # TODO: implement when cNode will be ready
+        return 'should return txid but currently not implemented..'
+
     def pastelid_sign(self, data: bytes) -> str:
         """
         :return: signature

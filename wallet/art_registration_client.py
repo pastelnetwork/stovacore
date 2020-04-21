@@ -27,60 +27,6 @@ class ArtRegistrationClient:
         signed_ticket.validate(ticket)
         return signed_ticket
 
-    def __generate_final_ticket(self, cls, ticket, signature, mn_signatures):
-        # create combined registration ticket
-        final_ticket = cls(dictionary={
-            "ticket": ticket.to_dict(),
-            "signature_author": signature.to_dict(),
-            "signature_1": mn_signatures[0].to_dict(),
-            "signature_2": mn_signatures[1].to_dict(),
-            "signature_3": mn_signatures[2].to_dict(),
-            "nonce": str(uuid.uuid4()),
-        })
-
-        # make sure we validate correctly
-        # FIXME: suppress validation on client. pyNodes should care about validation, but not wallet.
-        # final_ticket.validate(self.__chainwrapper)
-        return final_ticket
-
-    async def __collect_mn_regticket_signatures(self, signature, ticket, masternode_ordering):
-        signatures = []
-        for mn in masternode_ordering:
-            data_from_mn = await mn.call_masternode("SIGNREGTICKET_REQ", "SIGNREGTICKET_RESP",
-                                                    [signature.serialize(), ticket.serialize()])
-
-            # client parses signed ticket and validated signature
-            mn_signature = Signature(serialized=data_from_mn)
-
-            # is the data the same and the signature valid?
-            if NetWorkSettings.VALIDATE_MN_SIGNATURES:
-                require_true(mn_signature.pubkey == mn.pubkey)
-            mn_signature.validate(ticket)
-
-            # add signature to collected signatures
-            signatures.append(mn_signature)
-        return signatures
-
-    async def __collect_mn_actticket_signatures(self, signature, ticket, image, masternode_ordering):
-        # TODO: refactor the two MN signature collection functions into one
-        signatures = []
-        for mn in masternode_ordering:
-            data_from_mn = await mn.call_masternode("SIGNACTTICKET_REQ", "SIGNACTTICKET_RESP", [signature.serialize(),
-                                                                                                ticket.serialize(),
-                                                                                                image.serialize()])
-
-            # client parses signed ticket and validated signature
-            mn_signature = Signature(serialized=data_from_mn)
-
-            # is the data the same and the signature valid?
-            if NetWorkSettings.VALIDATE_MN_SIGNATURES:
-                require_true(mn_signature.pubkey == mn.pubkey)
-            mn_signature.validate(ticket)
-
-            # add signature to collected signatures
-            signatures.append(mn_signature)
-        return signatures
-
     @classmethod
     def generate_regticket(cls, image_data: bytes, regticket_data: dict):
         image = ImageData(dictionary={

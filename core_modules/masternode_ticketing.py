@@ -13,8 +13,8 @@ from core_modules.chunkmanager import get_chunkmanager
 from core_modules.database import Regticket, MASTERNODE_DB, Chunk
 from utils.mn_ordering import get_masternode_ordering
 from cnode_connection import get_blockchain_connection
-from .ticket_models import RegistrationTicket, Signature, ImageData, IDTicket, FinalIDTicket, TransferTicket, FinalTransferTicket, TradeTicket, \
-    FinalTradeTicket
+from .ticket_models import RegistrationTicket, Signature, ImageData, IDTicket, FinalIDTicket, TransferTicket, FinalTransferTicket
+
 from core_modules.helpers import require_true, bytes_to_chunkid, get_pynode_digest_int
 from core_modules.logger import initlogging
 
@@ -398,50 +398,6 @@ class TransferRegistrationClient:
 
         finalticket = FinalTransferTicket(dictionary={
             "ticket": transferticket.to_dict(),
-            "signature": signature.to_dict(),
-            "nonce": str(uuid.uuid4()),
-        })
-        finalticket.validate(self.__chainwrapper)
-
-        self.__chainwrapper.store_ticket(finalticket)
-
-
-class TradeRegistrationClient:
-    def __init__(self, privkey, pubkey, chainwrapper, artregistry):
-        self.__privkey = privkey
-        self.__pubkey = pubkey
-        self.__chainwrapper = chainwrapper
-        self.__artregistry = artregistry
-
-    async def register_trade(self, imagedata_hash, tradetype, watched_address, copies, price, expiration):
-        # move funds to new address
-        if tradetype == "bid":
-            collateral_txid = await self.__chainwrapper.move_funds_to_new_wallet(self.__pubkey, watched_address,
-                                                                                 copies, price)
-        else:
-            # this is unused in ask tickets
-            collateral_txid = "0000000000000000000000000000000000000000000000000000000000000000"
-
-        tradeticket = TradeTicket(dictionary={
-            "public_key": self.__pubkey,
-            "imagedata_hash": imagedata_hash,
-            "type": tradetype,
-            "copies": copies,
-            "price": price,
-            "expiration": expiration,
-            "watched_address": watched_address,
-            "collateral_txid": collateral_txid,
-        })
-        tradeticket.validate(self.__chainwrapper, self.__artregistry)
-
-        signature = Signature(dictionary={
-            "signature": pastel_id_write_signature_on_data_func(tradeticket.serialize(), self.__privkey, self.__pubkey),
-            "pubkey": self.__pubkey,
-        })
-        signature.validate(tradeticket)
-
-        finalticket = FinalTradeTicket(dictionary={
-            "ticket": tradeticket.to_dict(),
             "signature": signature.to_dict(),
             "nonce": str(uuid.uuid4()),
         })

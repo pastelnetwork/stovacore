@@ -288,51 +288,25 @@ class RegistrationTicket(TicketModelBase):
         return base64.b64encode(self.imagedata_hash).decode()
 
 
-class TradeTicket(TicketModelBase):
+class TradeBidTicket(TicketModelBase):
     methods = {
-        "public_key": PastelIDField(),
-        "imagedata_hash": SHA3512Field(),
-        "type": StringChoiceField(choices=["ask", "bid"]),
-        "copies": IntegerField(minsize=0, maxsize=1000),
+        "act_ticket_txid": TXIDField(),
         "price": IntegerField(minsize=0, maxsize=2 ** 32 - 1),
-        "watched_address": BlockChainAddressField(),
-        "collateral_txid": TXIDField(),
-        "expiration": IntegerField(minsize=0, maxsize=1000),  # x==0 means never expire, x > 0 mean X blocks
+        "wallet_address": BlockChainAddressField(),
+        "seller_pastel_id": PastelIDField()
     }
 
-    def validate(self, chainwrapper, artregistry):
-        # make sure artwork is properly registered
-        artregistry.get_ticket_for_artwork(self.imagedata_hash)
+    def generate_signed_ticket(self):
+        signature = get_blockchain_connection().pastelid_sign(self.serialize())
+        signed_ticket = Signature(dictionary={
+            "signature": signature,
+            "pastelid": get_blockchain_connection().pastelid,
+        })
+        return signed_ticket
 
-        # if this is a bid, validate collateral
-        if self.type == "bid":
-            # does the collateral utxo exist?
-            transaction = get_blockchain_connection().getrawtransaction(self.collateral_txid, 1)
-
-            # is the utxo a new one we are not currently watching? - this is to prevent a user reusing a collateral
-            _, listen_utxos = artregistry.get_listen_addresses_and_utxos()
-            require_true(self.collateral_txid not in listen_utxos)
-
-            # validate collateral
-            valid = False
-            for vout in transaction["vout"]:
-                if len(vout["scriptPubKey"]["addresses"]) > 1:
-                    continue
-
-                # validate address and amount of collateral
-                value = vout["value"]
-                address = vout["scriptPubKey"]["addresses"][0]
-                if address == self.watched_address and value == self.copies * self.price:
-                    valid = True
-                    break
-
-            if not valid:
-                raise ValueError("UTXO does not contain valid address as vout")
-
-        # we can't validate anything else here as all other checks are dependent on other tickets:
-        #  o copies is dependent on the current order book
-        #  o price can be anything
-        #  o expiration is time dependent
+    def validate(self, *args, **kwargs):
+        # TODO: check if sellerPastelID is artwork owner
+        return True
 
 
 class TransferTicket(TicketModelBase):
@@ -394,15 +368,6 @@ class SelfSignedTicket(TicketModelBase):
 class FinalIDTicket(SelfSignedTicket):
     methods = {
         "ticket": IDTicket,
-        "signature": Signature,
-        "nonce": UUIDField(),
-    }
-
-
-class FinalTradeTicket(SelfSignedTicket):
-    # TODO: this should be a MasterNodeSignedTicket, although that provides no tangible benefits here
-    methods = {
-        "ticket": TradeTicket,
         "signature": Signature,
         "nonce": UUIDField(),
     }

@@ -103,6 +103,14 @@ async def download_image(request):
     return web.json_response({'status': 'error', 'msg': 'Image not found on masternodes'})
 
 
+@routes.post('/create_bid_ticket')
+async def create_bid_ticket(request):
+    data = await request.json()
+    # data is expected to be {'act_ticket_txid': <txid>, 'price': <price>, 'wallet_address': <>, 'seller_pastel_id': <>}
+    response = await get_pastel_client().create_bid_ticket(data)
+    return web.json_response({'txid': response})
+
+
 @routes.get('/artworks_data')
 async def artworks_data(request):
     artwork_data = await get_pastel_client().get_artworks_data()

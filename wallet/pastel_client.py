@@ -11,7 +11,7 @@ from core_modules.chainwrapper import ChainWrapper
 from core_modules.helpers import get_pynode_digest_hex
 from core_modules.rpc_client import RPCException, RPCClient
 from core_modules.logger import initlogging
-from core_modules.ticket_models import RegistrationTicket
+from core_modules.ticket_models import RegistrationTicket, Signature, TradeBidTicket
 from pynode.tasks import TXID_LENGTH
 from utils.mn_ordering import get_masternode_ordering
 from wallet.art_registration_client import ArtRegistrationClient
@@ -198,3 +198,12 @@ class PastelClient:
                 'orderBlockTxid': regticket.order_block_txid
             })
         return result
+
+    async def create_bid_ticket(self, data):
+        mn1 = get_masternode_ordering()[0]
+        result = await mn1.call_masternode("BID_TICKET_REQ", "BID_TICKET_RESP",
+                                           data)
+        signed_ticket = Signature(serialized=result)
+        # FIXME: where do we need to put this signature? To the blockchain when writing ticket?
+        ticket = TradeBidTicket(dictionary=data)
+        return get_blockchain_connection().register_trade_bid_ticket(ticket.serialize_base64())
