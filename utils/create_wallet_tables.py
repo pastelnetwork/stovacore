@@ -1,12 +1,12 @@
 import sys
 import os
-from wallet.database import db, RegticketDB, Masternode
+from wallet.database import db, WALLET_DB_MODELS
 from wallet.settings import WALLET_DATABASE_FILE
 
 
 def create_tables():
     db.connect(reuse_if_open=True)
-    db.create_tables([RegticketDB, Masternode])
+    db.create_tables(WALLET_DB_MODELS)
 
 
 # if __name__ == '__main__':

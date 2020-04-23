@@ -1,6 +1,10 @@
+import os
+
 from peewee import Model, SqliteDatabase, DateTimeField, FloatField, IntegerField, BlobField, CharField, BooleanField
 
+from core_modules.helpers import get_pynode_digest_hex
 from core_modules.rpc_client import RPCClient
+from wallet.settings import get_thumbnail_dir
 
 db = SqliteDatabase(None)
 
@@ -43,3 +47,33 @@ class Masternode(Model):
     @classmethod
     def get_active_nodes(cls):
         return Masternode.select().where(Masternode.active == True)
+
+
+class Artwork(Model):
+    act_ticket_txid = CharField(unique=True)
+    artist_pastelid = CharField()
+    artwork_title = CharField()
+    total_copies = IntegerField()
+    artist_name = CharField()
+    artist_website = CharField()
+    artist_written_statement = CharField()
+    artwork_series_name = CharField()
+    artwork_creation_video_youtube_url = CharField()
+    artwork_keyword_set = CharField()
+    imagedata_hash = BlobField()
+    blocknum = IntegerField()  # use negative blocknum to store invalid act ticket txids
+    order_block_txid = CharField()
+
+    class Meta:
+        database = db
+        table_name = 'artwork'
+
+    def get_thumbnail_path(self):
+        thumbnail_filename = '{}.png'.format(self.act_ticket_txid)
+        return os.path.join(get_thumbnail_dir(), thumbnail_filename)
+
+    def get_image_hash_digest(self):
+        return get_pynode_digest_hex(self.imagedata_hash)
+
+
+WALLET_DB_MODELS = [RegticketDB, Masternode, Artwork]

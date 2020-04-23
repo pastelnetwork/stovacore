@@ -16,7 +16,7 @@ from pynode.tasks import TXID_LENGTH
 from utils.mn_ordering import get_masternode_ordering
 from wallet.art_registration_client import ArtRegistrationClient
 from wallet.client_node_manager import ClientNodeManager
-from wallet.database import RegticketDB, Masternode
+from wallet.database import RegticketDB, Masternode, Artwork
 from wallet.settings import BURN_ADDRESS, get_thumbnail_dir
 
 
@@ -157,45 +157,62 @@ class PastelClient:
         return image_data
 
     async def get_artworks_data(self):
-        result = []
         act_tickets_txids = get_blockchain_connection().list_tickets('act')  # list
-        client = Masternode.select()[0].get_rpc_client()
+        txid_list = set(filter(lambda x: len(x) == TXID_LENGTH, act_tickets_txids))
+        db_txid_list = set([a.act_ticket_txid for a in Artwork.select()])
+        # get act ticket txids which are in blockchain and not in db_txid_list
+        act_ticket_txid_to_fetch = txid_list - db_txid_list
+        if len(act_ticket_txid_to_fetch):
+            client = Masternode.select()[0].get_rpc_client()
+            # fetch missing data from the blockchain and write to DB
+            for txid in act_ticket_txid_to_fetch:
+                try:
+                    ticket = json.loads(get_blockchain_connection().get_ticket(txid))  # it's registration ticket here
+                except JSONRPCException as e:
+                    self.__logger.warn('Error obtain act ticket txid: {}'.format(txid))
+                    # to avoid processing invalid txid multiple times - write in to the DB with height=-1
+                    Artwork.create(act_ticket_txid=txid, blocknum=-1)
+                    continue
 
-        for txid in filter(lambda x: len(x) == TXID_LENGTH, act_tickets_txids):
-            try:
-                ticket = json.loads(get_blockchain_connection().get_ticket(txid))  # it's registration ticket here
-            except JSONRPCException as e:
-                self.__logger.warn('Error obtain act ticket txid: {}'.format(txid))
-                # to avoid processing invalid txid multiple times - write in to the DB with height=-1
-                continue
+                regticket = RegistrationTicket(serialized_base64=ticket['ticket']['art_ticket'])
+                artist_pastelid = list(ticket['ticket']['signatures']['artist'].keys())[0]
 
-            regticket = RegistrationTicket(serialized_base64=ticket['ticket']['art_ticket'])
-            artist_pastelid = list(ticket['ticket']['signatures']['artist'].keys())[0]
+                # get thumbnail
+                thumbnail_data = await client.rpc_download_thumbnail(regticket.thumbnailhash)
 
-            # get thumbnail
-            thumbnail_data = await client.rpc_download_thumbnail(regticket.thumbnailhash)
-
-            thumbnail_filename = '{}.png'.format(txid)
-            thumbnail_path = os.path.join(get_thumbnail_dir(), thumbnail_filename)
-            with open(thumbnail_path, 'wb') as f:
-                f.write(thumbnail_data)
-
+                thumbnail_filename = '{}.png'.format(txid)
+                thumbnail_path = os.path.join(get_thumbnail_dir(), thumbnail_filename)
+                with open(thumbnail_path, 'wb') as f:
+                    f.write(thumbnail_data)
+                # store artwork data to DB
+                Artwork.create(act_ticket_txid=txid, artist_pastelid=artist_pastelid,
+                               artwork_title=regticket.artwork_title, total_copies=regticket.total_copies,
+                               artist_name=regticket.artist_name, artist_website=regticket.artist_website,
+                               artist_written_statement=regticket.artist_written_statement,
+                               artwork_series_name=regticket.artwork_series_name,
+                               artwork_creation_video_youtube_url=regticket.artwork_creation_video_youtube_url,
+                               artwork_keyword_set=regticket.artwork_keyword_set,
+                               imagedata_hash=regticket.imagedata_hash,
+                               blocknum=regticket.blocknum,
+                               order_block_txid=regticket.order_block_txid
+                               )
+        result = []
+        for artwork in Artwork.select().where(Artwork.blocknum > 0):
             result.append({
-                'artistPastelId': artist_pastelid,
-                'name': regticket.artwork_title,
-                'numOfCopies': regticket.total_copies,
-                # 'copyPrice': regticket.copy_price
-                'copyPrice': 999,
-                'thumbnailPath': thumbnail_path,
-                'artistName': regticket.artist_name,
-                'artistWebsite': regticket.artist_website,
-                'artistWrittenStatement': regticket.artist_written_statement,
-                'artworkSeriesName': regticket.artwork_series_name,
-                'artworkCreationVideoYoutubeUrl': regticket.artwork_creation_video_youtube_url,
-                'artworkKeywordSet': regticket.artwork_keyword_set,
-                'imageHash': get_pynode_digest_hex(regticket.imagedata_hash),
-                'blocknum': regticket.blocknum,
-                'orderBlockTxid': regticket.order_block_txid
+                'artistPastelId': artwork.artist_pastelid,
+                'name': artwork.artwork_title,
+                'numOfCopies': artwork.total_copies,
+                'copyPrice': -1,
+                'thumbnailPath': artwork.get_thumbnail_path(),
+                'artistName': artwork.artist_name,
+                'artistWebsite': artwork.artist_website,
+                'artistWrittenStatement': artwork.artist_written_statement,
+                'artworkSeriesName': artwork.artwork_series_name,
+                'artworkCreationVideoYoutubeUrl': artwork.artwork_creation_video_youtube_url,
+                'artworkKeywordSet': artwork.artwork_keyword_set,
+                'imageHash': artwork.get_image_hash_digest(),
+                'blocknum': artwork.blocknum,
+                'orderBlockTxid': artwork.order_block_txid
             })
         return result
 
