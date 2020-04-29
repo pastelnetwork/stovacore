@@ -4,6 +4,9 @@ import signal
 import sys
 import logging
 
+os.environ['PYNODE_MODE'] = 'WALLET'
+
+
 from utils.create_wallet_tables import create_tables
 from wallet.database import db
 from wallet.http_server import run_http_server
