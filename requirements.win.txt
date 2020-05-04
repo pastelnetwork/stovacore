@@ -1,0 +1,17 @@
+python-bitcoinrpc==1.0
+Pillow==6.0.0
+PyNaCl
+msgpack==0.5.6
+pyzmq==17.1.2
+zstandard
+pandas
+scipy
+numpy
+Keras
+aiohttp==3.5.4
+peewee==3.9.6
+Keras-Applications
+Keras-Preprocessing
+requests==2.22.0
+# dev
+PyInstaller==3.5
