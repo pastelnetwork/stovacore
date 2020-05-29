@@ -1,0 +1,28 @@
+# should log in to instances under animecoin user
+- name: Install pynode
+  hosts: mns
+  tasks:
+    - name: Create venv folder
+      shell: mkdir ~/.virtualenvs
+
+    - name: Fetch sources
+      shell: git clone https://github.com/PastelNetwork/StoVaCore.git  
+      # && cd StoVaCore && git lfs fetch && git lfs checkout
+
+    - name: Fetch trained model
+      shell: cd ~/StoVaCore/misc && rm nsfw_trained_model.pb && wget https://dobrushskiy.name/static/nsfw_trained_model.pb
+
+    - name: Install pip deps
+      shell: virtualenv ~/.virtualenvs/StoVaCore -p python3 && cd StoVaCore && /home/animecoinuser/.virtualenvs/StoVaCore/bin/pip3 install -r requirements.txt
+
+    - name: create key directory
+      shell: mkdir -p /home/animecoinuser/.pastel/testnet3/pastelkeys
+
+    - name: generate https certificates
+      shell: mkdir ~/.pastel/pynode_https_cert && cd ~/.pastel/pynode_https_cert && openssl req -newkey rsa:2048 -nodes -keyout privkey.pem -x509 -days 36500 -out certificate.pem -subj "/C=US"
+
+    - name: create database
+      shell: PYTHONPATH=/home/animecoinuser/StoVaCore/ /home/animecoinuser/.virtualenvs/StoVaCore/bin/python ~/StoVaCore/utils/create_tables.py  
+
+    - name: create pastelID
+      shell: cd ~/StoVaCore && ./pynode.sh create_pastelid

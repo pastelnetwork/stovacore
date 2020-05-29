@@ -1,0 +1,39 @@
+# run a given playbook for a given hosts (inventory)
+docker run --rm -it -v "$(pwd)":"$(pwd)" -w "$(pwd)" -v ~/.ssh:/root/.ssh lexauw/ansible-alpine ansible-playbook -i hosts.yaml prepare_instance.yaml -v
+
+
+# pasteld status (check if process is running)
+docker run --rm -it -v "$(pwd)":"$(pwd)" -w "$(pwd)" -v ~/.ssh:/root/.ssh lexauw/ansible-alpine ansible -i hosts.yaml all -m shell -a 'ps -ef | grep pasteld | grep -v grep' -v
+
+
+#./pastel-cli getnewaddress
+docker run --rm -it -v "$(pwd)":"$(pwd)" -w "$(pwd)" -v ~/.ssh:/root/.ssh lexauw/ansible-alpine ansible -i hosts.yaml all -m shell -a 'cd ~/pastel && ./pastel-cli getnewaddress' -v
+
+#getinfo
+docker run --rm -it -v "$(pwd)":"$(pwd)" -w "$(pwd)" -v ~/.ssh:/root/.ssh lexauw/ansible-alpine ansible -i hosts.yaml all -m shell -a 'cd ~/pastel && ./pastel-cli getinfo' -v
+
+
+# stop nodes (doesnt matter nodes or masternodes - stop all)
+docker run --rm -it -v "$(pwd)":"$(pwd)" -w "$(pwd)" -v ~/.ssh:/root/.ssh lexauw/ansible-alpine ansible -i hosts.yaml all -m shell -a 'cd ~/pastel && ./pastel-cli stop' -v
+
+# start node (non master node)
+docker run --rm -it -v "$(pwd)":"$(pwd)" -w "$(pwd)" -v ~/.ssh:/root/.ssh lexauw/ansible-alpine ansible -i hosts.yaml all -m shell -a 'cd ~/pastel && ./start_node.sh &' -v
+
+# start masternodes
+docker run --rm -it -v "$(pwd)":"$(pwd)" -w "$(pwd)" -v ~/.ssh:/root/.ssh lexauw/ansible-alpine ansible -i hosts.yaml all -m shell -a 'cd ~/pastel && ./start_mn.sh' -v
+
+# check masternode status
+docker run --rm -it -v "$(pwd)":"$(pwd)" -w "$(pwd)" -v ~/.ssh:/root/.ssh lexauw/ansible-alpine ansible -i hosts.yaml all -m shell -a 'cd ~/pastel && ./pastel-cli masternode status' -v
+
+# activate masternode
+docker run --rm -it -v "$(pwd)":"$(pwd)" -w "$(pwd)" -v ~/.ssh:/root/.ssh lexauw/ansible-alpine ansible -i hosts.yaml all -m shell -a 'cd ~/pastel && ./pastel-cli masternode start-alias {{inventory_hostname}}' -v
+
+
+# masternode list
+docker run --rm -it -v "$(pwd)":"$(pwd)" -w "$(pwd)" -v ~/.ssh:/root/.ssh lexauw/ansible-alpine ansible -i hosts.yaml all -m shell -a 'cd ~/pastel && ./pastel-cli masternode list' -v
+
+# check sqlite version
+docker run --rm -it -v "$(pwd)":"$(pwd)" -w "$(pwd)" -v ~/.ssh:/root/.ssh lexauw/ansible-alpine ansible -i hosts.yaml all -m shell -a "echo 'import sqlite3; print(sqlite3.sqlite_version); exit()' | /home/animecoinuser/.virtualenvs/StoVaCore/bin/python" -v
+
+# pynode stop, update, start
+docker run --rm -it -v "$(pwd)":"$(pwd)" -w "$(pwd)" -v ~/.ssh:/root/.ssh lexauw/ansible-alpine ansible -i hosts.yaml all -m shell -a 'cd ~/StoVaCore && ./pynode.sh stop && git pull origin master && ./pynode.sh start' -v

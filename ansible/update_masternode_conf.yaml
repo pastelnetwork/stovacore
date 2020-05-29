@@ -1,0 +1,76 @@
+- name: Update masternode.conf
+  hosts: mns
+  gather_facts: no
+
+  tasks:
+  - set_fact:
+      config: {}
+
+  - name: get IP address
+    shell: curl ipinfo.io/ip
+    register: ip_address
+
+  - name: set masternode IPs
+    set_fact: 
+      ext_address: "{{ip_address.stdout}}:4444"
+      mn_address: "{{ip_address.stdout}}:19933"
+
+  - name: init dict
+    set_fact:
+      config: "{{ config | combine({ 'extCfg': None }) }}"
+
+  - name: add ip addresses
+    set_fact:
+      config: "{{ config | combine({ 'extAddress': ext_address }) | combine({ 'mnAddress': mn_address }) }}"
+
+  - name: generate new masternode key
+    shell: cd ~/pastel && ./pastel-cli masternode genkey
+    register: mn_priv_key
+
+  - name: add mnPrivKey
+    set_fact:
+      config: "{{ config | combine({ 'mnPrivKey': mn_priv_key.stdout }) }}"
+
+  - name: get masternode outputs (txid + outIndex)
+    shell: cd ~/pastel && ./pastel-cli masternode outputs
+    register: mn_outputs
+
+  - name: parse masternode output
+    set_fact: 
+      txid: "{{ ((mn_outputs.stdout | from_json).keys() | list)[0] }}" # key
+      out_index: "{{ ((mn_outputs.stdout | from_json).values() |list)[0] }}" # value
+  
+  - name: add mn outputs
+    set_fact:
+      config: "{{ config | combine({ 'outIndex': out_index }) | combine({ 'txid': txid }) }}"
+
+
+
+  - name: get pastelid
+    shell: cd ~/pastel && ./pastel-cli pastelid list
+    register: pastelid_output
+
+  - name: parse pastelid output
+    set_fact: 
+      pastelid: "{{ ((pastelid_output.stdout | from_json | list)[0].values() | list)[0] }}" 
+  
+  - name: add pastelid
+    set_fact:
+      config: "{{ config | combine({ 'extKey': pastelid }) }}"
+
+
+# this will be at the end
+  - set_fact:
+      config: '{ "{{inventory_hostname}}": {{config}} }'
+
+# finally write generated config to the file.
+  - name: write masternode.conf
+    copy:
+      content: "{{ config | to_nice_json }}"
+      dest: /home/animecoinuser/.pastel/testnet3/masternode.conf
+    
+# update start_mn.sh with generated key
+  - name: update start_mn.sh with the key 
+    template:
+      src: start_mn.j2
+      dest: /home/animecoinuser/pastel/start_mn.sh

@@ -1,0 +1,49 @@
+- name: Prepare pastel instance
+  hosts: root
+  tasks:
+    - name: Add user 'animecoinuser'
+      shell: adduser --disabled-password --gecos "" animecoinuser
+
+    - name: Set its password
+      shell: echo animecoinuser:taksa123 | chpasswd
+
+    - name: Install libgomp1
+      shell: apt update && apt install -y libgomp1 
+
+    - name: Install git-lfs
+      shell: apt install -y git-lfs
+
+    - name: Install PIP3
+      shell: apt install -y python3-pip
+      environment:
+        DEBIAN_FRONTEND: noninteractive
+
+    - name: Install software-properties-common
+      shell: apt install -y software-properties-common
+
+    - name: Install python3-distutils
+      shell: apt install -y python3-distutils
+
+    - name: Install virtualenv
+      shell: pip3 install virtualenv
+
+    - name: Update sqlite version
+      shell: wget https://dobrushskiy.name/static/libsqlite3.so.0 && mv libsqlite3.so.0 /usr/lib/x86_64-linux-gnu/libsqlite3.so.3.31 && ln -sf /usr/lib/x86_64-linux-gnu/libsqlite3.so.3.31 /usr/lib/x86_64-linux-gnu/libsqlite3.so.0
+
+    - name: Add ssh key for animecoinuser
+      become: yes
+      become_user: animecoinuser
+      become_method: su
+      shell: mkdir -p ~/.ssh && touch ~/.ssh/authorized_keys && echo 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDHv8VsEeLaywTBkj2GL0fkasCcPP18xnV43ECQMgVY4IWm+XZUh3nk0QVVby1Om5VpsuOANp5yCZxmO6rQO4/7i4V7qYPpR2J3qdC6AvwAP+5EPMy1TEvU2UIbNwNfjhpeBcYv/YvR3gLLYZd0w/uq/a3PCkqBDHYafVcUhfAGBYfBzMFlzqWWuBkPg/R5RhfztGdpGGPCCwEQIys5NqRC2z3N68+mnkLDoEYbTVlyi3HOBjPG+3yx3iyyoYMVlvpuGcWn049BcaoF7B0nUMXUVnKO0VCNqQ6tmTRcq+CKKX2Sucwyaf2uringjAg1K19Rcts49lsL+qilayUgfyXD a.dobrushskiy@gmail.com' >> ~/.ssh/authorized_keys
+
+    - name: Get Pastel binaries
+      become: yes
+      become_user: animecoinuser
+      become_method: su
+      shell: cd /home/animecoinuser/ && wget https://dobrushskiy.name/static/pastel.tar.gz && tar -xf pastel.tar.gz && cd pastel && ./fetch-params.sh
+
+    - name: Create pastel.conf
+      become: yes
+      become_user: animecoinuser
+      become_method: su
+      shell: mkdir ~/.pastel/ && wget https://dobrushskiy.name/static/pastel.conf && chmod +r pastel.conf && mv pastel.conf ~/.pastel/pastel.conf

@@ -1,0 +1,25 @@
+mns:
+  hosts:
+    _alexmn1:
+    _alexmn2:
+    _alexmn3:
+    _alexmn4:
+    _alexmn5:
+    _alexmn6:
+    _alexmn7:
+    _alexmn8:
+    _alexmn9:
+    _alexmn10:
+
+root:
+  hosts:
+    alexmn1:
+    alexmn2:
+    alexmn3:
+    alexmn4:
+    alexmn5:
+    alexmn6:
+    alexmn7:
+    alexmn8:
+    alexmn9:
+    alexmn10:

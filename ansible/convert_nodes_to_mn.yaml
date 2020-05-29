@@ -1,0 +1,39 @@
+- name: Convert nodes to masternodes
+  hosts: mns
+  gather_facts: no
+  serial: 1
+  tasks:
+    - name: stop the node
+      shell: cd ~/pastel && ./pastel-cli stop
+
+    - name: wait 10 seconds
+      wait_for: 
+        timeout: 10
+
+    - name: start node as a masternode
+      shell: cd ~/pastel && ./start_mn.sh
+    
+    - name: wait 10 seconds
+      wait_for: 
+        timeout: 10
+
+    - name: check mnsync status 
+      shell: cd ~/pastel && ./pastel-cli mnsync status
+      register: result
+      until: (result.stdout | from_json).IsSynced
+      retries: 999999
+      delay: 10        
+
+    - name: start alias
+      shell: cd ~/pastel && ./pastel-cli  masternode start-alias "{{inventory_hostname}}"
+
+    - name: wait 10 seconds
+      wait_for: 
+        timeout: 10
+
+    - name: Wait for MN appear in masternode list
+      shell: cd ~/pastel && ./pastel-cli masternode list
+      register: result
+      until: not (result.stdout | from_json | dict2items | rejectattr("value", "equalto", "ENABLED") | list | length)
+      retries: 999999
+      delay: 10        

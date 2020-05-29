@@ -1,0 +1,8 @@
+#!/bin/bash
+
+IP=$(curl ipinfo.io/ip)
+PKEY="{{mn_priv_key.stdout}}"
+
+echo \"External IP = \"$IP
+
+./pasteld -daemon -masternode -txindex=1 -reindex -masternodeprivkey=$PKEY -externalip=$IP  -maxtipage=144000
