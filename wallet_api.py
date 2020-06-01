@@ -24,7 +24,11 @@ async def masternode_refresh():
 
 def run_event_loop():
     loop = asyncio.get_event_loop()
-    loop.add_signal_handler(signal.SIGTERM, loop.stop)
+    try:
+        loop.add_signal_handler(signal.SIGTERM, loop.stop)
+    except NotImplementedError:
+        # add_signal_handler is not implemented for Windows
+        pass
     loop.create_task(run_http_server())
     loop.create_task(masternode_refresh())
     try:
