@@ -9,12 +9,10 @@ from core_modules.helpers import get_pynode_digest_bytes, require_true
 from core_modules.logger import initlogging
 from core_modules.model_validators import FieldValidator, StringField, IntegerField, FingerprintField, SHA3512Field, \
     LubyChunkHashField, LubyChunkField, ImageField, ThumbnailField, TXIDField, UUIDField, SignatureField, \
-    PastelIDField, LubySeedField, BlockChainAddressField, UnixTimeField, StringChoiceField
+    PastelIDField, LubySeedField, BlockChainAddressField, UnixTimeField
 
-from core_modules.blackbox_modules.dupe_detection_utils import measure_similarity, assemble_fingerprints_for_pandas
 from core_modules.settings import NetWorkSettings
 
-from core_modules.blackbox_modules.nsfw import get_nsfw_detector
 
 from core_modules.blackbox_modules import luby
 
@@ -256,6 +254,9 @@ class RegistrationTicket(TicketModelBase):
     }
 
     def validate(self, chainwrapper):
+        from core_modules.blackbox_modules.dupe_detection_utils import measure_similarity, \
+            assemble_fingerprints_for_pandas
+
         # we have no way to check these but will do so on activation:
         #  o fingerprints
         #  o lubyhashes
