@@ -14,5 +14,7 @@ peewee==3.9.6
 Keras-Applications==1.0.2
 Keras-Preprocessing==1.0.1
 requests==2.22.0
+base58==2.0.0
+
 # dev
 PyInstaller==3.5
