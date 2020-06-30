@@ -10,7 +10,7 @@
       # && cd StoVaCore && git lfs fetch && git lfs checkout
 
     - name: Fetch trained model
-      shell: cd ~/StoVaCore/misc && rm nsfw_trained_model.pb && wget https://dobrushskiy.name/static/nsfw_trained_model.pb
+      shell: cd ~/StoVaCore/misc && wget https://dobrushskiy.name/static/nsfw_trained_model.pb
 
     - name: Install pip deps
       shell: virtualenv ~/.virtualenvs/StoVaCore -p python3 && cd StoVaCore && /home/animecoinuser/.virtualenvs/StoVaCore/bin/pip3 install -r requirements.txt

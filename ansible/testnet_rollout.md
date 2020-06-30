@@ -5,10 +5,11 @@
  - execute playbook 'prepare_instance.yaml'
  `ansible-playbook -i hosts.yaml prepare_instance.yaml -v`
  - run cNodes (ansible ad-hoc command shell `cd ~/pastel && ./start_node.sh &`)
- Whole command: `ansible -i hosts.yaml mns -m shell 'cd ~/pastel && ./start_node.sh &'`
+ Whole command: `ansible -i hosts.yaml mns -m shell -a 'cd ~/pastel && ./start_node.sh &'`
  
  (mine coins for some time to have enough coins for pasteleid registration)
  - run `pynode_install.yaml` playbook
+ `ansible-playbook -i hosts.yaml pynode_install.yaml -v`
 
  - send 1000000 coins to each MN 
  
