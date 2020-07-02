@@ -14,4 +14,6 @@
  - send 1000000 coins to each MN 
  
  - run `update_masternode_conf.yaml` playbook,
+ `ansible-playbook -i hosts.yaml update_masternode_conf.yaml -v`
+ 
  - run `convert_nodes_to_mn.yaml` playbook to convert nodes to masternodes. It will take about 5-6 hours for testnet of 10 masternodes. 
