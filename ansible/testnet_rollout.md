@@ -17,3 +17,8 @@
  `ansible-playbook -i hosts.yaml update_masternode_conf.yaml -v`
  
  - run `convert_nodes_to_mn.yaml` playbook to convert nodes to masternodes. It will take about 5-6 hours for testnet of 10 masternodes. 
+
+ - Register MN Ids: `ansible -i hosts.yaml mns -m shell -a 'cd ~/StoVaCore && ./pynode.sh register_mnid' -v`
+ 
+ - Run pyNodes: `ansible -i hosts.yaml mns -m shell -a 'cd ~/StoVaCore && ./pynode.sh start' -v`
+ 
