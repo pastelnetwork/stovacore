@@ -1,6 +1,6 @@
 from core_modules.blackbox_modules import luby
 from core_modules.chunkmanager import get_chunkmanager
-from core_modules.database import Chunk
+from core_modules.database import Chunk, ChunkMnRanked
 from core_modules.helpers import hex_to_chunkid
 from core_modules.logger import initlogging
 from core_modules.rpc_client import RPCException
@@ -61,14 +61,25 @@ def receive_rpc_download_image(data, *args, **kwargs):
 
 
 def receive_rpc_download_thumbnail(data, *args, **kwargs):
-    # fixme: maybe if current MN does not stores a given thumbnail - it worth
-    #  to return a list of masternodes which should store it (from ChunkMnRanked table).
     image_hash = data['image_hash']
     chunks_db = Chunk.select().where(Chunk.image_hash == image_hash, Chunk.stored == True)
     if len(chunks_db) == 0:
+        # fixme: maybe if current MN does not stores a given thumbnail - it worth
+        #  to return a list of masternodes which should store it (from ChunkMnRanked table).
+        try:
+            chunk = Chunk.select().get(Chunk.image_hash == image_hash)
+        except Exception:
+            return {
+                "status": "ERROR",
+                "msg": "No chunks for given image",
+                "masternodes": []
+            }
+
+        masternodes = [c.masternode.pastel_id for c in ChunkMnRanked.select().where(ChunkMnRanked.chunk == chunk)]
         return {
             "status": "ERROR",
-            "msg": "No chunks for given image"
+            "msg": "No chunks for given image",
+            "masternodes": masternodes
         }
     if len(chunks_db) > 1:
         return {
