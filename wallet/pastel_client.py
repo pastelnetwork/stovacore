@@ -178,7 +178,24 @@ class PastelClient:
                 artist_pastelid = list(ticket['ticket']['signatures']['artist'].keys())[0]
 
                 # get thumbnail
-                thumbnail_data = await client.rpc_download_thumbnail(regticket.thumbnailhash)
+                response = await client.rpc_download_thumbnail(regticket.thumbnailhash)
+                thumbnail_data = b''
+                if response['status'] == "SUCCESS":
+                    thumbnail_data = response['image_data']
+                elif response['status'] == "ERROR":
+                    if 'masternodes' in response:
+                        # try to fetch thumbnail from recommended masternodes
+                        for pastelid in response['masternodes']:
+                            try:
+                                rpc_client = Masternode.select().get(Masternode.pastel_id == pastelid).get_rpc_client()
+                                response = await rpc_client.rpc_download_thumbnail(regticket.thumbnailhash)
+                                if response['status'] == "SUCCESS":
+                                    thumbnail_data = response['image_data']
+                                    break
+                                elif response['status'] == "ERROR":
+                                    continue
+                            except Exception:
+                                continue
 
                 thumbnail_filename = '{}.png'.format(txid)
                 thumbnail_path = os.path.join(get_thumbnail_dir(), thumbnail_filename)
