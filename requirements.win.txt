@@ -7,13 +7,14 @@ zstandard
 pandas
 scipy
 numpy
-Keras
+Keras==2.1.6
 aiohttp==3.5.4
 peewee==3.9.6
 Keras-Applications
 Keras-Preprocessing
 requests==2.22.0
 base58==2.0.0
+tensorflow==1.13.1
 
 # dev
 PyInstaller==3.5
