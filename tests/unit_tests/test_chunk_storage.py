@@ -198,11 +198,18 @@ class ChunkFileNamesTestCase(unittest.TestCase):
 
     def test_chunk_id_to_filename(self):
         # create regticket
-        regticket = ArtRegistrationClient.generate_regticket(png_1x1_data, 'artist_name', 'artist_website',
-                                                             'artist_written_statement',
-                                                             'artwork_title', 'artwork_series_name',
-                                                             'artwork_creation_video_youtube_url',
-                                                             'artwork_keyword_set', total_copies=99, copy_price=555)
+        regticket = ArtRegistrationClient.generate_regticket(
+            png_1x1_data,
+            {
+                'artist_name': 'artist_name',
+                'artist_website': 'artist_website',
+                'artist_written_statement': 'artist_written_statement',
+                'artwork_title': 'artwork_title',
+                'artwork_series_name': 'artwork_series_name',
+                'artwork_creation_video_youtube_url': 'artwork_creation_video_youtube_url',
+                'artwork_keyword_set': 'artwork_keyword_set',
+                'total_copies': 99, 'copy_price': 555
+            })
 
         # emulate what we do on MN0 when storing data to chunkstorage
         imagedata = ImageData(dictionary={
@@ -226,7 +233,8 @@ class ChunkFileNamesTestCase(unittest.TestCase):
         # good. now we've stored image and thumbnail in tmpstorage.
         # let's move it to regular storage
         self.assertEqual(Chunk.select().count(), 2)  # expect 2 chunks - image and thumbnail
-        self.assertEqual(Chunk.select().where(Chunk.confirmed == False).count(), 2)  # expect 2 chunks - image and thumbnail
+        self.assertEqual(Chunk.select().where(Chunk.confirmed == False).count(),
+                         2)  # expect 2 chunks - image and thumbnail
         # # set Chunk.confirmed  = True as if we've processed activation ticket
         Chunk.update(confirmed=True).execute()
         move_confirmed_chunks_to_persistant_storage()

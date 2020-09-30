@@ -1,3 +1,4 @@
+# python3.7 required.
 python-bitcoinrpc==1.0
 Pillow==6.0.0
 PyNaCl==1.2.1
