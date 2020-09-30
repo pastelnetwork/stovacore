@@ -1,5 +1,7 @@
 import base64
 import io
+import json
+
 import msgpack
 
 from PIL import Image
@@ -301,92 +303,101 @@ class RegistrationTicket(TicketModelBase):
             "app_ticket": self.serialize_base64(),  # application specific ticket data, these will be opaque for cNode
             "reserved": base64.b64encode(b'').decode()
         }
+        as_string = json.dumps(ticket)
+        return base64.b64encode(bytes(as_string, 'utf8')).decode()
 
-    class TradeBidTicket(TicketModelBase):
-        methods = {
-            "act_ticket_txid": TXIDField(),
-            "price": IntegerField(minsize=0, maxsize=2 ** 32 - 1),
-            "wallet_address": BlockChainAddressField(),
-            "seller_pastel_id": PastelIDField()
-        }
 
-        def generate_signed_ticket(self):
-            signature = get_blockchain_connection().pastelid_sign(self.serialize())
-            signed_ticket = Signature(dictionary={
-                "signature": signature,
-                "pastelid": get_blockchain_connection().pastelid,
-            })
-            return signed_ticket
+class TradeBidTicket(TicketModelBase):
+    methods = {
+        "act_ticket_txid": TXIDField(),
+        "price": IntegerField(minsize=0, maxsize=2 ** 32 - 1),
+        "wallet_address": BlockChainAddressField(),
+        "seller_pastel_id": PastelIDField()
+    }
 
-        def validate(self, *args, **kwargs):
-            # TODO: check if sellerPastelID is artwork owner
-            return True
+    def generate_signed_ticket(self):
+        signature = get_blockchain_connection().pastelid_sign(self.serialize())
+        signed_ticket = Signature(dictionary={
+            "signature": signature,
+            "pastelid": get_blockchain_connection().pastelid,
+        })
+        return signed_ticket
 
-    class TransferTicket(TicketModelBase):
-        methods = {
-            "public_key": PastelIDField(),
-            "recipient": PastelIDField(),
-            "imagedata_hash": SHA3512Field(),
-            "copies": IntegerField(minsize=0, maxsize=1000),
-        }
+    def validate(self, *args, **kwargs):
+        # TODO: check if sellerPastelID is artwork owner
+        return True
 
-        def validate(self, chainwrapper, artregistry):
-            # make sure artwork is properly registered
-            artregistry.get_ticket_for_artwork(self.imagedata_hash)
 
-            # we can't validate anything else here as all other checks are dependent on other tickets:
-            #  o public_key might not own any more copies
-            #  o recipient can be any key
-            #  o copies depends on whether public_key owns enough copies which is time dependent
+class TransferTicket(TicketModelBase):
+    methods = {
+        "public_key": PastelIDField(),
+        "recipient": PastelIDField(),
+        "imagedata_hash": SHA3512Field(),
+        "copies": IntegerField(minsize=0, maxsize=1000),
+    }
 
-    class IDTicket(TicketModelBase):
-        methods = {
-            # mandatory fields for Final Ticket
-            "blockchain_address": BlockChainAddressField(),
-            "public_key": PastelIDField(),
-            "ticket_submission_time": UnixTimeField(),
-        }
+    def validate(self, chainwrapper, artregistry):
+        # make sure artwork is properly registered
+        artregistry.get_ticket_for_artwork(self.imagedata_hash)
 
-        def validate(self):
-            # TODO: finish
-            # Validate:
-            #  o x time hasn't passed
-            #  o x blocks hasn't passed
-            #  o blockchain address is legit
-            pass
+        # we can't validate anything else here as all other checks are dependent on other tickets:
+        #  o public_key might not own any more copies
+        #  o recipient can be any key
+        #  o copies depends on whether public_key owns enough copies which is time dependent
 
-    class Signature(TicketModelBase):
-        methods = {
-            "signature": SignatureField(),
-            "pastelid": PastelIDField(),
-        }
 
-        def validate(self, ticket):
-            if not get_blockchain_connection().pastelid_verify(ticket.serialize(), self.signature, self.pastelid):
-                raise ValueError("Invalid signature")
+class IDTicket(TicketModelBase):
+    methods = {
+        # mandatory fields for Final Ticket
+        "blockchain_address": BlockChainAddressField(),
+        "public_key": PastelIDField(),
+        "ticket_submission_time": UnixTimeField(),
+    }
 
-    class SelfSignedTicket(TicketModelBase):
-        def validate(self, chainwrapper):
-            # validate that the author is correct and pubkeys match MNs
-            if self.signature.pubkey != self.ticket.public_key:
-                raise ValueError("Signature pubkey does not match regticket.author!")
+    def validate(self):
+        # TODO: finish
+        # Validate:
+        #  o x time hasn't passed
+        #  o x blocks hasn't passed
+        #  o blockchain address is legit
+        pass
 
-            # prevent nonce reuse
-            require_true(chainwrapper.valid_nonce(self.nonce))
 
-    class FinalIDTicket(SelfSignedTicket):
-        methods = {
-            "ticket": IDTicket,
-            "signature": Signature,
-            "nonce": UUIDField(),
-        }
+class Signature(TicketModelBase):
+    methods = {
+        "signature": SignatureField(),
+        "pastelid": PastelIDField(),
+    }
 
-    class FinalTransferTicket(SelfSignedTicket):
-        # TODO: this should be a MasterNodeSignedTicket, although that provides no tangible benefits here
-        methods = {
-            "ticket": TransferTicket,
-            "signature": Signature,
-            "nonce": UUIDField(),
-        }
+    def validate(self, ticket):
+        if not get_blockchain_connection().pastelid_verify(ticket.serialize(), self.signature, self.pastelid):
+            raise ValueError("Invalid signature")
+
+
+class SelfSignedTicket(TicketModelBase):
+    def validate(self, chainwrapper):
+        # validate that the author is correct and pubkeys match MNs
+        if self.signature.pubkey != self.ticket.public_key:
+            raise ValueError("Signature pubkey does not match regticket.author!")
+
+        # prevent nonce reuse
+        require_true(chainwrapper.valid_nonce(self.nonce))
+
+
+class FinalIDTicket(SelfSignedTicket):
+    methods = {
+        "ticket": IDTicket,
+        "signature": Signature,
+        "nonce": UUIDField(),
+    }
+
+
+class FinalTransferTicket(SelfSignedTicket):
+    # TODO: this should be a MasterNodeSignedTicket, although that provides no tangible benefits here
+    methods = {
+        "ticket": TransferTicket,
+        "signature": Signature,
+        "nonce": UUIDField(),
+    }
 
     # ===== END ===== #

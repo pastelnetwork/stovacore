@@ -71,15 +71,14 @@ class Regticket(Model):
 
         # write final ticket into blockchain
         art_ticket_data = {
-            'base64_data': ticket.serialize_base64(),
+            'cnode_package': ticket.serialize_base64(),
             'signatures_dict': signatures_dict,
             'key1': ticket.base64_imagedatahash,  # artist_signature.pastelid,
             'key2': ticket.base64_imagedatahash,
             'art_block': ticket.blocknum,
             'fee': int(self.localfee)
         }
-        with open('debug_data.json', 'w') as f:
-            f.write(json.dumps(art_ticket_data))
+
         bc_response = get_blockchain_connection().register_art_ticket(**art_ticket_data)
         return bc_response
 

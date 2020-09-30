@@ -1,3 +1,5 @@
+import base64
+import json
 from unittest import TestCase
 from tests.test_utils import png_1x1_data
 from core_modules.ticket_models import RegistrationTicket, ImageData, Signature
@@ -58,10 +60,18 @@ class RegticketTestCase(TestCase):
 
         # write final ticket into blockchain
         art_ticket_data = {
-            'base64_data': regticket.serialize_base64(),
+            'cnode_package': regticket.get_cnode_package(),
             'signatures_dict': signatures_dict,
             'key1': 'somekey1',  # artist_signature.pastelid,
             'key2': 'somekey2',
             'art_block': 1,
             'fee': 100
         }
+        self.assertEqual(type(art_ticket_data['cnode_package']), str)
+        cnode_package_dict = json.loads(base64.b64decode(art_ticket_data['cnode_package']))
+        self.assertEqual(cnode_package_dict['version'], 1)
+        self.assertEqual(cnode_package_dict['author'], regticket.author)
+        self.assertEqual(cnode_package_dict['blocknum'], regticket.blocknum)
+        app_ticket = RegistrationTicket(serialized_base64=cnode_package_dict['app_ticket'])
+        self.assertEqual(app_ticket.author, regticket.author)
+        self.assertEqual(app_ticket.imagedata_hash, regticket.imagedata_hash)
