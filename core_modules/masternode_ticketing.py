@@ -1,4 +1,5 @@
 import asyncio
+import json
 import uuid
 from decimal import Decimal
 
@@ -135,7 +136,10 @@ class ArtRegistrationServer:
 
     def __generate_signed_ticket(self, ticket):
 
-        signature = get_blockchain_connection().pastelid_sign(ticket.serialize())
+        # we sign cnode_container of Regticket. as anything passed to `pastelid_sign` is converted to base64
+        # we just send bytes(json(cnode_container)) there.
+
+        signature = get_blockchain_connection().pastelid_sign(bytes(json.dumps(ticket.get_cnode_package_dict()), 'utf8'))
         signed_ticket = Signature(dictionary={
             "signature": signature,
             "pastelid": get_blockchain_connection().pastelid,

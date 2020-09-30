@@ -290,8 +290,8 @@ class RegistrationTicket(TicketModelBase):
     def base64_imagedatahash(self):
         return base64.b64encode(self.imagedata_hash).decode()
 
-    def get_cnode_package(self):
-        ticket = {
+    def get_cnode_package_dict(self):
+        return {
             "version": 1,  # 1
             # PastelID of the author (artist) - this actually will be duplicated in the signatures block
             "author": self.author,
@@ -303,6 +303,9 @@ class RegistrationTicket(TicketModelBase):
             "app_ticket": self.serialize_base64(),  # application specific ticket data, these will be opaque for cNode
             "reserved": base64.b64encode(b'').decode()
         }
+
+    def get_cnode_package(self):
+        ticket = self.get_cnode_package_dict()
         as_string = json.dumps(ticket)
         return base64.b64encode(bytes(as_string, 'utf8')).decode()
 
@@ -370,7 +373,9 @@ class Signature(TicketModelBase):
     }
 
     def validate(self, ticket):
-        if not get_blockchain_connection().pastelid_verify(ticket.serialize(), self.signature, self.pastelid):
+        # as we sign cNode package - we should verify cNode package
+        if not get_blockchain_connection().pastelid_verify(bytes(json.dumps(ticket.get_cnode_package_dict()), 'utf8'),
+                                                           self.signature, self.pastelid):
             raise ValueError("Invalid signature")
 
 
