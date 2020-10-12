@@ -231,23 +231,20 @@ class BlockChain:
         # TODO: implement when cNode will be ready
         return 'should return txid but currently not implemented..'
 
-    def pastelid_sign(self, data: bytes) -> str:
+    def pastelid_sign(self, data: str) -> str:
         """
         :return: signature
         """
-        # convert data to base64, then to decode string
-        base64data = base64.b64encode(data).decode()
         try:
-            response = self.__call_jsonrpc("pastelid", "sign", base64data, self.pastelid, self.passphrase)
+            response = self.__call_jsonrpc("pastelid", "sign", data, self.pastelid, self.passphrase)
         except Exception as e:
             self.__logger.warning('Probably your passphrase {} is invalid for a current key'.format(self.passphrase))
             raise e
         return response['signature']
 
-    def pastelid_verify(self, data: bytes, signature: str, pastelid_to_verify: str) -> bool:
+    def pastelid_verify(self, data: str, signature: str, pastelid_to_verify: str) -> bool:
         """
         :return: Given signature valid/invalid against given data and pastelID.
         """
-        base64data = base64.b64encode(data).decode()
-        response = self.__call_jsonrpc("pastelid", "verify", base64data, signature, pastelid_to_verify)
+        response = self.__call_jsonrpc("pastelid", "verify", data, signature, pastelid_to_verify)
         return True if response['verification'] == 'OK' else False

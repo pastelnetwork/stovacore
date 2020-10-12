@@ -14,9 +14,9 @@ from core_modules.chunkmanager import get_chunkmanager
 from core_modules.database import Regticket, MASTERNODE_DB, Chunk
 from utils.mn_ordering import get_masternode_ordering
 from cnode_connection import get_blockchain_connection
-from .ticket_models import RegistrationTicket, Signature, ImageData, IDTicket, FinalIDTicket, TransferTicket, FinalTransferTicket
+from .ticket_models import RegistrationTicket, Signature, ImageData
 
-from core_modules.helpers import require_true, bytes_to_chunkid, get_pynode_digest_int
+from core_modules.helpers import require_true, bytes_to_chunkid
 from core_modules.logger import initlogging
 
 mn_ticket_logger = initlogging('Logger', __name__)
@@ -130,8 +130,7 @@ def masternode_place_image_data_in_chunkstorage(regticket, regticket_image_data)
 
 
 class ArtRegistrationServer:
-    def __init__(self, chainwrapper):
-        self.__chainwrapper = chainwrapper
+    def __init__(self):
         self.__chunkmanager = get_chunkmanager()
 
     def __generate_signed_ticket(self, ticket):
@@ -139,7 +138,7 @@ class ArtRegistrationServer:
         # we sign cnode_container of Regticket. as anything passed to `pastelid_sign` is converted to base64
         # we just send bytes(json(cnode_container)) there.
 
-        signature = get_blockchain_connection().pastelid_sign(bytes(json.dumps(ticket.get_cnode_package_dict()), 'utf8'))
+        signature = get_blockchain_connection().pastelid_sign(ticket.serialize_base64())
         signed_ticket = Signature(dictionary={
             "signature": signature,
             "pastelid": get_blockchain_connection().pastelid,
@@ -177,10 +176,10 @@ class ArtRegistrationServer:
         signed_regticket.validate(regticket)
 
         # validate registration ticket
-        regticket.validate(self.__chainwrapper)
+        regticket.validate()
 
         # sign regticket
-        signature = get_blockchain_connection().pastelid_sign(regticket.serialize())
+        signature = get_blockchain_connection().pastelid_sign(regticket.serialize_base64())
         ticket_signed_by_mn = Signature(dictionary={
             "signature": signature,
             "pastelid": get_blockchain_connection().pastelid,
@@ -198,7 +197,7 @@ class ArtRegistrationServer:
         signed_regticket.validate(regticket)
 
         # validate registration ticket
-        regticket.validate(self.__chainwrapper)
+        regticket.validate()
         upload_code = uuid.uuid4().bytes
 
         # TODO: clean upload code and regticket from local db when ticket was placed on the blockchain
@@ -337,74 +336,3 @@ class ArtRegistrationServer:
             return response
         else:
             return 'Validation passed'
-
-
-
-class IDRegistrationClient:
-    def __init__(self, privkey, pubkey, chainwrapper):
-        self.__privkey = privkey
-        self.__pubkey = pubkey
-        self.__chainwrapper = chainwrapper
-
-    def register_id(self, address):
-        idticket = IDTicket(dictionary={
-            "blockchain_address": address,
-            "public_key": self.__pubkey,
-            "ticket_submission_time": int(time.time()),
-        })
-        idticket.validate()
-
-        signature = Signature(dictionary={
-            "signature": pastel_id_write_signature_on_data_func(idticket.serialize(), self.__privkey, self.__pubkey),
-            "pubkey": self.__pubkey,
-        })
-        signature.validate(idticket)
-
-        finalticket = FinalIDTicket(dictionary={
-            "ticket": idticket.to_dict(),
-            "signature": signature.to_dict(),
-            "nonce": str(uuid.uuid4()),
-        })
-        finalticket.validate(self.__chainwrapper)
-
-        self.__chainwrapper.store_ticket(finalticket)
-
-
-class TransferRegistrationClient:
-    def __init__(self, privkey, pubkey, chainwrapper, artregistry):
-        self.__privkey = privkey
-        self.__pubkey = pubkey
-        self.__chainwrapper = chainwrapper
-        self.__artregistry = artregistry
-
-    def register_transfer(self, recipient_pubkey, imagedata_hash, copies):
-        transferticket = TransferTicket(dictionary={
-            "public_key": self.__pubkey,
-            "recipient": recipient_pubkey,
-            "imagedata_hash": imagedata_hash,
-            "copies": copies,
-        })
-        transferticket.validate(self.__chainwrapper, self.__artregistry)
-
-        # Make sure enough remaining copies are left on our key
-        # We do this here to prevent creating a ticket we know now as invalid. However anything
-        # might happen before this tickets makes it to the network, os this check can't be put in validate()
-        require_true(self.__artregistry.enough_copies_left(transferticket.imagedata_hash,
-                                                           transferticket.public_key,
-                                                           transferticket.copies))
-
-        signature = Signature(dictionary={
-            "signature": pastel_id_write_signature_on_data_func(transferticket.serialize(), self.__privkey,
-                                                                self.__pubkey),
-            "pubkey": self.__pubkey,
-        })
-        signature.validate(transferticket)
-
-        finalticket = FinalTransferTicket(dictionary={
-            "ticket": transferticket.to_dict(),
-            "signature": signature.to_dict(),
-            "nonce": str(uuid.uuid4()),
-        })
-        finalticket.validate(self.__chainwrapper)
-
-        self.__chainwrapper.store_ticket(finalticket)

@@ -5,10 +5,8 @@ import uuid
 
 from bitcoinrpc.authproxy import JSONRPCException
 
-from cnode_connection import get_blockchain_connection, basedir
+from cnode_connection import get_blockchain_connection
 from core_modules.artregistry import ArtRegistry
-from core_modules.chainwrapper import ChainWrapper
-from core_modules.helpers import get_pynode_digest_hex
 from core_modules.rpc_client import RPCException, RPCClient
 from core_modules.logger import initlogging
 from core_modules.ticket_models import RegistrationTicket, Signature, TradeBidTicket
@@ -43,7 +41,6 @@ class PastelClient:
         self.passphrase = passphrase
 
         self.__artregistry = ArtRegistry()
-        self.__chainwrapper = ChainWrapper(self.__artregistry)
         self.__nodemanager = ClientNodeManager()
         self.__active_tasks = {}
 
@@ -63,7 +60,7 @@ class PastelClient:
     # Image registration methods
     async def image_registration_step_2(self, regticket_data: dict, image_data: bytes):
 
-        artreg = ArtRegistrationClient(self.__chainwrapper)
+        artreg = ArtRegistrationClient()
         regticket = ArtRegistrationClient.generate_regticket(image_data, regticket_data)
         result = await artreg.get_workers_fee(
             image_data=image_data,
@@ -73,7 +70,7 @@ class PastelClient:
         return result
 
     async def image_registration_step_3(self, regticket_id):
-        artreg = ArtRegistrationClient(self.__chainwrapper)
+        artreg = ArtRegistrationClient()
 
         success, err = await artreg.send_regticket_to_mn2_mn3(regticket_id)
         if not success:

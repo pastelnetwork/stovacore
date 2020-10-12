@@ -14,12 +14,10 @@ art_reg_client_logger = initlogging('Logger', __name__)
 
 
 class ArtRegistrationClient:
-    def __init__(self, chainwrapper):
-        self.__chainwrapper = chainwrapper
-
-    def __generate_signed_ticket(self, ticket):
+    @classmethod
+    def generate_signed_ticket(cls, ticket):
         signed_ticket = Signature(dictionary={
-            "signature": get_blockchain_connection().pastelid_sign(ticket.serialize()),
+            "signature": get_blockchain_connection().pastelid_sign(ticket.serialize_base64()),
             "pastelid": get_blockchain_connection().pastelid
         })
 
@@ -61,7 +59,7 @@ class ArtRegistrationClient:
         })
 
     async def get_workers_fee(self, image_data, regticket):
-        regticket_signature = self.__generate_signed_ticket(regticket)
+        regticket_signature = self.generate_signed_ticket(regticket)
 
         regticket_db = RegticketDB.create(created=datetime.now(), blocknum=regticket.blocknum,
                                           serialized_regticket=regticket.serialize(),

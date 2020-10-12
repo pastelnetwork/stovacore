@@ -8,6 +8,7 @@ This module contain system test, which require some setup:
 This test are actually not 'refined' tests - they depend on the testnet state.
 Consider it more like manual test which are upgraded with a bit of automation.
 """
+import base64
 import json
 import shutil
 import unittest
@@ -25,15 +26,24 @@ from core_modules.rpc_serialization import RPCMessage
 from core_modules.ticket_models import RegistrationTicket
 from pynode.tasks import TXID_LENGTH, update_masternode_list, refresh_masternode_list, index_new_chunks, \
     get_and_proccess_new_activation_tickets, fetch_single_chunk_via_rpc, chunk_fetcher_task_body
+from tests.test_utils import png_1x1_data
+from tests.unit_tests.test_regticket import get_test_regticket_data
 from utils.mn_ordering import get_masternode_ordering
 from cnode_connection import reset_blockchain_connection
 
-CLIENT_PASTELID = 'jXZaYVHWw6czQ7r7oMHJkLjYDs7oSR4KWuSk3PybsWFnR2cjvjVpTMgQc7R2mfqT8eiggCwZb6SiHYRi7FouGh'
-SERVER_PASTELID = 'jXXr3LQbBp7UN9CgmKQpbPJoEqPRBpuvwG4isEprjLymGujXGUsPS6KZmx3aq7B2Sk4HRaMmcRU9aYYovsokcL'
+# put local cNode pastel ID here (should be registered). Its passphrase should be same as in `PASSPHRASE` variable
+from wallet.art_registration_client import ArtRegistrationClient
+
+CLIENT_PASTELID = 'jXYvNRFnX1c1fsuD3JvwdfSvBmhaKrNrFVeaQmmtJJ45WZ9vxbFDF4NQUgibMF3gQvtdjuQjy9YnDSXveZ1aXa'
+PASSPHRASE = 'taksa'
+
+# put pastelID of one of masternodes here
+SERVER_PASTELID = 'jXZxw2bZHefHxvNVaDFvKG5kokgE76JQDuWNQgucYnMKVxguFCt6AHMKq688YH8N73wZgKHmcWAcu8Aj2UVvQo'
 
 REAL_MN_PASTEL_ID = 'jXaHR8djB7VL6XFisRsGrv7P4fzna1wqdKMAJDHjhPgnh3kUdrRinv9yFowMivDEgAAU34bgm9u6hk98gE88CP'
-PASSPHRASE = 'taksa'
+
 MASTERNODE_NUMBER = 10  # number of masternodes in the network
+
 CHUNK_NUMBER = 13  # number of chunks in the network
 ACT_TICKET_NUMBER = 2  # number of art activation tickets in the network
 
@@ -107,12 +117,17 @@ class PastelSignVerifyTestCase(unittest.TestCase):
         os.environ.setdefault('PASSPHRASE', PASSPHRASE)
 
     def test_sign_verify(self):
-        data = b'some data'
+        data = base64.b64encode(b'some data').decode()
         signature = get_blockchain_connection().pastelid_sign(data)
         result = get_blockchain_connection().pastelid_verify(data, signature, CLIENT_PASTELID)
         self.assertEqual(result, True)
         result = get_blockchain_connection().pastelid_verify(data, 'aaa', CLIENT_PASTELID)
         self.assertEqual(result, False)
+
+    # TODO: create regticket sign/verify test case
+    def test_sign_verify_regticket(self):
+        regticket = ArtRegistrationClient.generate_regticket(png_1x1_data, {})
+        regticket_signature = ArtRegistrationClient.generate_signed_ticket(regticket)
 
 
 class RPCClientTestCase(unittest.TestCase):

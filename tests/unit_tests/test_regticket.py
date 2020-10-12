@@ -5,13 +5,14 @@ from tests.test_utils import png_1x1_data
 from core_modules.ticket_models import RegistrationTicket, ImageData, Signature
 
 
-def generate_test_regticket():
+def get_test_regticket_data():
     image = ImageData(dictionary={
         "image": png_1x1_data,
         "lubychunks": ImageData.generate_luby_chunks(png_1x1_data),
         "thumbnail": ImageData.generate_thumbnail(png_1x1_data),
     })
-    regticket = RegistrationTicket(dictionary={
+
+    return {
         "artist_name": 'name',
         "artist_website": 'website',
         "artist_written_statement": 'some data',
@@ -32,7 +33,11 @@ def generate_test_regticket():
         "order_block_txid": ''.join('A' for x in range(64)),
         "blocknum": 1,
         "imagedata_hash": image.get_artwork_hash(),
-    })
+    }
+
+
+def generate_test_regticket():
+    regticket = RegistrationTicket(dictionary=get_test_regticket_data())
     return regticket
 
 
@@ -72,6 +77,6 @@ class RegticketTestCase(TestCase):
         self.assertEqual(cnode_package_dict['version'], 1)
         self.assertEqual(cnode_package_dict['author'], regticket.author)
         self.assertEqual(cnode_package_dict['blocknum'], regticket.blocknum)
-        app_ticket = RegistrationTicket(serialized_base64=cnode_package_dict['app_ticket'])
+        app_ticket = RegistrationTicket(serialized_base64=regticket.get_cnode_package())
         self.assertEqual(app_ticket.author, regticket.author)
         self.assertEqual(app_ticket.imagedata_hash, regticket.imagedata_hash)

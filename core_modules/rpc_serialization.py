@@ -8,7 +8,7 @@ from decimal import Decimal
 from copy import copy
 
 from core_modules.blackbox_modules.helpers import sleep_rand
-from core_modules.helpers import get_pynode_digest_bytes
+from core_modules.helpers import get_pynode_digest_bytes, get_pynode_digest_bytes_base64
 from core_modules.helpers_type import ensure_type, ensure_type_of_field
 from core_modules.helpers import require_true
 from core_modules.settings import NetWorkSettings
@@ -125,7 +125,7 @@ class RPCMessage:
         ensure_types_for_v1(self.container)
         container_serialized = msgpack.packb(self.container, default=default, use_bin_type=True)
         self.container['signature'] = get_blockchain_connection().pastelid_sign(
-            get_pynode_digest_bytes(container_serialized))
+            get_pynode_digest_bytes_base64(container_serialized))
 
     def pack(self) -> bytes:
         if not self.container['signature']:
@@ -143,5 +143,6 @@ class RPCMessage:
         signature = container['signature']
         container['signature'] = ''
         container_serialized = msgpack.packb(container, default=default, use_bin_type=True)
-        return get_blockchain_connection().pastelid_verify(get_pynode_digest_bytes(container_serialized), signature,
+        return get_blockchain_connection().pastelid_verify(get_pynode_digest_bytes_base64(container_serialized),
+                                                           signature,
                                                            container['sender_id'])

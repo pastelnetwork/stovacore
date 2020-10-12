@@ -3,7 +3,6 @@ import signal
 
 from core_modules.artregistry import ArtRegistry
 from core_modules.autotrader import AutoTrader
-from core_modules.chainwrapper import ChainWrapper
 from core_modules.masternode_ticketing import ArtRegistrationServer
 from pynode.rpc_server import RPCServer
 from core_modules.logger import initlogging
@@ -31,9 +30,8 @@ class MasterNodeDaemon:
 
         # legacy entities. Review and delete if not required
         self.__artregistry = ArtRegistry()
-        self.__chainwrapper = ChainWrapper(self.__artregistry)
         self.__autotrader = AutoTrader(self.__artregistry)
-        self.__artregistrationserver = ArtRegistrationServer(self.__chainwrapper)
+        self.__artregistrationserver = ArtRegistrationServer()
         # end of legacy entities
 
         for rpc_handler in self.__artregistrationserver.rpc_handler_list:

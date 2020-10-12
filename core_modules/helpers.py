@@ -1,3 +1,4 @@
+import base64
 import random
 
 from .settings import NetWorkSettings
@@ -28,6 +29,10 @@ def get_pynode_digest_bytes(data: bytes) -> bytes:
     h = PYNODE_HASH_ALGO()  # hashlib.sha3_512
     h.update(data)  # -> hashlib.sha3_512.update(data)
     return h.digest()
+
+
+def get_pynode_digest_bytes_base64(data: bytes) -> str:
+    return base64.b64encode(get_pynode_digest_bytes(data)).decode()
 
 
 def get_pynode_digest_hex(data):
