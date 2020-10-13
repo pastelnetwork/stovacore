@@ -75,7 +75,6 @@ class Regticket(Model):
             'signatures_dict': signatures_dict,
             'key1': ticket.base64_imagedatahash,  # artist_signature.pastelid,
             'key2': ticket.base64_imagedatahash,
-            'art_block': ticket.blocknum,
             'fee': int(self.localfee)
         }
 

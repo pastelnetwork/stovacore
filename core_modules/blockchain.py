@@ -206,7 +206,7 @@ class BlockChain:
     def mnid_register(self, pastelid, passphrase):
         return self.__call_jsonrpc("tickets", "register", "mnid", pastelid, passphrase)
 
-    def register_art_ticket(self, cnode_package, signatures_dict, key1, key2, art_block, fee):
+    def register_art_ticket(self, cnode_package, signatures_dict, key1, key2, fee):
         """
         :param base64_data: Base64 encoded original ticket created by the artist.
         :param signatures_dict: Signatures (base64) and PastelIDs of the author and verifying masternodes (MN2 and MN3)
@@ -223,7 +223,7 @@ class BlockChain:
         :param fee: The agreed upon storag fee.
          :return:
         """
-        parameters = [cnode_package, json.dumps(signatures_dict), self.pastelid, self.passphrase, key1, key2, art_block,
+        parameters = [cnode_package, json.dumps(signatures_dict), self.pastelid, self.passphrase, key1, key2,
                       fee]
         return self.__call_jsonrpc("tickets", "register", "art", *parameters)
 
