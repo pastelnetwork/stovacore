@@ -27,7 +27,7 @@ class PastelClientTestCase(unittest.TestCase):
     def test_get_artwork_data(self):
         async def get_artwork_data():
             artwork_data = await get_pastel_client().get_artworks_data()
-            self.assertEqual(len(artwork_data), 3)
+            self.assertEqual(len(artwork_data), 2)
         refresh_masternode_list()
         asyncio.run(get_artwork_data())
         asyncio.run(get_artwork_data())  # check if 2nd run it does not fetch data from blockchain

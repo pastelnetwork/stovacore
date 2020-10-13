@@ -44,7 +44,7 @@ REAL_MN_PASTEL_ID = 'jXaHR8djB7VL6XFisRsGrv7P4fzna1wqdKMAJDHjhPgnh3kUdrRinv9yFow
 
 MASTERNODE_NUMBER = 10  # number of masternodes in the network
 
-CHUNK_NUMBER = 13  # number of chunks in the network
+CHUNK_NUMBER = 20  # number of chunks in the network
 ACT_TICKET_NUMBER = 2  # number of art activation tickets in the network
 
 # DISABLED_MASTERNODES = ['51.158.183.93:4444', '51.15.57.47:4444']
@@ -108,7 +108,7 @@ class ImageRegistrationTestCase(unittest.TestCase):
         regticket_base64 = ticket['ticket']['art_ticket']
 
         regticket = RegistrationTicket(serialized_base64=regticket_base64)
-        self.assertEqual(regticket.blocknum, 3370)
+        print('Regticket  block number: {}'.format(regticket.blocknum))
 
 
 class PastelSignVerifyTestCase(unittest.TestCase):
@@ -258,7 +258,7 @@ class IndexNewChunksTaskTestCase(unittest.TestCase):
         self.assertEqual(Masternode.get_active_nodes().count(), MASTERNODE_NUMBER)
         get_and_proccess_new_activation_tickets()
         self.assertEqual(Chunk.select().count(), CHUNK_NUMBER)
-        self.assertEqual(ActivationTicket.select().count(), 1)
+        self.assertEqual(ActivationTicket.select().count(), 2)
         for chunk in Chunk.select():
             self.assertEqual(chunk.indexed, False)
             self.assertEqual(chunk.confirmed,
@@ -296,6 +296,12 @@ class SQLRPCTestCase(unittest.TestCase):
             'select artist_pk, created, localfee, is_valid_mn0, status, confirmed from regticket;');
         pprint(result)
         # self.assertEqual(len(result), 7)
+
+    def test_sql_rpc_1(self):
+        masternodes = list(Masternode.get_active_nodes())
+        mn = masternodes[0].get_rpc_client()
+        result = mn.send_rpc_execute_sql('select * from masternode;')
+        pprint(result)
 
 
 class RPCPingAllNodesTestCase(unittest.TestCase):

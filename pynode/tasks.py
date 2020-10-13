@@ -125,7 +125,8 @@ def index_new_chunks():
 def get_registration_ticket_from_act_ticket(ticket):
     # regticket_txid = act_ticket['ticket']['reg_txid']
     # ticket = get_blockchain_connection().get_ticket(regticket_txid)
-    return RegistrationTicket(serialized=base64.b64decode(ticket['ticket']['art_ticket']))
+    # ticket['ticket']['art_ticket']  - it's cnode package
+    return RegistrationTicket(serialized_base64=ticket['ticket']['art_ticket'])
 
 
 def get_and_proccess_new_activation_tickets():

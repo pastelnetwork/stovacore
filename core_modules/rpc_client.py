@@ -77,7 +77,7 @@ class RPCClient:
         sender_id, response_msg = rpc_message.sender_id, rpc_message.data
         rpcname, success, response_data = response_msg
         # fixme: log data only if it's not very long.
-        self.__logger.info('RPC {} from {} success: {}, data: {}'.format(rpcname,
+        self.__logger.warn('RPC {} from {} success: {}, data: {}'.format(rpcname,
                                                                          self.__server_ip, success, response_data))
 
         if rpcname != response_name:
