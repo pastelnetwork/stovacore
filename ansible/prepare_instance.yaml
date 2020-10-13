@@ -36,6 +36,12 @@
       become_method: su
       shell: mkdir -p ~/.ssh && touch ~/.ssh/authorized_keys && echo 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDHv8VsEeLaywTBkj2GL0fkasCcPP18xnV43ECQMgVY4IWm+XZUh3nk0QVVby1Om5VpsuOANp5yCZxmO6rQO4/7i4V7qYPpR2J3qdC6AvwAP+5EPMy1TEvU2UIbNwNfjhpeBcYv/YvR3gLLYZd0w/uq/a3PCkqBDHYafVcUhfAGBYfBzMFlzqWWuBkPg/R5RhfztGdpGGPCCwEQIys5NqRC2z3N68+mnkLDoEYbTVlyi3HOBjPG+3yx3iyyoYMVlvpuGcWn049BcaoF7B0nUMXUVnKO0VCNqQ6tmTRcq+CKKX2Sucwyaf2uringjAg1K19Rcts49lsL+qilayUgfyXD a.dobrushskiy@gmail.com' >> ~/.ssh/authorized_keys
 
+    - name: Add ssh key for animecoinuser
+      become: yes
+      become_user: animecoinuser
+      become_method: su
+      shell: echo 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDlJu2iYze4C3FGqTjvR7hAdGyYT6i6c5shmVNCZvvzBE9Wd/KK90aZvkXyC0KmbTRNJeALrwys06uaiU9qahQj3gmA4WEbtnqYMOiD1diF1DnQT6UYRTyQl4VIfowTTEtMOLlj9pBgy8gMVGzxnJ4Oia6WmIzzh+SCgN4pQivAqeZsAsjYuc7VnBA3DoZEli0tMZAivOWcgC1T1NUd1oyd6IosO3gZb7r6U0R0795GcdRoJsT3I0sEsTMs2PNwFnDRQJ3C6Q9ZGnliU7CHjBs4jti1SGbfmwuTB7QcpMjWkli0tNLny2qdU32JbPSWuZ3qt0pIFyHQHOVAFBW6Ask1lRhpvUNPmHSffwtO8MaagOFXypxL1Eo16SkGFipVgu06WGWwNTQhI6UMzTvGOPKSkZYbpqC1QY+CJRLf5p9ehte3OzryKWKtTKBIGwH22XRk43nMZGf0cqgUSsIpw/yMNqIMeBv9uvNv1N611PtSvR8Q6OWUTRwvOx8UMXNIkhM= root@ubuntu-s-1vcpu-1gb-fra1-01' >> ~/.ssh/authorized_keys
+
     - name: Get Pastel binaries
       become: yes
       become_user: animecoinuser
