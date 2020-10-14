@@ -113,7 +113,10 @@ async def create_bid_ticket(request):
 
 @routes.get('/artworks_data')
 async def artworks_data(request):
-    artwork_data = await get_pastel_client().get_artworks_data()
+    try:
+        artwork_data = await get_pastel_client().get_artworks_data()
+    except Exception as ex:
+        return web.json_response({'error': 'Unable to fetch artworks data, try again later'}, status=503)
     return web.json_response(artwork_data)
 
 

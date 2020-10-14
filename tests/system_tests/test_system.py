@@ -298,10 +298,17 @@ class SQLRPCTestCase(unittest.TestCase):
         # self.assertEqual(len(result), 7)
 
     def test_sql_rpc_1(self):
+        """
+        Calculate number of stored chunks
+        """
         masternodes = list(Masternode.get_active_nodes())
-        mn = masternodes[0].get_rpc_client()
-        result = mn.send_rpc_execute_sql('select * from masternode;')
-        pprint(result)
+        r = {}
+        for node in masternodes:
+            mn = node.get_rpc_client()
+            result = mn.send_rpc_execute_sql('select * from chunk;')
+            r[node.ext_address] = len(list(filter(lambda x: x['stored'] == 1, result)))
+
+        pprint(r)
 
 
 class RPCPingAllNodesTestCase(unittest.TestCase):

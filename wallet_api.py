@@ -55,5 +55,5 @@ if __name__ == '__main__':
     db.init(os.path.join(app_dir, WALLET_DATABASE_FILE))
     # if not os.path.exists(os.path.join(APP_DIR, WALLET_DATABASE_FILE)):
     create_tables()
-    logging.basicConfig(level=logging.WARN)
+    logging.basicConfig(level=logging.DEBUG)
     run_event_loop()
