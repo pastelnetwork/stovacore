@@ -227,6 +227,18 @@ class BlockChain:
                       fee]
         return self.__call_jsonrpc("tickets", "register", "art", *parameters)
 
+    def register_sell_ticket(self, txid, price):
+        parameters = [txid, price, self.pastelid, self.passphrase]
+        return self.__call_jsonrpc("tickets", "register", "sell", *parameters)
+
+    def register_buy_ticket(self):
+        parameters = []
+        return self.__call_jsonrpc("tickets", "register", "buy", *parameters)
+
+    def register_trade_ticket(self):
+        parameters = []
+        return self.__call_jsonrpc("tickets", "register", "trade", *parameters)
+
     def register_trade_bid_ticket(self, base64_data):
         # TODO: implement when cNode will be ready
         return 'should return txid but currently not implemented..'

@@ -1,0 +1,27 @@
+- name: Convert nodes to masternodes
+  hosts: _alexmn1
+  gather_facts: no
+  serial: 1
+  tasks:
+    - name: get masternode outputs (txid + outIndex)
+      shell: cd ~/pastel && ./pastel-cli masternode outputs
+      register: mn_outputs
+
+    - name: parse masternode output
+      set_fact:
+        txid: "{{ ((mn_outputs.stdout | from_json).keys() | list)[0] }}" # key
+        out_index: "{{ ((mn_outputs.stdout | from_json).values() |list)[0] }}" # value
+
+    - name: Wait for MN appear in masternode list
+      shell: cd ~/pastel && ./pastel-cli masternode list
+      register: result
+      until: not (result.stdout | from_json | dict2items | selectattr("{{txid-out_index}}", "equalto", "ENABLED") | list | length)
+      retries: 999999
+      delay: 10
+
+#    - name: Wait for MN appear in masternode list
+#      shell: cd ~/pastel && ./pastel-cli masternode list
+#      register: result
+#      until: not (result.stdout | from_json | dict2items | rejectattr("value", "equalto", "ENABLED") | list | length)
+#      retries: 999999
+#      delay: 10

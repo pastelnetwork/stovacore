@@ -40,7 +40,7 @@
       become: yes
       become_user: animecoinuser
       become_method: su
-      shell: echo 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDlJu2iYze4C3FGqTjvR7hAdGyYT6i6c5shmVNCZvvzBE9Wd/KK90aZvkXyC0KmbTRNJeALrwys06uaiU9qahQj3gmA4WEbtnqYMOiD1diF1DnQT6UYRTyQl4VIfowTTEtMOLlj9pBgy8gMVGzxnJ4Oia6WmIzzh+SCgN4pQivAqeZsAsjYuc7VnBA3DoZEli0tMZAivOWcgC1T1NUd1oyd6IosO3gZb7r6U0R0795GcdRoJsT3I0sEsTMs2PNwFnDRQJ3C6Q9ZGnliU7CHjBs4jti1SGbfmwuTB7QcpMjWkli0tNLny2qdU32JbPSWuZ3qt0pIFyHQHOVAFBW6Ask1lRhpvUNPmHSffwtO8MaagOFXypxL1Eo16SkGFipVgu06WGWwNTQhI6UMzTvGOPKSkZYbpqC1QY+CJRLf5p9ehte3OzryKWKtTKBIGwH22XRk43nMZGf0cqgUSsIpw/yMNqIMeBv9uvNv1N611PtSvR8Q6OWUTRwvOx8UMXNIkhM= root@ubuntu-s-1vcpu-1gb-fra1-01' >> ~/.ssh/authorized_keys
+      shell: echo 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDChY+/Vx5b4ZKqy1dSajxxyBjuooeuRjDe6jHKvV6XxvCN+29ERbvUD/emCaX9t7EBglIfjAfIrZpeI+ph1jy263BXqmwTawitd9qLqIjVsd13Mbc7GHo3BCQyKUf01xHBCH5uwXmpTSDt5vrNtmmrxlxrkRx7cjEC45JbkiIJrI74k0OlyUuUV6fnA57i099GvrRFafb7uGkHEVAh9my/nzSu0ELLu96bZFthjqf6F4x8JJqJSY6ivuJ95++ZIOCPv7CrhOdBsTUQktX58YN25fMJPAAc8jtuMvkcwMuGjHRwlfLCzd6vRrEHn3wC+/R5oK5JG3TAc/HAgrsBE5YH root@cli-srv-funny-darwin' >> ~/.ssh/authorized_keys
 
     - name: Get Pastel binaries
       become: yes

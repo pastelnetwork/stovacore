@@ -1,0 +1,100 @@
+Host alexmn1
+    HostName 51.15.41.129
+    User root
+    StrictHostKeyChecking no
+
+Host alexmn2
+    HostName 51.15.79.175
+    User root
+    StrictHostKeyChecking no
+
+Host alexmn3
+    HostName 51.15.83.99
+    User root
+    StrictHostKeyChecking no
+
+Host alexmn4
+    HostName 51.158.176.36
+    User root
+    StrictHostKeyChecking no
+
+Host alexmn5
+    HostName 51.158.188.130
+    User root
+    StrictHostKeyChecking no
+
+Host alexmn6
+    HostName 51.15.109.152
+    User root
+    StrictHostKeyChecking no
+
+Host alexmn7
+    HostName 51.158.183.93
+    User root
+    StrictHostKeyChecking no
+
+Host alexmn8
+    HostName 51.158.167.70
+    User root
+    StrictHostKeyChecking no
+
+Host alexmn9
+    HostName 51.15.116.190
+    User root
+    StrictHostKeyChecking no
+
+Host alexmn10
+    HostName 51.15.38.6
+    User root
+    StrictHostKeyChecking no
+
+Host _alexmn1
+    HostName 51.15.41.129
+    User animecoinuser
+    StrictHostKeyChecking no
+
+Host _alexmn2
+    HostName 51.15.79.175
+    User animecoinuser
+    StrictHostKeyChecking no
+
+Host _alexmn3
+    HostName 51.15.83.99
+    User animecoinuser
+    StrictHostKeyChecking no
+
+Host _alexmn4
+    HostName 51.158.176.36
+    User animecoinuser
+    StrictHostKeyChecking no
+
+Host _alexmn5
+    HostName 51.158.188.130
+    User animecoinuser
+    StrictHostKeyChecking no
+
+Host _alexmn6
+    HostName 51.15.109.152
+    User animecoinuser
+    StrictHostKeyChecking no
+
+Host _alexmn7
+    HostName 51.158.183.93
+    User animecoinuser
+    StrictHostKeyChecking no
+
+Host _alexmn8
+    HostName 51.158.167.70
+    User animecoinuser
+    StrictHostKeyChecking no
+
+Host _alexmn9
+    HostName 51.15.116.190
+    User animecoinuser
+    StrictHostKeyChecking no
+
+Host _alexmn10
+    HostName 51.15.38.6
+    User animecoinuser
+    StrictHostKeyChecking no
+
