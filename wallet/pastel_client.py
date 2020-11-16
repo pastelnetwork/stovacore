@@ -230,7 +230,7 @@ class PastelClient:
             })
         return result
 
-    async def create_bid_ticket(self, data):
+    async def register_sell_ticket(self, data):
         mn1 = get_masternode_ordering()[0]
         result = await mn1.call_masternode("BID_TICKET_REQ", "BID_TICKET_RESP",
                                            data)

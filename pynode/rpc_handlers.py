@@ -3,8 +3,6 @@ from core_modules.chunkmanager import get_chunkmanager
 from core_modules.database import Chunk, ChunkMnRanked
 from core_modules.helpers import hex_to_chunkid
 from core_modules.logger import initlogging
-from core_modules.rpc_client import RPCException
-from core_modules.ticket_models import TradeBidTicket
 
 rpc_handler_logger = initlogging('RPCHandlerLogger', __name__)
 
@@ -93,13 +91,3 @@ def receive_rpc_download_thumbnail(data, *args, **kwargs):
         "status": "SUCCESS",
         "image_data": thumbnail_data
     }
-
-
-def receive_rpc_bid_ticket(data, *args, **kwargs):
-    trade_bid_ticket = TradeBidTicket(dictionary=data)
-    trade_bid_ticket.validate()
-    # sign ticket
-    # return signature
-    signed_ticket = trade_bid_ticket.generate_signed_ticket()
-    return signed_ticket.serialize()
-

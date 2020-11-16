@@ -228,6 +228,11 @@ class BlockChain:
         return self.__call_jsonrpc("tickets", "register", "art", *parameters)
 
     def register_sell_ticket(self, txid, price):
+        """
+        :param txid: txid or either art registration ticket either trade ticket
+        :param price: artowork requested price
+        :return:
+        """
         parameters = [txid, price, self.pastelid, self.passphrase]
         return self.__call_jsonrpc("tickets", "register", "sell", *parameters)
 
@@ -238,10 +243,6 @@ class BlockChain:
     def register_trade_ticket(self):
         parameters = []
         return self.__call_jsonrpc("tickets", "register", "trade", *parameters)
-
-    def register_trade_bid_ticket(self, base64_data):
-        # TODO: implement when cNode will be ready
-        return 'should return txid but currently not implemented..'
 
     def pastelid_sign(self, data: str) -> str:
         """

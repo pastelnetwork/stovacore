@@ -37,3 +37,6 @@
       until: not (result.stdout | from_json | dict2items | rejectattr("value", "equalto", "ENABLED") | list | length)
       retries: 999999
       delay: 10        
+
+    - name: register MNID
+      shell: cd ~/StoVaCore && ./pynode.sh register_mnid
