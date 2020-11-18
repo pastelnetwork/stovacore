@@ -320,27 +320,6 @@ class RegistrationTicket(TicketModelBase):
         return regticket_dict
 
 
-class TradeBidTicket(TicketModelBase):
-    methods = {
-        "act_ticket_txid": TXIDField(),
-        "price": IntegerField(minsize=0, maxsize=2 ** 32 - 1),
-        "wallet_address": BlockChainAddressField(),
-        "seller_pastel_id": PastelIDField()
-    }
-
-    def generate_signed_ticket(self):
-        signature = get_blockchain_connection().pastelid_sign(self.serialize_base64())
-        signed_ticket = Signature(dictionary={
-            "signature": signature,
-            "pastelid": get_blockchain_connection().pastelid,
-        })
-        return signed_ticket
-
-    def validate(self, *args, **kwargs):
-        # TODO: check if sellerPastelID is artwork owner
-        return True
-
-
 class Signature(TicketModelBase):
     methods = {
         "signature": SignatureField(),

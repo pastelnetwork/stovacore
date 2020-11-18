@@ -49,6 +49,16 @@ class Masternode(Model):
         return Masternode.select().where(Masternode.active == True)
 
 
+NOT_ON_SALE = 0
+SELL_TICKET_CREATED = 1  # put for sale by current user
+ON_SALE = 2  # put for sale by someone in the network
+
+ARTWORK_SALE_STATUSES = (
+    (NOT_ON_SALE, 'Not on sale'),
+    (SELL_TICKET_CREATED, 'Sell ticket created'),
+    (ON_SALE, 'On sale'))
+
+
 class Artwork(Model):
     act_ticket_txid = CharField(unique=True)
     artist_pastelid = CharField()
@@ -63,6 +73,7 @@ class Artwork(Model):
     imagedata_hash = BlobField()
     blocknum = IntegerField()  # use negative blocknum to store invalid act ticket txids
     order_block_txid = CharField()
+    sale_status = IntegerField(default=NOT_ON_SALE, choices=ARTWORK_SALE_STATUSES)
 
     class Meta:
         database = db

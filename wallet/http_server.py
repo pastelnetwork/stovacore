@@ -104,19 +104,21 @@ async def download_image(request):
 
 
 @routes.post('/create_sell_ticket')
-async def create_bid_ticket(request):
+async def create_sell_ticket(request):
     data = await request.json()
-    # data is expected to be {'act_ticket_txid': <txid>, 'price': <price>, 'wallet_address': <>, 'seller_pastel_id': <>}
-    response = await get_pastel_client().register_sell_ticket(data)
+    # data is expected to be {'txid': <txid>, 'price': <price>}
+    # FIXME: why not add validation for wallet_api? wallet app error on API calls should be visible in the
+    #  wallet, at least in wallet console
+    response = await get_pastel_client().register_sell_ticket(**data)
     return web.json_response({'txid': response})
 
 
 @routes.get('/artworks_data')
 async def artworks_data(request):
-    try:
-        artwork_data = await get_pastel_client().get_artworks_data()
-    except Exception as ex:
-        return web.json_response({'error': 'Unable to fetch artworks data, try again later'}, status=503)
+    # try:
+    artwork_data = await get_pastel_client().get_artworks_data()
+    # except Exception as ex:
+    #     return web.json_response({'error': 'Unable to fetch artworks data, try again later'}, status=503)
     return web.json_response(artwork_data)
 
 
