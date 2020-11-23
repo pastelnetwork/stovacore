@@ -1,13 +1,13 @@
 import os
 import sys
 from aiohttp import web
+from bitcoinrpc.authproxy import JSONRPCException
 
 from wallet.database import RegticketDB
 from wallet.settings import get_artwork_dir
 
 routes = web.RouteTableDef()
 pastel_client = None
-
 
 def get_pastel_client():
     # this import should be local to let env varibles be set earlier than blockchain object will be created
@@ -106,10 +106,15 @@ async def download_image(request):
 @routes.post('/create_sell_ticket')
 async def create_sell_ticket(request):
     data = await request.json()
-    # data is expected to be {'txid': <txid>, 'price': <price>}
+    # data is expected to be {'txid': <txid>, 'price': <price>, 'image_hash': <image_hash>}
     # FIXME: why not add validation for wallet_api? wallet app error on API calls should be visible in the
     #  wallet, at least in wallet console
-    response = await get_pastel_client().register_sell_ticket(**data)
+    try:
+        response = await get_pastel_client().register_sell_ticket(**data)
+    except JSONRPCException as ex:
+        return web.json_response({'error': str(ex)}, status=400)
+
+    # returning same image hash as we received to associate this response with a given artwork for node process.
     return web.json_response({'txid': response})
 
 
