@@ -115,7 +115,7 @@ async def create_sell_ticket(request):
         return web.json_response({'error': str(ex)}, status=400)
 
     # returning same image hash as we received to associate this response with a given artwork for node process.
-    return web.json_response({'txid': response})
+    return web.json_response(response)
 
 
 @routes.get('/artworks_data')

@@ -178,10 +178,14 @@ class BlockChain:
         return self.__call_jsonrpc("tickets", "list", ticket_type)
 
     def get_ticket(self, txid):
+        return self.__call_jsonrpc("tickets", "get", txid)
+
+    def find_ticket(self, ticket_type, key):
         """
         ticket_type - one of (id, art, act, trade, down)
+        for finding act ticket - registration ticket txid is approriate key.
         """
-        return self.__call_jsonrpc("tickets", "get", txid)
+        return self.__call_jsonrpc("tickets", "find", ticket_type, key)
 
     def masternode_list(self):
         return self.__call_jsonrpc("masternode", "list", "extra")

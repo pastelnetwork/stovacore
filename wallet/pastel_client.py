@@ -154,21 +154,28 @@ class PastelClient:
         return image_data
 
     async def get_artworks_data(self):
-        act_tickets_txids = get_blockchain_connection().list_tickets('act')  # list
-        txid_list = set(filter(lambda x: len(x) == TXID_LENGTH, act_tickets_txids))
-        db_txid_list = set([a.act_ticket_txid for a in Artwork.select()])
+        reg_tickets_txids = get_blockchain_connection().list_tickets('act')  # list
+        txid_list = set(filter(lambda x: len(x) == TXID_LENGTH, reg_tickets_txids))
+        db_txid_list = set([a.reg_ticket_txid for a in Artwork.select()])
         # get act ticket txids which are in blockchain and not in db_txid_list
-        act_ticket_txid_to_fetch = txid_list - db_txid_list
-        if len(act_ticket_txid_to_fetch):
+        reg_ticket_txid_to_fetch = txid_list - db_txid_list
+        if len(reg_ticket_txid_to_fetch):
             client = Masternode.select()[0].get_rpc_client()
             # fetch missing data from the blockchain and write to DB
-            for txid in act_ticket_txid_to_fetch:
+            for txid in reg_ticket_txid_to_fetch:
                 try:
                     ticket = json.loads(get_blockchain_connection().get_ticket(txid))  # it's registration ticket here
                 except JSONRPCException as e:
-                    self.__logger.warn('Error obtain act ticket txid: {}'.format(txid))
+                    self.__logger.warn('Error obtain registration ticket txid: {}'.format(txid))
                     # to avoid processing invalid txid multiple times - write in to the DB with height=-1
-                    Artwork.create(act_ticket_txid=txid, blocknum=-1)
+                    Artwork.create(reg_ticket_txid=txid, blocknum=-1)
+                    continue
+                try:
+                    act_ticket = json.loads(get_blockchain_connection().find_ticket('act', txid))
+                except JSONRPCException as e:
+                    self.__logger.warn('Error obtain act ticket by key: {}'.format(txid))
+                    # to avoid processing invalid txid multiple times - write in to the DB with height=-1
+                    Artwork.create(reg_ticket_txid=txid, blocknum=-1)
                     continue
 
                 regticket = RegistrationTicket(serialized_base64=ticket['ticket']['art_ticket'])
@@ -199,7 +206,7 @@ class PastelClient:
                 with open(thumbnail_path, 'wb') as f:
                     f.write(thumbnail_data)
                 # store artwork data to DB
-                Artwork.create(act_ticket_txid=txid, artist_pastelid=artist_pastelid,
+                Artwork.create(reg_ticket_txid=txid, act_ticket_txid=act_ticket['txid'], artist_pastelid=artist_pastelid,
                                artwork_title=regticket.artwork_title, total_copies=regticket.total_copies,
                                artist_name=regticket.artist_name, artist_website=regticket.artist_website,
                                artist_written_statement=regticket.artist_written_statement,

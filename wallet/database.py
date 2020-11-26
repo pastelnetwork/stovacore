@@ -60,7 +60,8 @@ ARTWORK_SALE_STATUSES = (
 
 
 class Artwork(Model):
-    act_ticket_txid = CharField(unique=True)
+    reg_ticket_txid = CharField(unique=True)
+    act_ticket_txid = CharField()
     artist_pastelid = CharField()
     artwork_title = CharField()
     total_copies = IntegerField()
@@ -80,7 +81,7 @@ class Artwork(Model):
         table_name = 'artwork'
 
     def get_thumbnail_path(self):
-        thumbnail_filename = '{}.png'.format(self.act_ticket_txid)
+        thumbnail_filename = '{}.png'.format(self.reg_ticket_txid)
         return os.path.join(get_thumbnail_dir(), thumbnail_filename)
 
     def get_image_hash_digest(self):
