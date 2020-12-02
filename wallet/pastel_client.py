@@ -117,7 +117,11 @@ class PastelClient:
             elif 'txid' in mn2_response[0]:
                 txid = mn2_response[0]['txid']
             else:
-                raise Exception('Txid not found neither in mn1 nor in mn2 response!')
+                # raise Exception('Txid not found neither in mn1 nor in mn2 response!')
+                return {'status': 'ERROR',
+                        'msg': 'Txid not found neither in mn1 nor in mn2 response!, '
+                               'Responses: MN0: {}, MN1: {}, MN2: {}'.format(
+                                mn0_response, mn1_response, mn2_response)}
             return {
                 'status': 'SUCCESS',
                 'txid': txid,
@@ -206,7 +210,8 @@ class PastelClient:
                 with open(thumbnail_path, 'wb') as f:
                     f.write(thumbnail_data)
                 # store artwork data to DB
-                Artwork.create(reg_ticket_txid=txid, act_ticket_txid=act_ticket['txid'], artist_pastelid=artist_pastelid,
+                Artwork.create(reg_ticket_txid=txid, act_ticket_txid=act_ticket['txid'],
+                               artist_pastelid=artist_pastelid,
                                artwork_title=regticket.artwork_title, total_copies=regticket.total_copies,
                                artist_name=regticket.artist_name, artist_website=regticket.artist_website,
                                artist_written_statement=regticket.artist_written_statement,
@@ -219,6 +224,26 @@ class PastelClient:
                                )
         result = []
         for artwork in Artwork.select().where(Artwork.blocknum > 0):
+            sale_data = {
+                'forSale': False,
+                'price': -1
+            }
+            response = get_blockchain_connection().find_ticket('sell', artwork.act_ticket_txid)
+            if response == 'Key is not found':
+                pass
+            elif type(response) == list:
+                resp_json = json.loads(response[0])
+                sale_data = {
+                    'forSale': True,
+                    'price': resp_json['ticket']['asked_price']
+                }
+            elif type(response) == str:
+                resp_json = json.loads(response)
+                sale_data = {
+                    'forSale': True,
+                    'price': resp_json['ticket']['asked_price']
+                }
+
             result.append({
                 'artistPastelId': artwork.artist_pastelid,
                 'name': artwork.artwork_title,
@@ -234,7 +259,8 @@ class PastelClient:
                 'imageHash': artwork.get_image_hash_digest(),
                 'blocknum': artwork.blocknum,
                 'orderBlockTxid': artwork.order_block_txid,
-                'actTicketTxid': artwork.act_ticket_txid
+                'actTicketTxid': artwork.act_ticket_txid,
+                'saleData': sale_data
             })
         return result
 
