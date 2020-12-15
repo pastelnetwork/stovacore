@@ -86,7 +86,7 @@ NetWorkSettings.MAX_LUBY_CHUNKS = math.ceil((NetWorkSettings.IMAGE_MAX_SIZE / Ne
                                             * NetWorkSettings.LUBY_REDUNDANCY_FACTOR)
 
 if NetWorkSettings.DEBUG:
-    NetWorkSettings.NSFW_THRESHOLD = 1
+    NetWorkSettings.NSFW_THRESHOLD = 0.9
 else:
     NetWorkSettings.NSFW_THRESHOLD = 0.96
 

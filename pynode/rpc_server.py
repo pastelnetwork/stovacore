@@ -5,8 +5,7 @@ from aiohttp import web
 from core_modules.logger import initlogging
 from core_modules.rpc_serialization import RPCMessage
 from core_modules.settings import NetWorkSettings
-from pynode.rpc_handlers import receive_rpc_fetchchunk, receive_rpc_download_image, receive_rpc_download_thumbnail, \
-    receive_rpc_bid_ticket
+from pynode.rpc_handlers import receive_rpc_fetchchunk, receive_rpc_download_image, receive_rpc_download_thumbnail
 
 
 class RPCServer:
