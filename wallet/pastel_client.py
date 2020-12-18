@@ -159,7 +159,7 @@ class PastelClient:
 
     async def get_artworks_data(self):
         reg_tickets_txids = get_blockchain_connection().list_tickets('act')  # list
-        txid_list = set(filter(lambda x: len(x) == TXID_LENGTH, reg_tickets_txids))
+        txid_list = set(map(lambda x: x['ticket']['reg_txid'], reg_tickets_txids))
         db_txid_list = set([a.reg_ticket_txid for a in Artwork.select()])
         # get act ticket txids which are in blockchain and not in db_txid_list
         reg_ticket_txid_to_fetch = txid_list - db_txid_list
@@ -168,14 +168,14 @@ class PastelClient:
             # fetch missing data from the blockchain and write to DB
             for txid in reg_ticket_txid_to_fetch:
                 try:
-                    ticket = json.loads(get_blockchain_connection().get_ticket(txid))  # it's registration ticket here
+                    ticket = get_blockchain_connection().get_ticket(txid) # it's registration ticket here
                 except JSONRPCException as e:
                     self.__logger.warn('Error obtain registration ticket txid: {}'.format(txid))
                     # to avoid processing invalid txid multiple times - write in to the DB with height=-1
                     Artwork.create(reg_ticket_txid=txid, blocknum=-1)
                     continue
                 try:
-                    act_ticket = json.loads(get_blockchain_connection().find_ticket('act', txid))
+                    act_ticket = get_blockchain_connection().find_ticket('act', txid)
                 except JSONRPCException as e:
                     self.__logger.warn('Error obtain act ticket by key: {}'.format(txid))
                     # to avoid processing invalid txid multiple times - write in to the DB with height=-1

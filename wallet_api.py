@@ -18,8 +18,8 @@ APP_DIR = None
 
 async def masternode_refresh():
     while True:
-        await asyncio.sleep(10)
         refresh_masternode_list()
+        await asyncio.sleep(10)
 
 
 def run_event_loop():
@@ -55,5 +55,5 @@ if __name__ == '__main__':
     db.init(os.path.join(app_dir, WALLET_DATABASE_FILE))
     # if not os.path.exists(os.path.join(APP_DIR, WALLET_DATABASE_FILE)):
     create_tables()
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     run_event_loop()
