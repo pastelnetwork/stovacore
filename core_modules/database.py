@@ -7,7 +7,7 @@ from peewee import (Model, SqliteDatabase, BlobField, DateTimeField, DecimalFiel
 from cnode_connection import get_blockchain_connection
 from core_modules.helpers import bytes_to_chunkid
 from core_modules.rpc_client import RPCClient
-from core_modules.settings import NetWorkSettings
+from core_modules.settings import Settings
 from core_modules.ticket_models import RegistrationTicket, Signature
 
 MASTERNODE_DB = SqliteDatabase(None)
@@ -49,7 +49,7 @@ class Regticket(Model):
         ticket = RegistrationTicket(serialized=self.regticket)
         current_block = get_blockchain_connection().getblockcount()
         # verify if confirmation receive for 5 blocks or less from regticket creation.
-        if current_block - ticket.blocknum > NetWorkSettings.MAX_CONFIRMATION_DISTANCE_IN_BLOCKS:
+        if current_block - ticket.blocknum > Settings.MAX_CONFIRMATION_DISTANCE_IN_BLOCKS:
             self.status = REGTICKET_STATUS_ERROR
             error_msg = 'Second confirmation received too late - current block {}, regticket block: {}'. \
                 format(current_block, ticket.blocknum)
@@ -145,7 +145,7 @@ class ChunkMnDistance(Model):
 
 class ChunkMnRanked(Model):
     """
-    Table for keeping top `NetWorkSettings.REPLICATION_FACTOR` masternodes for each chunk.
+    Table for keeping top `Settings.REPLICATION_FACTOR` masternodes for each chunk.
     Content is completely removed and recalculated on each MN add/remove.
     Content is added when new chunks added.
     """

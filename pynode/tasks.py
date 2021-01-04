@@ -12,7 +12,7 @@ from core_modules.logger import initlogging
 from core_modules.chunkmanager import get_chunkmanager
 from core_modules.ticket_models import RegistrationTicket
 from core_modules.rpc_client import RPCException
-from core_modules.settings import NetWorkSettings
+from core_modules.settings import Settings
 from core_modules.helpers import get_pynode_digest_int, chunkid_to_hex
 from cnode_connection import get_blockchain_connection
 
@@ -213,10 +213,10 @@ def recalculate_mn_chunk_ranking_table():
     from chunkmndistance
     '''
 
-    # leave only top `NetWorkSettings.REPLICATION_FACTOR` masternodes (which are considered as chunk owners).
+    # leave only top `Settings.REPLICATION_FACTOR` masternodes (which are considered as chunk owners).
     sql = '''select chunk_id, masternode_id, r from ({}) as t where t.r<={}'''.format(
         subquery,
-        NetWorkSettings.REPLICATION_FACTOR
+        Settings.REPLICATION_FACTOR
     )
 
     # delete old rows
@@ -340,7 +340,7 @@ async def fetch_chunk_and_store_it(chunkid):
 
 
 async def chunk_fetcher_task_body(pastel_id=None):
-    missing_chunks = get_missing_chunk_ids(pastel_id)[:NetWorkSettings.CHUNK_FETCH_PARALLELISM]
+    missing_chunks = get_missing_chunk_ids(pastel_id)[:Settings.CHUNK_FETCH_PARALLELISM]
     tasks = []
     for missing_chunk in missing_chunks:
         tasks.append(fetch_chunk_and_store_it(missing_chunk))

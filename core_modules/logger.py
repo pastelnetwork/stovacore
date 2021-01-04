@@ -28,15 +28,17 @@ def initlogging(logger_name, module, level="error"):
         else:
             raise ValueError("Invalid level: %s" % level)
 
+        formatter = logging.Formatter(' %(asctime)s - ' + name + ' - %(levelname)s - %(message)s')
+
         # use file handler for pyNode and console handler for wallet
         if os.environ.get('PYNODE_MODE') == 'WALLET':
-            formatter = logging.Formatter(' %(asctime)s - ' + name + ' - %(levelname)s - %(message)s')
-            consolehandler = logging.StreamHandler()
-            consolehandler.setFormatter(formatter)
-            logger.addHandler(consolehandler)
+            console_handler = logging.StreamHandler()
+            console_handler.setFormatter(formatter)
+            logger.addHandler(console_handler)
         else:
             # total maximum 5 files up to 100MB each
             file_handler = logging.handlers.RotatingFileHandler(LOG_FILENAME, maxBytes=100 * 1024 * 1024, backupCount=5)
+            file_handler.setFormatter(formatter)
             logger.addHandler(file_handler)
 
         # record this logger

@@ -1,15 +1,15 @@
 import subprocess
 
 from core_modules.logger import initlogging
-from core_modules.settings import NetWorkSettings
+from core_modules.settings import Settings
 
 
 class JailedImageParser:
     def __init__(self, file_data):
         self.__logger = initlogging('', __name__)
 
-        if len(file_data) > NetWorkSettings.IMAGE_MAX_SIZE:
-            raise ValueError("File is larger than NetWorkSettings.IMAGE_MAX_SIZE (%s)" % NetWorkSettings.IMAGE_MAX_SIZE)
+        if len(file_data) > Settings.IMAGE_MAX_SIZE:
+            raise ValueError("File is larger than Settings.IMAGE_MAX_SIZE (%s)" % Settings.IMAGE_MAX_SIZE)
 
         self.file_data = file_data
 
@@ -29,7 +29,7 @@ class JailedImageParser:
 
     def __call_jailed_converter(self):
         # make this use popen
-        process = subprocess.Popen(NetWorkSettings.IMAGEPARSERCMDLINE, bufsize=0, stdin=subprocess.PIPE,
+        process = subprocess.Popen(Settings.IMAGEPARSERCMDLINE, bufsize=0, stdin=subprocess.PIPE,
                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True, shell=False)
         outbuf, errbuf = b'', b''
         # start = dt.now()
@@ -37,9 +37,9 @@ class JailedImageParser:
             # TODO: time out subprocess after X seconds
             # now = dt.now()
             # delta = (now-start).total_seconds()
-            # if delta > NetWorkSettings.IMAGE_PARSER_TIMEOUT_SECONDS:
+            # if delta > Settings.IMAGE_PARSER_TIMEOUT_SECONDS:
             #     raise RuntimeError("Image parser took longer than %s: %s" % (
-            #         NetWorkSettings.IMAGE_PARSER_TIMEOUT_SECONDS, delta))
+            #         Settings.IMAGE_PARSER_TIMEOUT_SECONDS, delta))
 
             # TODO: this can DoS us, since async communication is not possible and direct reading/writing from
             # process.stdout/stderr can result in deadlocks according to the documentation.

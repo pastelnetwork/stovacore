@@ -11,7 +11,7 @@ from core_modules.blackbox_modules.helpers import sleep_rand
 from core_modules.helpers import get_pynode_digest_bytes, get_pynode_digest_bytes_base64
 from core_modules.helpers_type import ensure_type, ensure_type_of_field
 from core_modules.helpers import require_true
-from core_modules.settings import NetWorkSettings
+from core_modules.settings import Settings
 from cnode_connection import get_blockchain_connection
 
 MAX_SUPPORTED_VERSION = 1
@@ -98,9 +98,9 @@ class RPCMessage:
 
     @staticmethod
     def reconstruct(serialized: bytes) -> 'RPCMessage':
-        if len(serialized) > NetWorkSettings.RPC_MSG_SIZELIMIT:
+        if len(serialized) > Settings.RPC_MSG_SIZELIMIT:
             raise ValueError("Message is too large: %s > %s" % (len(serialized),
-                                                                NetWorkSettings.RPC_MSG_SIZELIMIT))
+                                                                Settings.RPC_MSG_SIZELIMIT))
 
         container = msgpack.unpackb(serialized, ext_hook=ext_hook, raw=False)
         if not validate_container_format(container):

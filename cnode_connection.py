@@ -3,8 +3,9 @@ import time
 import bitcoinrpc
 from core_modules.blockchain import BlockChain
 from core_modules.logger import initlogging
+from core_modules.settings import Settings
 
-global_logger = initlogging(int(0), __name__)
+global_logger = initlogging(int(0), __name__, Settings.LOG_LEVEL)
 
 #  global blockchain connection object, used for cNode communication
 _blockchain = None
@@ -16,19 +17,12 @@ def connect_to_blockchain_daemon():
 
     while True:
         if pastelid and passphrase:  # running a wallet
-            blockchain = BlockChain(user='rt',
-                                    password='rt',
-                                    ip='127.0.0.1',
-                                    rpcport=19932,
-                                    pastelid=pastelid,
-                                    passphrase=passphrase
-                                    )
+            blockchain = BlockChain(Settings.CNODE_RPC_USER, Settings.CNODE_RPC_PWD,
+                                    Settings.CNODE_RPC_IP, Settings.CNODE_RPC_PORT,
+                                    pastelid=pastelid, passphrase=passphrase)
         else:  # running a node
-            blockchain = BlockChain(user='rt',
-                                    password='rt',
-                                    ip='127.0.0.1',
-                                    rpcport=19932
-                                    )
+            blockchain = BlockChain(Settings.CNODE_RPC_USER, Settings.CNODE_RPC_PWD,
+                                    Settings.CNODE_RPC_IP, Settings.CNODE_RPC_PORT)
 
         try:
             blockchain.getwalletinfo()

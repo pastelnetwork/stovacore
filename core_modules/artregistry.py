@@ -1,6 +1,6 @@
 from core_modules.logger import initlogging
 from core_modules.helpers import require_true
-from core_modules.settings import NetWorkSettings
+from core_modules.settings import Settings
 from cnode_connection import get_blockchain_connection
 
 
@@ -49,7 +49,7 @@ class Match:
 
         # these two variables mark the block numbers in between which this match is considered valid
         self.lockstart = lockstart
-        self.lockend = lockstart + NetWorkSettings.TICKET_MATCH_EXPIRY
+        self.lockend = lockstart + Settings.TICKET_MATCH_EXPIRY
 
     def __str__(self):
         return "art: %s, bid: %s, ask: %s" % (self.artid.hex(), self.bid, self.ask)

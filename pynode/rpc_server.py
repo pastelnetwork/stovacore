@@ -4,15 +4,14 @@ from aiohttp import web
 
 from core_modules.logger import initlogging
 from core_modules.rpc_serialization import RPCMessage
-from core_modules.settings import NetWorkSettings
+from core_modules.settings import Settings
 from pynode.rpc_handlers import receive_rpc_fetchchunk, receive_rpc_download_image, receive_rpc_download_thumbnail
 
 
 class RPCServer:
     def __init__(self):
-        self.__logger = initlogging('', __name__)
+        self.__logger = initlogging('', __name__, Settings.LOG_LEVEL)
 
-        self.port = 4444
         self.runner = None
         self.site = None
 
@@ -22,7 +21,7 @@ class RPCServer:
         self.app.add_routes([web.post('/', self.__http_proccess)])
         # self.app.on_shutdown.append(self.stop_server)
 
-        self.__logger.debug("RPC listening on {}".format(self.port))
+        self.__logger.debug("RPC listening on {}".format(Settings.RPC_PORT))
 
         self.add_callback("PING_REQ", "PING_RESP", self.__receive_rpc_ping)
         self.add_callback("SQL_REQ", "SQL_RESP", self.__receive_rpc_sql)
@@ -109,9 +108,9 @@ class RPCServer:
         await self.runner.setup()
 
         ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-        ssl_context.load_cert_chain(NetWorkSettings.HTTPS_CERTIFICATE_FILE,
-                                    NetWorkSettings.HTTPS_KEY_FILE)
-        self.site = web.TCPSite(self.runner, port=self.port, ssl_context=ssl_context)
+        ssl_context.load_cert_chain(Settings.HTTPS_CERTIFICATE_FILE,
+                                    Settings.HTTPS_KEY_FILE)
+        self.site = web.TCPSite(self.runner, port=Settings.RPC_PORT, ssl_context=ssl_context)
         await self.site.start()
 
     async def stop_server(self, *args, **kwargs):

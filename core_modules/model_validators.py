@@ -2,7 +2,7 @@ import io
 
 from PIL import Image
 
-from .settings import NetWorkSettings
+from .settings import Settings
 
 
 class FieldValidator:
@@ -119,8 +119,8 @@ class FingerprintField(ContainerWithElementValidator):
     element_validator = FloatField(minsize=-1000, maxsize=1000)
 
     def __init__(self):
-        super().__init__(NetWorkSettings.DUPE_DETECTION_FINGERPRINT_SIZE,
-                         NetWorkSettings.DUPE_DETECTION_FINGERPRINT_SIZE)
+        super().__init__(Settings.DUPE_DETECTION_FINGERPRINT_SIZE,
+                         Settings.DUPE_DETECTION_FINGERPRINT_SIZE)
 
 
 class ImageTypeValidatorField(LengthValidator):
@@ -140,12 +140,12 @@ class ImageTypeValidatorField(LengthValidator):
 
 class ImageField(ImageTypeValidatorField):
     def __init__(self):
-        super().__init__(1, NetWorkSettings.IMAGE_MAX_SIZE)
+        super().__init__(1, Settings.IMAGE_MAX_SIZE)
 
 
 class ThumbnailField(ImageTypeValidatorField):
     def __init__(self):
-        super().__init__(1, NetWorkSettings.THUMBNAIL_MAX_SIZE)
+        super().__init__(1, Settings.THUMBNAIL_MAX_SIZE)
 
 
 class BytesField(LengthValidator):
@@ -202,7 +202,7 @@ class LubyChunkHashField(ContainerWithElementValidator):
     element_validator = SHA3512Field()
 
     def __init__(self):
-        super().__init__(1, NetWorkSettings.MAX_LUBY_CHUNKS)
+        super().__init__(1, Settings.MAX_LUBY_CHUNKS)
 
 
 class LubySeedField(ContainerWithElementValidator):
@@ -210,12 +210,12 @@ class LubySeedField(ContainerWithElementValidator):
     element_validator = IntegerField(minsize=0, maxsize=2**32-1)
 
     def __init__(self):
-        super().__init__(1, NetWorkSettings.MAX_LUBY_CHUNKS)
+        super().__init__(1, Settings.MAX_LUBY_CHUNKS)
 
 
 class LubyChunkField(ContainerWithElementValidator):
     container_type = list
-    element_validator = BytesField(minsize=1, maxsize=NetWorkSettings.CHUNKSIZE)
+    element_validator = BytesField(minsize=1, maxsize=Settings.CHUNKSIZE)
 
     def __init__(self):
-        super().__init__(1, NetWorkSettings.MAX_LUBY_CHUNKS)
+        super().__init__(1, Settings.MAX_LUBY_CHUNKS)

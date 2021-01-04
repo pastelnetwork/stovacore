@@ -14,7 +14,7 @@ from core_modules.model_validators import FieldValidator, StringField, IntegerFi
     LubyChunkHashField, LubyChunkField, ImageField, ThumbnailField, TXIDField, UUIDField, SignatureField, \
     PastelIDField, LubySeedField, BlockChainAddressField, UnixTimeField
 
-from core_modules.settings import NetWorkSettings
+from core_modules.settings import Settings
 
 from core_modules.blackbox_modules import luby
 
@@ -173,14 +173,14 @@ class ImageData(TicketModelBase):
 
     def generate_fingerprints(self):
         from utils.dupe_detection import DupeDetector
-        fingerprints = DupeDetector(NetWorkSettings.DUPE_DETECTION_MODELS,
-                                    NetWorkSettings.DUPE_DETECTION_TARGET_SIZE).compute_deep_learning_features(
+        fingerprints = DupeDetector(Settings.DUPE_DETECTION_MODELS,
+                                    Settings.DUPE_DETECTION_TARGET_SIZE).compute_deep_learning_features(
             self.image)
         return fingerprints
 
     @staticmethod
     def generate_luby_chunks(imagedata, seeds=None):
-        chunks = luby.encode(NetWorkSettings.LUBY_REDUNDANCY_FACTOR, NetWorkSettings.CHUNKSIZE, imagedata, seeds)
+        chunks = luby.encode(Settings.LUBY_REDUNDANCY_FACTOR, Settings.CHUNKSIZE, imagedata, seeds)
 
         # test that the chunks are correct
         luby.verify_blocks(chunks)
@@ -191,7 +191,7 @@ class ImageData(TicketModelBase):
     def generate_thumbnail(imagedata):
         imagefile = io.BytesIO(imagedata)
         image = Image.open(imagefile)
-        image.thumbnail(NetWorkSettings.THUMBNAIL_DIMENSIONS)
+        image.thumbnail(Settings.THUMBNAIL_DIMENSIONS)
 
         with io.BytesIO() as output:
             # we use optimize=False to generate the same output every time
@@ -268,7 +268,7 @@ class RegistrationTicket(TicketModelBase):
         # validate that order txid is not too old
         block_distance = get_block_distance(get_blockchain_connection().getbestblockhash(),
                                             self.order_block_txid)
-        if block_distance > NetWorkSettings.MAX_REGISTRATION_BLOCK_DISTANCE:
+        if block_distance > Settings.MAX_REGISTRATION_BLOCK_DISTANCE:
             raise ValueError("Block distance between order_block_height and current block is too large!")
         # validate that art hash doesn't exist:
         # TODO: move this artwork index logic into chainwrapper
@@ -277,7 +277,7 @@ class RegistrationTicket(TicketModelBase):
         # validate that fingerprints are not dupes
         if len(fingerprint_db) > 0:
             # TODO: check for fingerprint dupes
-            if NetWorkSettings.DUPE_DETECTION_ENABLED:
+            if Settings.DUPE_DETECTION_ENABLED:
                 pandas_table = assemble_fingerprints_for_pandas([(k, v) for k, v in fingerprint_db.items()])
                 is_duplicate, params_df = measure_similarity(self.fingerprints, pandas_table)
                 if is_duplicate:

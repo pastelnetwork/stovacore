@@ -2,7 +2,7 @@
 
 import unittest
 
-from core_modules.model_validators import NetWorkSettings
+from core_modules.model_validators import Settings
 from core_modules.model_validators import FingerprintField, LubyChunkField, LubyChunkHashField, LubySeedField, \
     ImageField, ThumbnailField, BytesField, StringField, StringChoiceField, IntegerField, SHA2256Field, SHA3512Field, \
     TXIDField, SignatureField, PubkeyField, BlockChainAddressField, UnixTimeField, NotImplementedType, \
@@ -20,31 +20,31 @@ class TestFingerprintField(unittest.TestCase):
 
     def test_length_min(self):
         with self.assertRaises(ValueError):
-            data = [0.0 for _ in range(NetWorkSettings.DUPE_DETECTION_FINGERPRINT_SIZE - 1)]
+            data = [0.0 for _ in range(Settings.DUPE_DETECTION_FINGERPRINT_SIZE - 1)]
             self.v.validate(data)
 
     def test_length_max(self):
         with self.assertRaises(ValueError):
-            data = [0.0 for _ in range(NetWorkSettings.DUPE_DETECTION_FINGERPRINT_SIZE + 1)]
+            data = [0.0 for _ in range(Settings.DUPE_DETECTION_FINGERPRINT_SIZE + 1)]
             self.v.validate(data)
 
     def test_innertype(self):
         with self.assertRaises(TypeError):
-            data = [0 for _ in range(NetWorkSettings.DUPE_DETECTION_FINGERPRINT_SIZE)]
+            data = [0 for _ in range(Settings.DUPE_DETECTION_FINGERPRINT_SIZE)]
             self.v.validate(data)
 
     def test_innermin(self):
         with self.assertRaises(ValueError):
-            data = [-1000000.0 for _ in range(NetWorkSettings.DUPE_DETECTION_FINGERPRINT_SIZE)]
+            data = [-1000000.0 for _ in range(Settings.DUPE_DETECTION_FINGERPRINT_SIZE)]
             self.v.validate(data)
 
     def test_innermax(self):
         with self.assertRaises(ValueError):
-            data = [1000000.0 for _ in range(NetWorkSettings.DUPE_DETECTION_FINGERPRINT_SIZE)]
+            data = [1000000.0 for _ in range(Settings.DUPE_DETECTION_FINGERPRINT_SIZE)]
             self.v.validate(data)
 
     def test_valid(self):
-        data = [133.7 for _ in range(NetWorkSettings.DUPE_DETECTION_FINGERPRINT_SIZE)]
+        data = [133.7 for _ in range(Settings.DUPE_DETECTION_FINGERPRINT_SIZE)]
         self.v.validate(data)
 
 
@@ -63,7 +63,7 @@ class TestLubyChunkField(unittest.TestCase):
 
     def test_len_max(self):
         with self.assertRaises(ValueError):
-            data = [1234 for _ in range(NetWorkSettings.MAX_LUBY_CHUNKS + 1)]
+            data = [1234 for _ in range(Settings.MAX_LUBY_CHUNKS + 1)]
             self.v.validate(data)
 
     def test_innertype(self):
@@ -78,7 +78,7 @@ class TestLubyChunkField(unittest.TestCase):
 
     def test_innermax(self):
         with self.assertRaises(ValueError):
-            data = [b'X' * (NetWorkSettings.CHUNKSIZE + 1)]
+            data = [b'X' * (Settings.CHUNKSIZE + 1)]
             self.v.validate(data)
 
     def test_valid(self):
@@ -101,7 +101,7 @@ class TestLubyChunkHashField(unittest.TestCase):
 
     def test_len_max(self):
         with self.assertRaises(ValueError):
-            data = [1234 for _ in range(NetWorkSettings.MAX_LUBY_CHUNKS + 1)]
+            data = [1234 for _ in range(Settings.MAX_LUBY_CHUNKS + 1)]
             self.v.validate(data)
 
     def test_innertype(self):
@@ -139,7 +139,7 @@ class TestLubySeedField(unittest.TestCase):
 
     def test_len_max(self):
         with self.assertRaises(ValueError):
-            data = [1234 for _ in range(NetWorkSettings.MAX_LUBY_CHUNKS + 1)]
+            data = [1234 for _ in range(Settings.MAX_LUBY_CHUNKS + 1)]
             self.v.validate(data)
 
     def test_innertype(self):
@@ -195,12 +195,12 @@ class TestImageField(unittest.TestCase):
             self.v.validate(data)
 
     def test_max(self):
-        data = b'A' * (NetWorkSettings.IMAGE_MAX_SIZE + 1)
+        data = b'A' * (Settings.IMAGE_MAX_SIZE + 1)
         with self.assertRaises(ValueError):
             self.v.validate(data)
 
     def test_invalid_image(self):
-        data = b'B' * NetWorkSettings.IMAGE_MAX_SIZE
+        data = b'B' * Settings.IMAGE_MAX_SIZE
         with self.assertRaises(OSError):
             self.v.validate(data)
 
@@ -224,12 +224,12 @@ class TestThumbnailField(unittest.TestCase):
             self.v.validate(data)
 
     def test_max(self):
-        data = b'A' * (NetWorkSettings.THUMBNAIL_MAX_SIZE + 1)
+        data = b'A' * (Settings.THUMBNAIL_MAX_SIZE + 1)
         with self.assertRaises(ValueError):
             self.v.validate(data)
 
     def test_invalid_image(self):
-        data = b'D' * NetWorkSettings.THUMBNAIL_MAX_SIZE
+        data = b'D' * Settings.THUMBNAIL_MAX_SIZE
         with self.assertRaises(OSError):
             self.v.validate(data)
 

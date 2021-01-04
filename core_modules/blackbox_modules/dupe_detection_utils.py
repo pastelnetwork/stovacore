@@ -1,7 +1,7 @@
 import multiprocessing
 import pandas as pd
 
-from ..settings import NetWorkSettings
+from ..settings import Settings
 from .statistics import calculate_spearmans_rho, calculate_kendalls_tau, calculate_bootstrapped_hoeffdings
 
 
@@ -9,12 +9,12 @@ NUM_WORKERS = int(round(multiprocessing.cpu_count() / 2))
 
 
 def measure_similarity(combined_fingerprint, fingerprint_table):
-    spearman_thresh = NetWorkSettings.DUPE_DETECTION_SPEARMAN_THRESHOLD
-    kendall_thresh = NetWorkSettings.DUPE_DETECTION_KENDALL_THRESHOLD
-    hoeffding_thresh = NetWorkSettings.DUPE_DETECTION_HOEFFDING_THRESHOLD
-    strictness = NetWorkSettings.DUPE_DETECTION_STRICTNESS
-    kendall_max = NetWorkSettings.DUPE_DETECTION_KENDALL_MAX
-    hoeffding_max = NetWorkSettings.DUPE_DETECTION_HOEFFDING_MAX
+    spearman_thresh = Settings.DUPE_DETECTION_SPEARMAN_THRESHOLD
+    kendall_thresh = Settings.DUPE_DETECTION_KENDALL_THRESHOLD
+    hoeffding_thresh = Settings.DUPE_DETECTION_HOEFFDING_THRESHOLD
+    strictness = Settings.DUPE_DETECTION_STRICTNESS
+    kendall_max = Settings.DUPE_DETECTION_KENDALL_MAX
+    hoeffding_max = Settings.DUPE_DETECTION_HOEFFDING_MAX
 
     is_duplicate = False
 

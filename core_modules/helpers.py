@@ -1,12 +1,12 @@
 import base64
 import random
 
-from .settings import NetWorkSettings
+from .settings import Settings
 
-CNODE_HASH_ALGO = NetWorkSettings.CNODE_HASH_ALGO
-PYNODE_HASH_ALGO = NetWorkSettings.PYNODE_HASH_ALGO
-SHA2_HEXFORMAT = "%0" + str(NetWorkSettings.CNODE_HEX_DIGEST_SIZE) + "x"
-SHA3_HEXFORMAT = "%0" + str(NetWorkSettings.PYNODE_HEX_DIGEST_SIZE) + "x"
+CNODE_HASH_ALGO = Settings.CNODE_HASH_ALGO
+PYNODE_HASH_ALGO = Settings.PYNODE_HASH_ALGO
+SHA2_HEXFORMAT = "%0" + str(Settings.CNODE_HEX_DIGEST_SIZE) + "x"
+SHA3_HEXFORMAT = "%0" + str(Settings.PYNODE_HEX_DIGEST_SIZE) + "x"
 
 
 def getrandbytes(n):

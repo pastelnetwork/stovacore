@@ -4,6 +4,7 @@ import signal
 from core_modules.artregistry import ArtRegistry
 from core_modules.autotrader import AutoTrader
 from core_modules.masternode_ticketing import ArtRegistrationServer
+from core_modules.settings import Settings
 from pynode.rpc_server import RPCServer
 from core_modules.logger import initlogging
 
@@ -24,7 +25,7 @@ class MasterNodeDaemon:
     """
     def __init__(self):
         # initialize logging
-        self.__logger = initlogging(int(0), __name__)
+        self.__logger = initlogging(int(0), __name__, Settings.LOG_LEVEL)
         self.__logger.debug("Started logger")
         self.rpcserver = RPCServer()
 

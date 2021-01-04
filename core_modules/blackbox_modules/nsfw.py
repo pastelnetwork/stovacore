@@ -1,10 +1,10 @@
-from core_modules.settings import NetWorkSettings
+from core_modules.settings import Settings
 
 
 class __NSFWDetector:
     def __init__(self):
         import tensorflow as tf
-        with tf.gfile.FastGFile(NetWorkSettings.NSFW_MODEL_FILE, 'rb') as f:  # Unpersists graph from file
+        with tf.gfile.FastGFile(Settings.NSFW_MODEL_FILE, 'rb') as f:  # Unpersists graph from file
             self.__nsfw_graph = tf.GraphDef()
             self.__nsfw_graph.ParseFromString(f.read())
         tf.import_graph_def(self.__nsfw_graph, name='')
@@ -26,7 +26,7 @@ class __NSFWDetector:
             return image_nsfw_score
 
     def is_nsfw(self, image_data):
-        return self.get_score(image_data) > NetWorkSettings.NSFW_THRESHOLD
+        return self.get_score(image_data) > Settings.NSFW_THRESHOLD
 
 
 _NSFWDetector = None
