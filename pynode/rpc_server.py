@@ -1,7 +1,9 @@
 import ssl
+from os import path
 
 from aiohttp import web
 
+from core_modules.database import Masternode
 from core_modules.logger import initlogging
 from core_modules.rpc_serialization import RPCMessage
 from core_modules.settings import Settings
@@ -10,7 +12,7 @@ from pynode.rpc_handlers import receive_rpc_fetchchunk, receive_rpc_download_ima
 
 class RPCServer:
     def __init__(self):
-        self.__logger = initlogging('', __name__, Settings.LOG_LEVEL)
+        self.__logger = initlogging('RPC Server', __name__)
 
         self.runner = None
         self.site = None
@@ -18,13 +20,16 @@ class RPCServer:
         # define our RPCs
         self.__RPCs = {}
         self.app = web.Application()
-        self.app.add_routes([web.post('/', self.__http_proccess)])
+        self.app.add_routes([web.post('/', self.__http_proccess), web.get('/status', self.get_status)])
         # self.app.on_shutdown.append(self.stop_server)
 
-        self.__logger.debug("RPC listening on {}".format(Settings.RPC_PORT))
+        self.__logger.debug("Starting RPC to listen on {}".format(Settings.RPC_PORT))
 
+        # MUST be removed before release -->
         self.add_callback("PING_REQ", "PING_RESP", self.__receive_rpc_ping)
         self.add_callback("SQL_REQ", "SQL_RESP", self.__receive_rpc_sql)
+        # <--
+
         self.add_callback("FETCHCHUNK_REQ", "FETCHCHUNK_RESP",
                           receive_rpc_fetchchunk)
         self.add_callback("IMAGEDOWNLOAD_REQ", "IMAGEDOWNLOAD_RESP",
@@ -33,14 +38,21 @@ class RPCServer:
         self.add_callback("THUMBNAIL_DOWNLOAD_REQ", "THUMBNAIL_DOWNLOAD_RESP",
                           receive_rpc_download_thumbnail)
 
+        self.__logger.debug("RPC Server initialized")
+
     def add_callback(self, callback_req, callback_resp, callback_function, coroutine=False, allowed_pubkey=None):
         self.__RPCs[callback_req] = [callback_resp, callback_function, coroutine, allowed_pubkey]
+
+    async def get_status(self, request):
+        self.__logger.info('Status request received')
+        masternodes = list(Masternode.get_active_nodes())
+        result = { "status": "alive", "details": {"masternode_count": len(masternodes)}}
+        return web.json_response(result)
 
     def __receive_rpc_ping(self, data, *args, **kwargs):
         self.__logger.info('Ping request received')
         if not isinstance(data, bytes):
             raise TypeError("Data must be a bytes!")
-
         return {"data": data}
 
     def __receive_rpc_sql(self, sql, *args, **kwargs):
@@ -104,6 +116,13 @@ class RPCServer:
         return web.Response(body=reply_packet)
 
     async def run_server(self):
+        if not path.exists(Settings.HTTPS_CERTIFICATE_FILE):
+            print("ERROR! HTTPS Certificate file doesn't exist - {0}", Settings.HTTPS_CERTIFICATE_FILE)
+            raise SystemExit('Exiting')
+        if not path.exists(Settings.HTTPS_KEY_FILE):
+            print("ERROR! HTTPS Certificate Key file doesn't exist - {0}", Settings.HTTPS_KEY_FILE)
+            raise SystemExit('Exiting')
+
         self.runner = web.AppRunner(self.app)
         await self.runner.setup()
 

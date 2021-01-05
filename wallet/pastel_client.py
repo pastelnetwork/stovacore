@@ -35,7 +35,7 @@ def masternodes_by_distance_from_image(image_hash):
 class PastelClient:
     def __init__(self, pastelid, passphrase):
 
-        self.__logger = initlogging('Wallet interface', __name__, level='warning')
+        self.__logger = initlogging('Wallet interface', __name__)
 
         self.pastelid = pastelid
         self.passphrase = passphrase

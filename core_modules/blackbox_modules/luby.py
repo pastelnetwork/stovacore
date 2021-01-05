@@ -11,7 +11,7 @@ from core_modules.logger import initlogging
 HEADER_PATTERN = '<3I32s'
 HEADER_LENGTH = struct.calcsize(HEADER_PATTERN)
 
-luby_logger = initlogging('Logger', __name__)
+luby_logger = initlogging('Lubby', __name__)
 
 
 class NotEnoughChunks(Exception):

@@ -1,10 +1,10 @@
 from core_modules.blackbox_modules import luby
 from core_modules.chunkmanager import get_chunkmanager
-from core_modules.database import Chunk, ChunkMnRanked
+from core_modules.database import Chunk, ChunkMnRanked, Masternode
 from core_modules.helpers import hex_to_chunkid
 from core_modules.logger import initlogging
 
-rpc_handler_logger = initlogging('RPCHandlerLogger', __name__)
+rpc_handler_logger = initlogging('RPC Handler', __name__)
 
 
 def receive_rpc_fetchchunk(data, **kwargs):

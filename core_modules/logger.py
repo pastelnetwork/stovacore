@@ -2,12 +2,14 @@ import logging
 import logging.handlers
 import os
 
+from core_modules.settings import Settings
+
 loggers = {}
 
 LOG_FILENAME = 'pynode.log'
 
 
-def initlogging(logger_name, module, level="error"):
+def initlogging(logger_name, module, level=Settings.LOG_LEVEL):
     name = "%s - %s" % (logger_name, module)
 
     # TODO: perhaps this can be done in a more elegant way?
@@ -43,5 +45,7 @@ def initlogging(logger_name, module, level="error"):
 
         # record this logger
         loggers[name] = logger
+
+        logger.debug("%s Logger started" % logger_name)
 
     return logger

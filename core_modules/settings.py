@@ -114,17 +114,20 @@ Settings.DUPE_DETECTION_HOEFFDING_MAX = 0
 
 Settings.RPC_PORT = '4444'
 
-Settings.HTTPS_KEY_FILE = Settings.BASEDIR + '/privkey.pem'
-Settings.HTTPS_CERTIFICATE_FILE = Settings.BASEDIR + '/certificate.pem'
+Settings.CHUNK_DATA_DIR = os.path.join(Settings.BASEDIR, "chunkdata")
+Settings.TEMP_STORAGE_DIR = os.path.join(Settings.BASEDIR, "tmpstorage")
 
-Settings.MN_DATABASE_FILE = Settings.BASEDIR + '/masternode.db'
+Settings.HTTPS_KEY_FILE = os.path.join(Settings.BASEDIR, 'privkey.pem')
+Settings.HTTPS_CERTIFICATE_FILE = os.path.join(Settings.BASEDIR, 'certificate.pem')
+
+Settings.MN_DATABASE_FILE = os.path.join(Settings.BASEDIR, 'masternode.db')
 Settings.LONG_REGTICKET_VALIDATION_ENABLED = False
 
 # FIXME: change to more appropriate for production usage value
 Settings.MAX_CONFIRMATION_DISTANCE_IN_BLOCKS = 2000
 
 Settings.CNODE_DIR = "/home/alexey/.pastel"
-Settings.CNODE_CONFIG_FILE = "pastel.conf"
+Settings.CNODE_CONFIG_FILE = os.path.join(Settings.CNODE_DIR, "pastel.conf")
 Settings.CNODE_RPC_USER = 'rt'
 Settings.CNODE_RPC_PWD = 'rt'
 Settings.CNODE_RPC_IP = '127.0.0.1'

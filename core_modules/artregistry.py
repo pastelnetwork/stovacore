@@ -92,12 +92,14 @@ class Match:
 
 class ArtRegistry:
     def __init__(self):
-        self.__logger = initlogging('', __name__)
+        self.__logger = initlogging('Art Registry', __name__)
         self.__artworks = {}
         self.__tickets = {}
         self.__owners = {}
         self.__matches = []
         self.__current_block_height = None
+
+        self.__logger.debug("Art Registry initialized")
 
     def __unlock_match(self, match, success):
         match.unlock(success=success, current_block_height=self.__current_block_height)

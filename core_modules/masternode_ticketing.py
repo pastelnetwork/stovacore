@@ -19,7 +19,7 @@ from .ticket_models import RegistrationTicket, Signature, ImageData
 from core_modules.helpers import require_true, bytes_to_chunkid
 from core_modules.logger import initlogging
 
-mn_ticket_logger = initlogging('Logger', __name__)
+mn_ticket_logger = initlogging('Ticket Manager', __name__)
 
 
 async def is_burn_10_tx_height_valid(regticket, txid):
@@ -132,6 +132,7 @@ def masternode_place_image_data_in_chunkstorage(regticket, regticket_image_data)
 class ArtRegistrationServer:
     def __init__(self):
         self.__chunkmanager = get_chunkmanager()
+        mn_ticket_logger.debug("Art Registration Server initialized")
 
     def __generate_signed_ticket(self, ticket):
 

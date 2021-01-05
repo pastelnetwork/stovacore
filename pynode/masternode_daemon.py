@@ -25,8 +25,8 @@ class MasterNodeDaemon:
     """
     def __init__(self):
         # initialize logging
-        self.__logger = initlogging(int(0), __name__, Settings.LOG_LEVEL)
-        self.__logger.debug("Started logger")
+        self.__logger = initlogging('Masternode Daemon', __name__)
+
         self.rpcserver = RPCServer()
 
         # legacy entities. Review and delete if not required
@@ -37,8 +37,13 @@ class MasterNodeDaemon:
 
         for rpc_handler in self.__artregistrationserver.rpc_handler_list:
             self.rpcserver.add_callback(*rpc_handler)
+        self.__logger.debug("Art Registration callback handlers set")
+
+        self.__logger.debug("Masternode Daemon initialized")
 
     def run_event_loop(self):
+        self.__logger.debug("Starting event loop...")
+
         # start async loops
         loop = asyncio.get_event_loop()
 
@@ -46,19 +51,26 @@ class MasterNodeDaemon:
         loop.add_signal_handler(signal.SIGTERM, loop.stop)
 
         loop.create_task(self.rpcserver.run_server())
+        self.__logger.debug("RPC server started")
+
         loop.create_task(chunk_fetcher_task())
+        self.__logger.debug("Chunk fetcher started")
 
         # refresh masternode list, calculate XOR distances for added masternode
         loop.create_task(masternodes_refresh_task())
+        self.__logger.debug("Masternode refresh task started")
 
         # calculate XOR distances for new chunks
         loop.create_task(index_new_chunks_task())
+        self.__logger.debug("Chunk indexer started")
 
         # fetch new activation tickets, process chunks from there
         loop.create_task(process_new_tickets_task())
+        self.__logger.debug("Ticket processor started")
 
         # go through temp storage, move confirmed chunks to persistent one
         loop.create_task(proccess_tmp_storage())
+        self.__logger.debug("Storage processor started")
 
         try:
             loop.run_forever()

@@ -16,7 +16,7 @@ from core_modules.settings import Settings
 from core_modules.helpers import get_pynode_digest_int, chunkid_to_hex
 from cnode_connection import get_blockchain_connection
 
-mnl_logger = initlogging('', __name__)
+tasks_logger = initlogging('Tasks', __name__)
 
 TXID_LENGTH = 64
 
@@ -49,6 +49,8 @@ def update_masternode_list():
     #     Masternode.delete().where(Masternode.pastel_id.in_(removed_pastelids)).execute()
 
     if len(added_pastelids):
+        tasks_logger.warn('Got new Masternodes. Adding to the list')
+
         data_for_insert = [{'pastel_id': pastelid, 'ext_address': fresh_mn_list[pastelid]} for pastelid in
                            added_pastelids]
         Masternode.insert(data_for_insert).execute()
@@ -141,13 +143,21 @@ def get_and_proccess_new_activation_tickets():
     # FIXME: use `height` param when it will be implemented on cNode
     act_tickets_txids = get_blockchain_connection().list_tickets('act')  # list
 
+    if act_tickets_txids is None:
+        return
+
+    tasks_logger.warn('Get new activation tickets')
+
     for txid in filter(lambda x: len(x) == TXID_LENGTH, act_tickets_txids):
         if ActivationTicket.select().where(ActivationTicket.txid == txid).count() != 0:
             continue
+
+        tasks_logger.warn('Processing activation ticket with txid %s'%txid)
+
         try:
             ticket = json.loads(get_blockchain_connection().get_ticket(txid))  # it's registration ticket here
         except JSONRPCException as e:
-            mnl_logger.error('Exception while fetching actticket: {}'.format(str(e)))
+            tasks_logger.error('Exception while fetching actticket: {}'.format(str(e)))
             # to avoid processing invalid txid multiple times - write in to the DB with height=-1
             ActivationTicket.create(txid=txid, height=-1)
             continue
@@ -187,16 +197,16 @@ def move_confirmed_chunks_to_persistant_storage():
      - fetch each chunk from DB, if it's confirmed - move to persistant storage.
     """
     for chunk_id in get_chunkmanager().index_temp_storage():
-        mnl_logger.warn('Process chunk {}'.format(chunk_id))
+        tasks_logger.warn('Process chunk {}'.format(chunk_id))
         try:
             chunk_db = Chunk.get(chunk_id=chunk_id)
         except DoesNotExist:
-            mnl_logger.warn('Chunk with id {} does not exist in DB but exist in local storage'.format(chunk_id))
+            tasks_logger.warn('Chunk with id {} does not exist in DB but exist in local storage'.format(chunk_id))
             get_chunkmanager().rm_from_temp_storage(chunk_id)
             continue
         if chunk_db.confirmed:
             # move to persistant storge
-            mnl_logger.warn('Move chunk to persistant storage')
+            tasks_logger.warn('Move chunk to persistant storage')
             get_chunkmanager().move_to_persistant_storage(chunk_id)
 
 
@@ -224,7 +234,7 @@ def recalculate_mn_chunk_ranking_table():
 
     # insert (chunk, masternode, rank) for all chunk-owners in a separate table for convinience
     insert_sql = '''insert into chunkmnranked (chunk_id, masternode_id, rank) {}'''.format(sql)
-    mnl_logger.info('query: {}'.format(insert_sql))
+    tasks_logger.info('query: {}'.format(insert_sql))
     MASTERNODE_DB.execute_sql(insert_sql)
 
 
@@ -269,7 +279,7 @@ async def proccess_tmp_storage():
         try:
             move_confirmed_chunks_to_persistant_storage()
         except Exception as ex:
-            mnl_logger.error('Exception in process tmp storage task: {}'.format(ex))
+            tasks_logger.error('Exception in process tmp storage task: {}'.format(ex))
 
 
 async def process_new_tickets_task():
@@ -278,7 +288,7 @@ async def process_new_tickets_task():
         try:
             get_and_proccess_new_activation_tickets()
         except Exception as ex:
-            mnl_logger.error('Exception in process new tickets task: {}'.format(ex))
+            tasks_logger.error('Exception in process new tickets task: {}'.format(ex))
 
 
 async def masternodes_refresh_task():
@@ -287,7 +297,7 @@ async def masternodes_refresh_task():
         try:
             refresh_masternode_list()
         except Exception as ex:
-            mnl_logger.error('Exception in masternode refresh task: {}'.format(ex))
+            tasks_logger.error('Exception in masternode refresh task: {}'.format(ex))
 
 
 async def index_new_chunks_task():
@@ -296,7 +306,7 @@ async def index_new_chunks_task():
         try:
             index_new_chunks()
         except Exception as ex:
-            mnl_logger.error('Exception in Index new chunks task: {}'.format(ex))
+            tasks_logger.error('Exception in Index new chunks task: {}'.format(ex))
 
 
 async def fetch_single_chunk_via_rpc(chunkid):
@@ -310,11 +320,11 @@ async def fetch_single_chunk_via_rpc(chunkid):
         try:
             data = await mn.send_rpc_fetchchunk(chunkid)
         except RPCException as exc:
-            mnl_logger.info("FETCHCHUNK RPC FAILED for node %s with exception %s" % (mn.server_ip, exc))
+            tasks_logger.info("FETCHCHUNK RPC FAILED for node %s with exception %s" % (mn.server_ip, exc))
             continue
 
         if data is None:
-            mnl_logger.info("MN %s returned None for fetchchunk %s" % (mn.server_ip, chunkid))
+            tasks_logger.info("MN %s returned None for fetchchunk %s" % (mn.server_ip, chunkid))
             # chunk was not found
             continue
 
@@ -322,12 +332,12 @@ async def fetch_single_chunk_via_rpc(chunkid):
         # verify that digest matches
         digest = get_pynode_digest_int(data)
         if chunkid != str(digest):
-            mnl_logger.info("MN %s returned bad chunk for fetchchunk %s, mismatched digest: %s" % (
+            tasks_logger.info("MN %s returned bad chunk for fetchchunk %s, mismatched digest: %s" % (
                 mn.server_ip, chunkid, digest))
             continue
         return data
     # nobody has this chunk
-    mnl_logger.error("Unable to fetch chunk %s" %
+    tasks_logger.error("Unable to fetch chunk %s" %
                      chunkid_to_hex(int(chunkid)))
 
 
@@ -353,7 +363,7 @@ async def chunk_fetcher_task():
         try:
             await chunk_fetcher_task_body()
         except Exception as ex:
-            mnl_logger.error('Exception in chunk fetcher task: {}'.format(ex))
+            tasks_logger.error('Exception in chunk fetcher task: {}'.format(ex))
         await asyncio.sleep(1)
 
 
@@ -371,9 +381,9 @@ async def run_ping_test_forever(self):
         try:
             response_data = await mn.send_rpc_ping(data)
         except RPCException as exc:
-            mnl_logger.info("PING RPC FAILED for node %s with exception %s" % (mn, exc))
+            tasks_logger.info("PING RPC FAILED for node %s with exception %s" % (mn, exc))
         else:
             if response_data != data:
-                mnl_logger.warning("PING FAILED for node %s (%s != %s)" % (mn, data, response_data))
+                tasks_logger.warning("PING FAILED for node %s (%s != %s)" % (mn, data, response_data))
             else:
-                 mnl_logger.debug("PING SUCCESS for node %s for chunk: %s" % (mn, data))
+                 tasks_logger.debug("PING SUCCESS for node %s for chunk: %s" % (mn, data))

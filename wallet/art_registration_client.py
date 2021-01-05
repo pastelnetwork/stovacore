@@ -10,7 +10,7 @@ from core_modules.logger import initlogging
 from utils.mn_ordering import get_masternode_ordering
 from wallet.database import RegticketDB
 
-art_reg_client_logger = initlogging('Logger', __name__)
+art_reg_client_logger = initlogging('Art Registration', __name__)
 
 
 class ArtRegistrationClient:

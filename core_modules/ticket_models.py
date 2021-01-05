@@ -18,7 +18,7 @@ from core_modules.settings import Settings
 
 from core_modules.blackbox_modules import luby
 
-ticket_logger = initlogging('Ticket logger', __name__)
+ticket_logger = initlogging('Tickets', __name__)
 
 
 # ===== VALIDATORS ===== #

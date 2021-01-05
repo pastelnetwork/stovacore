@@ -4,9 +4,11 @@ from cnode_connection import get_blockchain_connection
 
 class AutoTrader:
     def __init__(self, artregistry):
-        self.__logger = initlogging('', __name__)
+        self.__logger = initlogging('Auto Trader', __name__)
         self.__artregistry = artregistry
         self.__enabled = False
+
+        self.__logger.debug("Auto Trader initialized")
 
     def consummate_trades(self):
         if not self.__enabled:

@@ -8,7 +8,7 @@ from cnode_connection import get_blockchain_connection
 class MasternodeManager:
     def __init__(self):
         self.__masternodes = {}
-        self.__logger = initlogging('', __name__)
+        self.__logger = initlogging('Masternode Manager', __name__)
 
     def get(self, nodeid):
         return self.__masternodes[nodeid]

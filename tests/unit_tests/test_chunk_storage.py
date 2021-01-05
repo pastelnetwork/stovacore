@@ -14,6 +14,7 @@ from core_modules.helpers import get_pynode_digest_int, bytes_to_chunkid
 from core_modules.blackbox_modules import luby
 from core_modules.masternode_ticketing import masternode_place_image_data_in_chunkstorage
 from core_modules.ticket_models import RegistrationTicket, ImageData
+from core_modules.settings import Settings
 from pynode.tasks import move_confirmed_chunks_to_persistant_storage
 from tests.system_tests.test_system import switch_pastelid, CLIENT_PASTELID, PASSPHRASE
 from tests.test_utils import png_1x1_data
@@ -182,11 +183,10 @@ class ChunkFileNamesTestCase(unittest.TestCase):
         MASTERNODE_DB.connect(reuse_if_open=True)
         MASTERNODE_DB.create_tables(DB_MODELS)
         # cleanup chunk storage
-        from cnode_connection import basedir
         import shutil
         try:
-            shutil.rmtree(os.path.join(basedir, "chunkdata"))
-            shutil.rmtree(os.path.join(basedir, "tmpstorage"))
+            shutil.rmtree(Settings.CHUNK_DATA_DIR)
+            shutil.rmtree(Settings.TEMP_STORAGE_DIR)
         except FileNotFoundError:
             pass
 

@@ -5,7 +5,7 @@ from core_modules.blockchain import BlockChain
 from core_modules.logger import initlogging
 from core_modules.settings import Settings
 
-global_logger = initlogging(int(0), __name__, Settings.LOG_LEVEL)
+cnode_connection_logger = initlogging("cNode Connection", __name__)
 
 #  global blockchain connection object, used for cNode communication
 _blockchain = None
@@ -14,6 +14,9 @@ _blockchain = None
 def connect_to_blockchain_daemon():
     pastelid = os.environ.get('PASTEL_ID')
     passphrase = os.environ.get('PASSPHRASE')
+
+    cnode_connection_logger.debug("Connecting to cNode at %s:%s as %s..." %
+                                  (Settings.CNODE_RPC_IP, Settings.CNODE_RPC_PORT,Settings.CNODE_RPC_USER))
 
     while True:
         if pastelid and passphrase:  # running a wallet
@@ -27,10 +30,10 @@ def connect_to_blockchain_daemon():
         try:
             blockchain.getwalletinfo()
         except (ConnectionRefusedError, bitcoinrpc.authproxy.JSONRPCException) as exc:
-            global_logger.debug("Exception %s while getting wallet info, retrying..." % exc)
+            cnode_connection_logger.debug("Exception %s while getting wallet info, retrying..." % exc)
             time.sleep(0.5)
         else:
-            global_logger.debug("Successfully connected to daemon!")
+            cnode_connection_logger.debug("Successfully connected to cNode!")
             break
     return blockchain
 
@@ -41,9 +44,6 @@ def get_blockchain_connection():
     if not _blockchain:
         _blockchain = connect_to_blockchain_daemon()
     return _blockchain
-
-
-basedir = os.getcwd()
 
 
 def reset_blockchain_connection():

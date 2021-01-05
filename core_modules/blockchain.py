@@ -21,7 +21,7 @@ class BlockChain:
     def __init__(self, user, password, ip, rpcport, pastelid=None, passphrase=None):
         self.url = "http://%s:%s@%s:%s" % (user, password, ip, rpcport)
         self.__reconnect()
-        self.__logger = initlogging('', __name__, Settings.LOG_LEVEL)
+        self.__logger = initlogging('BlockChain', __name__)
 
         # passing `passphrase` parameter has the same idea as `pastelid` one.
         # we pass it for wallet_api and leave blank for masternode
