@@ -157,7 +157,7 @@ def get_and_proccess_new_activation_tickets():
         try:
             ticket = json.loads(get_blockchain_connection().get_ticket(txid))  # it's registration ticket here
         except JSONRPCException as e:
-            tasks_logger.error('Exception while fetching actticket: {}'.format(str(e)))
+            tasks_logger.exception('Exception while fetching actticket: {}'.format(str(e)))
             # to avoid processing invalid txid multiple times - write in to the DB with height=-1
             ActivationTicket.create(txid=txid, height=-1)
             continue
@@ -201,7 +201,7 @@ def move_confirmed_chunks_to_persistant_storage():
         try:
             chunk_db = Chunk.get(chunk_id=chunk_id)
         except DoesNotExist:
-            tasks_logger.warn('Chunk with id {} does not exist in DB but exist in local storage'.format(chunk_id))
+            tasks_logger.exception('Chunk with id {} does not exist in DB but exist in local storage'.format(chunk_id))
             get_chunkmanager().rm_from_temp_storage(chunk_id)
             continue
         if chunk_db.confirmed:
@@ -279,7 +279,7 @@ async def proccess_tmp_storage():
         try:
             move_confirmed_chunks_to_persistant_storage()
         except Exception as ex:
-            tasks_logger.error('Exception in process tmp storage task: {}'.format(ex))
+            tasks_logger.exception('Exception in process tmp storage task: {}'.format(ex))
 
 
 async def process_new_tickets_task():
@@ -288,7 +288,7 @@ async def process_new_tickets_task():
         try:
             get_and_proccess_new_activation_tickets()
         except Exception as ex:
-            tasks_logger.error('Exception in process new tickets task: {}'.format(ex))
+            tasks_logger.exception('Exception in process new tickets task: {}'.format(ex))
 
 
 async def masternodes_refresh_task():
@@ -297,7 +297,7 @@ async def masternodes_refresh_task():
         try:
             refresh_masternode_list()
         except Exception as ex:
-            tasks_logger.error('Exception in masternode refresh task: {}'.format(ex))
+            tasks_logger.exception('Exception in masternode refresh task: {}'.format(ex))
 
 
 async def index_new_chunks_task():
@@ -306,7 +306,7 @@ async def index_new_chunks_task():
         try:
             index_new_chunks()
         except Exception as ex:
-            tasks_logger.error('Exception in Index new chunks task: {}'.format(ex))
+            tasks_logger.exception('Exception in Index new chunks task: {}'.format(ex))
 
 
 async def fetch_single_chunk_via_rpc(chunkid):
@@ -320,7 +320,7 @@ async def fetch_single_chunk_via_rpc(chunkid):
         try:
             data = await mn.send_rpc_fetchchunk(chunkid)
         except RPCException as exc:
-            tasks_logger.info("FETCHCHUNK RPC FAILED for node %s with exception %s" % (mn.server_ip, exc))
+            tasks_logger.exception("FETCHCHUNK RPC FAILED for node %s with exception %s" % (mn.server_ip, exc))
             continue
 
         if data is None:
@@ -363,7 +363,7 @@ async def chunk_fetcher_task():
         try:
             await chunk_fetcher_task_body()
         except Exception as ex:
-            tasks_logger.error('Exception in chunk fetcher task: {}'.format(ex))
+            tasks_logger.exception('Exception in chunk fetcher task: {}'.format(ex))
         await asyncio.sleep(1)
 
 
@@ -381,7 +381,7 @@ async def run_ping_test_forever(self):
         try:
             response_data = await mn.send_rpc_ping(data)
         except RPCException as exc:
-            tasks_logger.info("PING RPC FAILED for node %s with exception %s" % (mn, exc))
+            tasks_logger.exception("PING RPC FAILED for node %s with exception %s" % (mn, exc))
         else:
             if response_data != data:
                 tasks_logger.warning("PING FAILED for node %s (%s != %s)" % (mn, data, response_data))

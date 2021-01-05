@@ -71,7 +71,7 @@ class RPCClient:
         try:
             rpc_message = RPCMessage.reconstruct(response_packet)
         except ValueError:
-            self.__logger.warning('Something went wrong when reconstructing message')
+            self.__logger.exception('Something went wrong when reconstructing message')
             return None
 
         sender_id, response_msg = rpc_message.sender_id, rpc_message.data
@@ -119,7 +119,7 @@ class RPCClient:
         try:
             returned_data = await self.__send_rpc_to_mn("PING_RESP", request_packet)
         except Exception as e:
-            self.__logger.warning('Skipping by timeout')
+            self.__logger.exception('Skipping by timeout')
             raise e
             # return None
 
@@ -140,7 +140,7 @@ class RPCClient:
         try:
             returned_data = self.__send_rpc_to_mn_sync("PING_RESP", request_packet)
         except Exception as e:
-            self.__logger.warn('Skipping by timeout')
+            self.__logger.exception('Skipping by timeout')
             raise e
             # return None
 
@@ -164,7 +164,7 @@ class RPCClient:
         try:
             returned_data = self.__send_rpc_to_mn_sync("SQL_RESP", request_packet)
         except Exception as e:
-            self.__logger.warn('Skipping by timeout')
+            self.__logger.exception('Skipping by timeout')
             raise e
 
         return returned_data["result"]

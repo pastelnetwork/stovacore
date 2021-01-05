@@ -126,8 +126,6 @@ Settings.LONG_REGTICKET_VALIDATION_ENABLED = False
 # FIXME: change to more appropriate for production usage value
 Settings.MAX_CONFIRMATION_DISTANCE_IN_BLOCKS = 2000
 
-Settings.CNODE_DIR = "/home/alexey/.pastel"
-Settings.CNODE_CONFIG_FILE = os.path.join(Settings.CNODE_DIR, "pastel.conf")
 Settings.CNODE_RPC_USER = 'rt'
 Settings.CNODE_RPC_PWD = 'rt'
 Settings.CNODE_RPC_IP = '127.0.0.1'
