@@ -14,7 +14,7 @@ class NotEnoughConfirmations(Exception):
     pass
 
 
-DEFAULT_PASTEL_ID_PASSPHRASE = 'passphrase'
+DEFAULT_PASTEL_ID_PASSPHRASE = 'putvalidpassphrasehereorreplacewithenvvar'
 
 
 class BlockChain:
