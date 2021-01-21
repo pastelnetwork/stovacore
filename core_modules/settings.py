@@ -79,7 +79,7 @@ Settings.IMAGE_MAX_SIZE = 100 * 1024 * 1024  # 100MB
 Settings.MAX_REGISTRATION_BLOCK_DISTANCE = 10000000  # 3 blocks
 
 Settings.THUMBNAIL_DIMENSIONS = (240, 240)
-Settings.THUMBNAIL_MAX_SIZE = 100 * 1024  # 100 kb
+Settings.THUMBNAIL_MAX_SIZE = 200 * 1024  # 200 kb
 
 Settings.LUBY_REDUNDANCY_FACTOR = 10
 
@@ -131,4 +131,4 @@ Settings.CNODE_CONFIG_FILE = os.path.join(Settings.CNODE_DIR, "pastel.conf")
 Settings.CNODE_RPC_USER = 'rt'
 Settings.CNODE_RPC_PWD = 'rt'
 Settings.CNODE_RPC_IP = '127.0.0.1'
-Settings.CNODE_RPC_PORT = 9932
+Settings.CNODE_RPC_PORT = 19932

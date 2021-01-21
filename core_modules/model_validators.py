@@ -147,6 +147,9 @@ class ThumbnailField(ImageTypeValidatorField):
     def __init__(self):
         super().__init__(1, Settings.THUMBNAIL_MAX_SIZE)
 
+    def __str__(self):
+        return 'Thumbnail field'
+
 
 class BytesField(LengthValidator):
     accepted_type = bytes

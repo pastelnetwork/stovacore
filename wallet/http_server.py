@@ -48,10 +48,10 @@ async def image_registration_step_2(request):
     image_path = data.pop('image')
     with open(image_path, 'rb') as f:
         content = f.read()
-    # try:
-    result = await get_pastel_client().image_registration_step_2(regticket_data=data, image_data=content)
-    # except Exception as ex:
-    #     return web.json_response({'error': str(ex)}, status=400)
+    try:
+        result = await get_pastel_client().image_registration_step_2(regticket_data=data, image_data=content)
+    except Exception as ex:
+        return web.json_response({'error': str(ex)}, status=400)
     regticket_db = RegticketDB.get(RegticketDB.id == result['regticket_id'])
     regticket_db.path_to_image = image_path
     regticket_db.save()
