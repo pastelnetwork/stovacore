@@ -114,13 +114,14 @@ Settings.DUPE_DETECTION_HOEFFDING_MAX = 0
 
 Settings.RPC_PORT = '4444'
 
+Settings.PASTEL_DIR = '~/.pastel'
 Settings.CHUNK_DATA_DIR = os.path.join(Settings.BASEDIR, "chunkdata")
 Settings.TEMP_STORAGE_DIR = os.path.join(Settings.BASEDIR, "tmpstorage")
 
-Settings.HTTPS_KEY_FILE = os.path.join(Settings.BASEDIR, 'privkey.pem')
-Settings.HTTPS_CERTIFICATE_FILE = os.path.join(Settings.BASEDIR, 'certificate.pem')
+Settings.HTTPS_KEY_FILE = os.path.join(Settings.PASTEL_DIR, 'privkey.pem')
+Settings.HTTPS_CERTIFICATE_FILE = os.path.join(Settings.PASTEL_DIR, 'certificate.pem')
 
-Settings.MN_DATABASE_FILE = os.path.join(Settings.BASEDIR, 'masternode.db')
+Settings.MN_DATABASE_FILE = os.path.join(Settings.PASTEL_DIR, 'masternode.db')
 Settings.LONG_REGTICKET_VALIDATION_ENABLED = False
 
 # FIXME: change to more appropriate for production usage value
