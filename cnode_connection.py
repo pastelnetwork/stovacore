@@ -16,7 +16,7 @@ def connect_to_blockchain_daemon():
     passphrase = os.environ.get('PASSPHRASE')
 
     cnode_connection_logger.debug("Connecting to cNode at %s:%s as %s..." %
-                                  (Settings.CNODE_RPC_IP, Settings.CNODE_RPC_PORT,Settings.CNODE_RPC_USER))
+                                  (Settings.CNODE_RPC_IP, Settings.CNODE_RPC_PORT, Settings.CNODE_RPC_USER))
 
     while True:
         if pastelid and passphrase:  # running a wallet
@@ -30,7 +30,7 @@ def connect_to_blockchain_daemon():
         try:
             blockchain.getwalletinfo()
         except (ConnectionRefusedError, bitcoinrpc.authproxy.JSONRPCException) as exc:
-            cnode_connection_logger.debug("Exception %s while getting wallet info, retrying..." % exc)
+            cnode_connection_logger.exception("Exception %s while getting wallet info, retrying..." % exc)
             time.sleep(0.5)
         else:
             cnode_connection_logger.debug("Successfully connected to cNode!")

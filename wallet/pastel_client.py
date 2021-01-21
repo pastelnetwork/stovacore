@@ -170,14 +170,14 @@ class PastelClient:
                 try:
                     ticket = get_blockchain_connection().get_ticket(txid) # it's registration ticket here
                 except JSONRPCException as e:
-                    self.__logger.warn('Error obtain registration ticket txid: {}'.format(txid))
+                    self.__logger.exception('Error obtain registration ticket txid: {}'.format(txid))
                     # to avoid processing invalid txid multiple times - write in to the DB with height=-1
                     Artwork.create(reg_ticket_txid=txid, blocknum=-1)
                     continue
                 try:
                     act_ticket = get_blockchain_connection().find_ticket('act', txid)
                 except JSONRPCException as e:
-                    self.__logger.warn('Error obtain act ticket by key: {}'.format(txid))
+                    self.__logger.exception('Error obtain act ticket by key: {}'.format(txid))
                     # to avoid processing invalid txid multiple times - write in to the DB with height=-1
                     Artwork.create(reg_ticket_txid=txid, blocknum=-1)
                     continue

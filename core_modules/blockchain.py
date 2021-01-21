@@ -256,7 +256,7 @@ class BlockChain:
         try:
             response = self.__call_jsonrpc("pastelid", "sign", data, self.pastelid, self.passphrase)
         except Exception as e:
-            self.__logger.warning('Probably your passphrase {} is invalid for a current key'.format(self.passphrase))
+            self.__logger.exception('Probably your passphrase {} is invalid for a current key'.format(self.passphrase))
             raise e
         return response['signature']
 

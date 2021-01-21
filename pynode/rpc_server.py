@@ -3,6 +3,7 @@ from os import path
 
 from aiohttp import web
 
+from cnode_connection import get_blockchain_connection
 from core_modules.database import Masternode
 from core_modules.logger import initlogging
 from core_modules.rpc_serialization import RPCMessage
@@ -45,8 +46,13 @@ class RPCServer:
 
     async def get_status(self, request):
         self.__logger.info('Status request received')
-        masternodes = list(Masternode.get_active_nodes())
-        result = { "status": "alive", "details": {"masternode_count": len(masternodes)}}
+        # filter = await request.content.read()
+
+        active_mns = list(Masternode.get_active_nodes())
+        # mn_status = {}
+
+        result = {"status": "alive", "pastel_id": get_blockchain_connection().pastelid,
+                  "masternodes": {"count": len(active_mns)}}
         return web.json_response(result)
 
     def __receive_rpc_ping(self, data, *args, **kwargs):

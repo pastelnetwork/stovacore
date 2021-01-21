@@ -223,7 +223,7 @@ class ArtRegistrationServer:
                 raise Exception('Given upload code was created by other public key')
             mn_ticket_logger.info('Given upload code exists with required public key')
         except DoesNotExist:
-            mn_ticket_logger.warn('Given upload code DOES NOT exists with required public key')
+            mn_ticket_logger.exception('Given upload code DOES NOT exists with required public key')
             raise
         regticket_db.image_data = image_data
         regticket_db.save()
@@ -242,7 +242,7 @@ class ArtRegistrationServer:
                 raise Exception('Given upload code was created by other public key')
             mn_ticket_logger.info('Given upload code exists with required public key')
         except DoesNotExist:
-            mn_ticket_logger.warn('Given upload code DOES NOT exists with required public key')
+            mn_ticket_logger.exception('Given upload code DOES NOT exists with required public key')
             raise
         result = get_blockchain_connection().getlocalfee()
         fee = result['localfee']
@@ -311,7 +311,7 @@ class ArtRegistrationServer:
         try:
             regticket_db = Regticket.get(upload_code=upload_code)
         except DoesNotExist:
-            mn_ticket_logger.error('Upload code {} not found in DB'.format(upload_code))
+            mn_ticket_logger.exception('Upload code {} not found in DB'.format(upload_code))
             raise ValueError('Given upload code was issued by someone else...')
         is_valid, errors = await is_burn_tx_valid(regticket_db, burn_10_txid)
         if not is_valid:

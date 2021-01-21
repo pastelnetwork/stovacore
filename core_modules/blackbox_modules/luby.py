@@ -251,7 +251,7 @@ def decode(blocks):
         try:
             data_length, block_size, seed, block_hash, block_body = __parse_block(block)
         except BlockParseError as exc:
-            luby_logger.warn("Block parsing failed with exception: %s" % exc)
+            luby_logger.exception("Block parsing failed with exception: %s" % exc)
             continue
 
         # we need to at least find one block that we can parse to calculate minimum_required
