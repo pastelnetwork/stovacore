@@ -118,8 +118,8 @@ Settings.PASTEL_DIR = os.path.join(os.getenv('HOME'), '.pastel')
 Settings.CHUNK_DATA_DIR = os.path.join(Settings.BASEDIR, "chunkdata")
 Settings.TEMP_STORAGE_DIR = os.path.join(Settings.BASEDIR, "tmpstorage")
 
-Settings.HTTPS_KEY_FILE = os.path.join(Settings.PASTEL_DIR, 'privkey.pem')
-Settings.HTTPS_CERTIFICATE_FILE = os.path.join(Settings.PASTEL_DIR, 'certificate.pem')
+Settings.HTTPS_KEY_FILE = os.path.join(Settings.PASTEL_DIR, 'pynode_https_cert', 'privkey.pem')
+Settings.HTTPS_CERTIFICATE_FILE = os.path.join(Settings.PASTEL_DIR, 'pynode_https_cert', 'certificate.pem')
 
 Settings.MN_DATABASE_FILE = os.path.join(Settings.PASTEL_DIR, 'masternode.db')
 Settings.LONG_REGTICKET_VALIDATION_ENABLED = False
