@@ -114,7 +114,7 @@ Settings.DUPE_DETECTION_HOEFFDING_MAX = 0
 
 Settings.RPC_PORT = '4444'
 
-Settings.PASTEL_DIR = '~/.pastel'
+Settings.PASTEL_DIR = os.path.join(os.getenv('HOME'), '.pastel')
 Settings.CHUNK_DATA_DIR = os.path.join(Settings.BASEDIR, "chunkdata")
 Settings.TEMP_STORAGE_DIR = os.path.join(Settings.BASEDIR, "tmpstorage")
 
