@@ -1,3 +1,5 @@
+import os
+
 import ssl
 from os import path
 
@@ -124,7 +126,15 @@ class RPCServer:
     async def run_server(self):
         if not path.exists(Settings.HTTPS_CERTIFICATE_FILE):
             print("ERROR! HTTPS Certificate file doesn't exist - {0}", Settings.HTTPS_CERTIFICATE_FILE)
-            raise SystemExit('Exiting')
+            print("Generating HTTPS certificates..")
+            os.system(
+                '''mkdir {cert_dir} && 
+                cd {cert_dir} && 
+                openssl req -newkey rsa:2048 -nodes -keyout privkey.pem -x509 -days 36500 -out certificate.pem -subj "/C=US"'''.format(
+                    cert_dir=Settings.HTTPS_CERT_DIR))
+            print("Certificates are generated")
+        else:
+            self.__logger.info("HTTPS certificate is found at {}".format(Settings.HTTPS_CERTIFICATE_FILE))
         if not path.exists(Settings.HTTPS_KEY_FILE):
             print("ERROR! HTTPS Certificate Key file doesn't exist - {0}", Settings.HTTPS_KEY_FILE)
             raise SystemExit('Exiting')

@@ -14,9 +14,6 @@ class NotEnoughConfirmations(Exception):
     pass
 
 
-DEFAULT_PASTEL_ID_PASSPHRASE = 'putvalidpassphrasehereorreplacewithenvvar'
-
-
 class BlockChain:
     def __init__(self, user, password, ip, rpcport, pastelid=None, passphrase=None):
         self.url = "http://%s:%s@%s:%s" % (user, password, ip, rpcport)
@@ -26,7 +23,7 @@ class BlockChain:
         # passing `passphrase` parameter has the same idea as `pastelid` one.
         # we pass it for wallet_api and leave blank for masternode
         if not passphrase:
-            self.passphrase = DEFAULT_PASTEL_ID_PASSPHRASE
+            self.passphrase = Settings.PASTEL_ID_PASSPHRASE
         else:
             self.passphrase = passphrase
 

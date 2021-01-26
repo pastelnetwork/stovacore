@@ -1,61 +1,56 @@
+import configparser
+
 import math
 import os
 import hashlib
-import sys
 
 from decimal import Decimal
 
-from core_modules.helpers_type import ensure_type_of_field
+
+class ConfigIsNotSet(Exception):
+    pass
 
 
 # SETTINGS - global settings for everyone
 class __Settings:
-    pass
+    def __init__(self):
+        if 'CONFIG_FILE' not in os.environ:
+            raise ConfigIsNotSet(
+                'Config file is not set up. Please set environment variable CONFIG_FILE to point the config file')
+        self.config_filename = os.environ['CONFIG_FILE']
 
+        if not self.config_filename:
+            raise Exception('Settings: config file is not provided')
+        if not os.path.isfile(self.config_filename):
+            raise Exception(
+                'Unable to read the config at "{}". Please check if it exists and has appropriate permissions'.format(
+                    self.config_filename))
+        config = configparser.ConfigParser()
+        config.read(self.config_filename)
+        if 'default' not in config:
+            raise Exception('Config file should have "default" section')
+        section = config['default']
 
-if getattr(sys, 'frozen', False):
-    FROZEN = True
-else:
-    FROZEN = False
+        # settings read from config
+        self.IS_TESTNET = section.getboolean('testnet')
+        self.PASTEL_ID_PASSPHRASE = section['passphrase']
+        self.CHUNK_DATA_DIR = section['storage_dir']
+        self.TEMP_STORAGE_DIR = section['tmp_storage_dir']
+
+        # hardcoded settings
+        self.DEBUG = False
+        self.LOG_LEVEL = 'debug'
+        BASEDIR = os.path.abspath(os.path.join(__file__, "..", ".."))
+        self.NSFW_MODEL_FILE = os.path.join(BASEDIR, "misc", "nsfw_trained_model.pb")
+        self.PASTEL_DIR = os.path.join(os.getenv('HOME'), '.pastel')
+
+        self.HTTPS_CERT_DIR = os.path.join(self.PASTEL_DIR, 'pynode_https_cert')
+        self.HTTPS_KEY_FILE = os.path.join(self.HTTPS_CERT_DIR, 'privkey.pem')
+        self.HTTPS_CERTIFICATE_FILE = os.path.join(self.HTTPS_CERT_DIR, 'certificate.pem')
+        self.MN_DATABASE_FILE = os.path.join(self.PASTEL_DIR, 'masternode.db')
+
 
 Settings = __Settings()
-
-Settings.DEBUG = False
-Settings.LOG_LEVEL = 'debug'
-
-Settings.FROZEN = FROZEN
-Settings.BASEDIR = os.path.abspath(os.path.join(__file__, "..", ".."))
-Settings.CHROOT_DIR = os.path.join(Settings.BASEDIR, "chroot_dir")
-Settings.NSFW_MODEL_FILE = os.path.join(Settings.BASEDIR, "misc", "nsfw_trained_model.pb")
-
-Settings.UNSHARE_CMDLINE = ["unshare", "-mUuinpCrf", "--mount-proc=/proc", "--"]
-
-if FROZEN:
-    Settings.IMAGEPARSERCMDLINE = Settings.UNSHARE_CMDLINE + [
-        os.path.join(Settings.BASEDIR, "parse_image_in_jail")]
-else:
-    Settings.IMAGEPARSERCMDLINE = Settings.UNSHARE_CMDLINE + [
-        "python", os.path.join(Settings.BASEDIR, "parse_image_in_jail.py")]
-
-Settings.IMAGE_PARSER_TIMEOUT_SECONDS = 3
-
-Settings.VALIDATE_MN_SIGNATURES = True
-
-Settings.COIN = Decimal('100000')
-Settings.BASE_TRANSACTION_AMOUNT = Decimal('300.0') / Decimal(Settings.COIN)  # 0.00300
-Settings.FEEPERKB = Decimal('0.0001')
-
-Settings.TICKET_MATCH_EXPIRY = 30  # 30s blocks x 30: 900s -> 15m
-
-if Settings.DEBUG:
-    Settings.REQUIRED_CONFIRMATIONS = 1
-else:
-    # Settings.REQUIRED_CONFIRMATIONS = 10
-    Settings.REQUIRED_CONFIRMATIONS = 1
-
-# We set this so low, because we don't care if the utxo gets invalidated. If it does, the ticket is lost anyway and
-# we need to be as fast as possible here.
-Settings.REQUIRED_CONFIRMATIONS_FOR_TRADE_UTXO = 1
 
 Settings.ALIAS_SEED = b'd\xad`n\xdc\x89\xc2/\xf6\xcd\xd6\xec\xcc\x1c\xc7\xd4\x83B9\x01\xb4\x06\xa2\xc9=\xf8_\x98\xa1p\x01&'
 Settings.CNODE_HASH_ALGO = hashlib.sha256
@@ -84,7 +79,7 @@ Settings.THUMBNAIL_MAX_SIZE = 200 * 1024  # 200 kb
 Settings.LUBY_REDUNDANCY_FACTOR = 10
 
 Settings.MAX_LUBY_CHUNKS = math.ceil((Settings.IMAGE_MAX_SIZE / Settings.CHUNKSIZE) \
-                                            * Settings.LUBY_REDUNDANCY_FACTOR)
+                                     * Settings.LUBY_REDUNDANCY_FACTOR)
 
 if Settings.DEBUG:
     Settings.NSFW_THRESHOLD = 1
@@ -114,15 +109,6 @@ Settings.DUPE_DETECTION_HOEFFDING_MAX = 0
 
 Settings.RPC_PORT = '4444'
 
-Settings.PASTEL_DIR = os.path.join(os.getenv('HOME'), '.pastel')
-Settings.CHUNK_DATA_DIR = os.path.join(Settings.BASEDIR, "chunkdata")
-Settings.TEMP_STORAGE_DIR = os.path.join(Settings.BASEDIR, "tmpstorage")
-
-Settings.HTTPS_KEY_FILE = os.path.join(Settings.PASTEL_DIR, 'pynode_https_cert', 'privkey.pem')
-Settings.HTTPS_CERTIFICATE_FILE = os.path.join(Settings.PASTEL_DIR, 'pynode_https_cert', 'certificate.pem')
-
-Settings.MN_DATABASE_FILE = os.path.join(Settings.PASTEL_DIR, 'masternode.db')
-Settings.LONG_REGTICKET_VALIDATION_ENABLED = False
 
 # FIXME: change to more appropriate for production usage value
 Settings.MAX_CONFIRMATION_DISTANCE_IN_BLOCKS = 2000
@@ -130,4 +116,4 @@ Settings.MAX_CONFIRMATION_DISTANCE_IN_BLOCKS = 2000
 Settings.CNODE_RPC_USER = 'rt'
 Settings.CNODE_RPC_PWD = 'rt'
 Settings.CNODE_RPC_IP = '127.0.0.1'
-Settings.CNODE_RPC_PORT = 19932
+Settings.CNODE_RPC_PORT = 19932 if Settings.IS_TESTNET else 9932

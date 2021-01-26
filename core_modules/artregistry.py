@@ -35,61 +35,6 @@ class TicketWrapper:
         return False
 
 
-class Match:
-    def __init__(self, logger, artid, bid, ask, lockstart):
-        self.__logger = logger
-
-        self.artid = artid
-        self.bid = bid
-        self.ask = ask
-
-        # sanity check
-        if self.bid.ticket.type != "bid" or self.ask.ticket.type != "ask":
-            raise ValueError("Bid is not bid or Ask is not ask!")
-
-        # these two variables mark the block numbers in between which this match is considered valid
-        self.lockstart = lockstart
-        self.lockend = lockstart + Settings.TICKET_MATCH_EXPIRY
-
-    def __str__(self):
-        return "art: %s, bid: %s, ask: %s" % (self.artid.hex(), self.bid, self.ask)
-
-    def lock(self):
-        self.__logger.debug("%s Tickets locked: %s, %s" % (self.artid.hex(), self.bid, self.ask))
-        self.bid.status = "locked"
-        self.ask.status = "locked"
-
-    def unlock(self, success, current_block_height):
-        if success:
-            self.bid.status = "done"
-            self.bid.done = True
-            self.ask.status = "done"
-            self.ask.done = True
-            self.__logger.debug("%s Successful match, tickets are done: %s, %s" % (self.artid.hex(), self.bid, self.ask))
-        else:
-            # unsuccessful match, bid ticket is invalidated
-            self.bid.status = "invalid"
-            self.bid.done = True
-            self.__logger.debug("%s Unsuccessful match, second ticket is invalid %s, height: %s" % (
-                self.artid.hex(), self.ask, current_block_height))
-
-            # check if ticket has expired
-            if self.ask.expired(current_block_height):
-                self.ask.status = "invalid"
-                self.ask.done = True
-                self.__logger.debug("%s Unsuccessful match, first ticket expired: %s, height: %s" % (
-                    self.artid.hex(), self.ask, current_block_height))
-            else:
-                self.ask.status = "open"
-                self.__logger.debug("%s Unsuccessful match, first ticket remains open: %s, height: %s" % (
-                    self.artid.hex(), self.ask, current_block_height))
-
-    def expired(self, current_block_height):
-        if current_block_height > self.lockend:
-            return True
-        return False
-
-
 class ArtRegistry:
     def __init__(self):
         self.__logger = initlogging('Art Registry', __name__)
@@ -113,37 +58,6 @@ class ArtRegistry:
         artdb = self.__owners[artid]
         if ticket.ticket.type == "ask":
             artdb[ticket.ticket.public_key] += ticket.ticket.copies
-
-    def update_current_block_height(self, new_height):
-        self.__current_block_height = new_height
-
-        unlocked_tickets = []
-
-        # invalidate matches that expired
-        newmatches = []
-        for match in self.__matches:
-            if match.expired(self.__current_block_height):
-                # match has expired without valid transaction
-                self.__unlock_match(match, False)
-                self.__logger.debug("Match has expired: %s, height: %s" % (match, self.__current_block_height))
-
-                # if match.ask has not expired add it back to the matcher engine
-                if match.ask.done is not True:
-                    unlocked_tickets.append(match.ask)
-            else:
-                newmatches.append(match)
-        self.__matches = newmatches
-
-        # invalidate open tickets (only these can expire)
-        for artid in self.__artworks.keys():
-            for ticket in self.__get_open_trade_tickets_for_art(artid):
-                if ticket.expired(self.__current_block_height):
-                    self.__invalidate_ticket(ticket)
-                    self.__logger.debug("Ticket has expired: %s" % ticket)
-
-        # add back freshly unlocked tickets to the matcher engine
-        for ticket in unlocked_tickets:
-            self.__find_match(ticket)
 
     def process_watched_vout(self, address, value):
         self.__logger.debug("Relevant transaction received for address %s with value %s" % (address, value))
@@ -257,64 +171,12 @@ class ArtRegistry:
         else:
             self.__logger.debug("Not enough copies exist %s <= %s, skipping ticket" % (author_copies, ticket.copies))
 
-    def add_trade_ticket(self, txid, ticket):
-        artid = ticket.imagedata_hash
-
-        # lock up artworks in the trade if ask and valid
-        if ticket.type == "ask":
-            artdb = self.__owners[artid]
-            if artdb.get(ticket.public_key) is None or ticket.copies > artdb[ticket.public_key]:
-                self.__logger.debug("Artist tried to sell more art than they have, ignoring ticket!")
-                return
-            self.__logger.debug("Ask ticket locked %s artworks from %s" % (ticket.copies, ticket.public_key.hex()))
-            artdb[ticket.public_key] -= ticket.copies
-
-        # create a new wrapped ticket
-        wrappedticket = TicketWrapper(self.__current_block_height, artid, txid, "trade", ticket)
-        wrappedticket.done = False
-        wrappedticket.status = "open"
-        self.__tickets[artid].append(wrappedticket)
-        self.__logger.debug("Open trade ticket added to artregistry: %s" % ticket)
-
-        # try to find matches for this ticket
-        self.__find_match(wrappedticket)
-
     def __get_open_trade_tickets_for_art(self, artid):
         ret = []
         for ticket in self.__tickets[artid]:
             if ticket.tickettype == "trade" and ticket.status == "open":
                 ret.append(ticket)
         return ret
-
-    def __find_match(self, newticket):
-        tickets = self.__get_open_trade_tickets_for_art(newticket.artid)
-        for matchticket in tickets:
-            if matchticket.ticket.price == newticket.ticket.price\
-            and matchticket.ticket.copies == newticket.ticket.copies\
-            and matchticket.ticket.public_key != newticket.ticket.public_key\
-            and ((matchticket.ticket.type == "ask" and newticket.ticket.type == "bid") or
-                 (matchticket.ticket.type == "bid" and newticket.ticket.type == "ask")):
-
-                # match found
-                self.__logger.debug("Ticket match found at price %s, copies: %s" % (
-                    newticket.ticket.price, newticket.ticket.copies))
-
-                # tickets matched, add a match object and lock
-                if matchticket.ticket.type == "ask":
-                    ask = matchticket
-                    bid = newticket
-                else:
-                    ask = newticket
-                    bid = matchticket
-
-                match = Match(self.__logger, newticket.artid, bid, ask, self.__current_block_height)
-                match.lock()
-
-                self.__matches.append(match)
-                self.__logger.debug("Match found between %s and %s" % (matchticket.txid, newticket.txid))
-
-                return matchticket
-        return None
 
     def enough_copies_left(self, artid, author, copies):
         artdb = self.__owners.get(artid)
