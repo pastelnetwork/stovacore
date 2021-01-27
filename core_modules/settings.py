@@ -10,6 +10,8 @@ from decimal import Decimal
 class ConfigIsNotSet(Exception):
     pass
 
+LOG_DESTINATION_STDOUT = 'stdout'
+
 
 # SETTINGS - global settings for everyone
 class __Settings:
@@ -36,6 +38,10 @@ class __Settings:
         self.PASTEL_ID_PASSPHRASE = section['passphrase']
         self.CHUNK_DATA_DIR = section['storage_dir']
         self.TEMP_STORAGE_DIR = section['tmp_storage_dir']
+        if 'log_destination' in section:
+            self.LOG_DESTINATION = section['log_destination']
+        else:
+            self.LOG_DESTINATION = LOG_DESTINATION_STDOUT
 
         # hardcoded settings
         self.DEBUG = False
