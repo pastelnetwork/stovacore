@@ -124,7 +124,7 @@ def index_new_chunks():
         recalculate_mn_chunk_ranking_table()
 
 
-def get_registration_ticket_from_act_ticket(ticket):
+def get_registration_ticket_object_from_data(ticket):
     # regticket_txid = act_ticket['ticket']['reg_txid']
     # ticket = get_blockchain_connection().get_ticket(regticket_txid)
     # ticket['ticket']['art_ticket']  - it's cnode package
@@ -139,23 +139,20 @@ def get_and_proccess_new_activation_tickets():
      - Store chunks from these registration tickets in local DB, marking them confirmed.
      (which will be used by another chunk-processing tasks).
     """
-    # get tickets
     # FIXME: use `height` param when it will be implemented on cNode
-    act_tickets_txids = get_blockchain_connection().list_tickets('act')  # list
-
+    act_tickets = get_blockchain_connection().list_tickets('act')  # list if dicts with actticket data
+    act_tickets_txids = [ticket['txid'] for ticket in act_tickets]
     if act_tickets_txids is None:
         return
-
-    tasks_logger.warn('Get new activation tickets')
 
     for txid in filter(lambda x: len(x) == TXID_LENGTH, act_tickets_txids):
         if ActivationTicket.select().where(ActivationTicket.txid == txid).count() != 0:
             continue
 
-        tasks_logger.warn('Processing activation ticket with txid %s'%txid)
+        tasks_logger.info('New activation ticket found: {}'.format(txid))
 
         try:
-            ticket = json.loads(get_blockchain_connection().get_ticket(txid))  # it's registration ticket here
+            act_ticket = get_blockchain_connection().get_ticket(txid)
         except JSONRPCException as e:
             tasks_logger.exception('Exception while fetching actticket: {}'.format(str(e)))
             # to avoid processing invalid txid multiple times - write in to the DB with height=-1
@@ -164,30 +161,38 @@ def get_and_proccess_new_activation_tickets():
         # fetch regticket from activation ticket
         # store regticket in local DB if not exist
         # get list of chunk ids, add to local DB (Chunk table)
-        regticket = get_registration_ticket_from_act_ticket(ticket)
+        regticket_data = get_blockchain_connection().get_ticket(act_ticket['ticket']['reg_txid'])
+        regticket = get_registration_ticket_object_from_data(regticket_data)
         chunk_hashes = regticket.lubyhashes  # this is list of bytes objects
 
         # add thumbnail chunk
         try:
+            tasks_logger.info('Creating Chunk record for thumbnail, hash {}'.format(regticket.thumbnailhash))
             chunk = Chunk.create_from_hash(chunkhash=regticket.thumbnailhash, artwork_hash=regticket.thumbnailhash)
         except IntegrityError:  # if Chunk with such chunkhash already exist
+            tasks_logger.error('Error: thumbnail chunk already exists')
             chunk = Chunk.get_by_hash(chunkhash=regticket.thumbnailhash)
         chunk.confirmed = True
         chunk.save()
 
+        chunks_created, chunks_updated = 0,0
+        tasks_logger.info('Creating chunks record for artwok chunks...')
         for chunkhash in chunk_hashes:
-            # FIXME: it can be speed up with bulk_update and bulk_create
             # if chunk exists - mark it as confirmed
             # else - create it. And mark as confirmed. More frequently we'll have no such chunk.
             try:
                 chunk = Chunk.create_from_hash(chunkhash=chunkhash, artwork_hash=regticket.imagedata_hash)
+                chunks_created += 1
             except IntegrityError:  # if Chunk with such chunkhash already exist
                 chunk = Chunk.get_by_hash(chunkhash=chunkhash)
+                chunks_updated += 1
             chunk.confirmed = True
             chunk.save()
+        tasks_logger.info('...Complete! Created {}, updated {} chunks'.format(chunks_created, chunks_updated))
 
         # write processed act ticket to DB
-        ActivationTicket.create(txid=txid, height=ticket['height'])
+        tasks_logger.info('Activation ticket processed, writing to the DB. Height: {}'.format(regticket_data['height']))
+        ActivationTicket.create(txid=txid, height=act_ticket['height'])
 
 
 def move_confirmed_chunks_to_persistant_storage():
@@ -283,12 +288,14 @@ async def proccess_tmp_storage():
 
 
 async def process_new_tickets_task():
+    tasks_logger.info('Process new tickets task started..')
     while True:
         await asyncio.sleep(1)
         try:
             get_and_proccess_new_activation_tickets()
         except Exception as ex:
             tasks_logger.exception('Exception in process new tickets task: {}'.format(ex))
+            tasks_logger.info('Process new tickets task finished')
 
 
 async def masternodes_refresh_task():
