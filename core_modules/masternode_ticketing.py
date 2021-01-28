@@ -17,9 +17,9 @@ from cnode_connection import get_blockchain_connection
 from .ticket_models import RegistrationTicket, Signature, ImageData
 
 from core_modules.helpers import require_true, bytes_to_chunkid
-from core_modules.logger import initlogging
+from core_modules.logger import get_logger
 
-mn_ticket_logger = initlogging('Ticket Manager', __name__)
+mn_ticket_logger = get_logger('Ticket Manager')
 
 
 async def is_burn_10_tx_height_valid(regticket, txid):

@@ -6,12 +6,12 @@ import math
 from struct import pack, unpack
 from collections import defaultdict
 
-from core_modules.logger import initlogging
+from core_modules.logger import get_logger
 
 HEADER_PATTERN = '<3I32s'
 HEADER_LENGTH = struct.calcsize(HEADER_PATTERN)
 
-luby_logger = initlogging('Lubby', __name__)
+luby_logger = get_logger('Lubby')
 
 
 class NotEnoughChunks(Exception):

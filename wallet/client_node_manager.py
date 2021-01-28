@@ -1,6 +1,6 @@
-from core_modules.logger import initlogging
+from core_modules.logger import get_logger
 
 
 class ClientNodeManager:
     def __init__(self):
-        self.__logger = initlogging('ClientNodeManager', __name__)
+        self.__logger = get_logger('ClientNodeManager')

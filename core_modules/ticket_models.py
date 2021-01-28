@@ -9,7 +9,7 @@ from PIL import Image
 from cnode_connection import get_blockchain_connection
 from core_modules.chainwrapper import get_block_distance
 from core_modules.helpers import get_pynode_digest_bytes, require_true
-from core_modules.logger import initlogging
+from core_modules.logger import get_logger
 from core_modules.model_validators import FieldValidator, StringField, IntegerField, FingerprintField, SHA3512Field, \
     LubyChunkHashField, LubyChunkField, ImageField, ThumbnailField, TXIDField, UUIDField, SignatureField, \
     PastelIDField, LubySeedField, BlockChainAddressField, UnixTimeField
@@ -18,7 +18,7 @@ from core_modules.settings import Settings
 
 from core_modules.blackbox_modules import luby
 
-ticket_logger = initlogging('Tickets', __name__)
+ticket_logger = get_logger('Tickets')
 
 
 # ===== VALIDATORS ===== #

@@ -2,10 +2,10 @@ import os
 import time
 import bitcoinrpc
 from core_modules.blockchain import BlockChain
-from core_modules.logger import initlogging
+from core_modules.logger import get_logger
 from core_modules.settings import Settings
 
-cnode_connection_logger = initlogging("cNode Connection", __name__)
+cnode_connection_logger = get_logger("cNode Connection")
 
 #  global blockchain connection object, used for cNode communication
 _blockchain = None

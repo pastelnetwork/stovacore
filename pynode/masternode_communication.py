@@ -1,14 +1,14 @@
 import random
 
 from core_modules.database import Masternode
-from core_modules.logger import initlogging
+from core_modules.logger import get_logger
 from cnode_connection import get_blockchain_connection
 
 
 class MasternodeManager:
     def __init__(self):
         self.__masternodes = {}
-        self.__logger = initlogging('Masternode Manager', __name__)
+        self.__logger = get_logger('Masternode Manager')
 
     def get(self, nodeid):
         return self.__masternodes[nodeid]

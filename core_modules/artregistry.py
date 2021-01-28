@@ -1,4 +1,4 @@
-from core_modules.logger import initlogging
+from core_modules.logger import get_logger
 from core_modules.helpers import require_true
 from core_modules.settings import Settings
 from cnode_connection import get_blockchain_connection
@@ -37,7 +37,7 @@ class TicketWrapper:
 
 class ArtRegistry:
     def __init__(self):
-        self.__logger = initlogging('Art Registry', __name__)
+        self.__logger = get_logger('Art Registry')
         self.__artworks = {}
         self.__tickets = {}
         self.__owners = {}

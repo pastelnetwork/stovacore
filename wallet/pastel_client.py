@@ -8,7 +8,7 @@ from bitcoinrpc.authproxy import JSONRPCException
 from cnode_connection import get_blockchain_connection
 from core_modules.artregistry import ArtRegistry
 from core_modules.rpc_client import RPCException, RPCClient
-from core_modules.logger import initlogging
+from core_modules.logger import get_logger
 from core_modules.ticket_models import RegistrationTicket, Signature
 from pynode.tasks import TXID_LENGTH
 from utils.mn_ordering import get_masternode_ordering
@@ -35,7 +35,7 @@ def masternodes_by_distance_from_image(image_hash):
 class PastelClient:
     def __init__(self, pastelid, passphrase):
 
-        self.__logger = initlogging('Wallet interface', __name__)
+        self.__logger = get_logger('Wallet interface')
 
         self.pastelid = pastelid
         self.passphrase = passphrase

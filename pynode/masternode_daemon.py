@@ -6,7 +6,7 @@ from core_modules.autotrader import AutoTrader
 from core_modules.masternode_ticketing import ArtRegistrationServer
 from core_modules.settings import Settings
 from pynode.rpc_server import RPCServer
-from core_modules.logger import initlogging
+from core_modules.logger import get_logger
 
 from pynode.tasks import masternodes_refresh_task, index_new_chunks_task, \
     process_new_tickets_task, proccess_tmp_storage, chunk_fetcher_task
@@ -25,7 +25,7 @@ class MasterNodeDaemon:
     """
     def __init__(self):
         # initialize logging
-        self.__logger = initlogging('Masternode Daemon', __name__)
+        self.__logger = get_logger('Masternode Daemon')
 
         self.rpcserver = RPCServer()
 
@@ -51,7 +51,6 @@ class MasterNodeDaemon:
         loop.add_signal_handler(signal.SIGTERM, loop.stop)
 
         loop.create_task(self.rpcserver.run_server())
-        self.__logger.debug("RPC server started")
 
         loop.create_task(chunk_fetcher_task())
         self.__logger.debug("Chunk fetcher started")
@@ -62,7 +61,6 @@ class MasterNodeDaemon:
 
         # calculate XOR distances for new chunks
         loop.create_task(index_new_chunks_task())
-        self.__logger.debug("Chunk indexer started")
 
         # fetch new activation tickets, process chunks from there
         loop.create_task(process_new_tickets_task())

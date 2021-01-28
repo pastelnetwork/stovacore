@@ -6,7 +6,7 @@ import time
 from http.client import CannotSendRequest, RemoteDisconnected
 from bitcoinrpc.authproxy import AuthServiceProxy, JSONRPCException
 
-from core_modules.logger import initlogging
+from core_modules.logger import get_logger
 from core_modules.settings import Settings
 
 
@@ -18,7 +18,7 @@ class BlockChain:
     def __init__(self, user, password, ip, rpcport, pastelid=None, passphrase=None):
         self.url = "http://%s:%s@%s:%s" % (user, password, ip, rpcport)
         self.__reconnect()
-        self.__logger = initlogging('BlockChain', __name__)
+        self.__logger = get_logger('BlockChain')
 
         # passing `passphrase` parameter has the same idea as `pastelid` one.
         # we pass it for wallet_api and leave blank for masternode

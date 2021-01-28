@@ -8,7 +8,7 @@ from peewee import DoesNotExist, IntegrityError
 
 from core_modules.database import Masternode, Chunk, ChunkMnDistance, Regticket, ChunkMnRanked, MASTERNODE_DB, \
     ActivationTicket
-from core_modules.logger import initlogging
+from core_modules.logger import get_logger
 from core_modules.chunkmanager import get_chunkmanager
 from core_modules.ticket_models import RegistrationTicket
 from core_modules.rpc_client import RPCException
@@ -16,7 +16,8 @@ from core_modules.settings import Settings
 from core_modules.helpers import get_pynode_digest_int, chunkid_to_hex
 from cnode_connection import get_blockchain_connection
 
-tasks_logger = initlogging('Tasks', __name__)
+tasks_logger = get_logger('Tasks')
+chunk_storage_logger = get_logger('ChunkStorage')
 
 TXID_LENGTH = 64
 
@@ -97,6 +98,7 @@ def calculate_xor_distances_for_chunks(chunk_ids):
     """
     `chunk_ids` - list of chunks ids. Chunk ID is a very long integer.
     """
+    chunk_storage_logger.info('calculate_xor_distances_for_chunks - started')
     chunk_ids_str = [str(x) for x in chunk_ids]
     chunks_db = Chunk.select().where(Chunk.chunk_id.in_(chunk_ids_str))
     for chunk in chunks_db:
@@ -114,20 +116,18 @@ def index_new_chunks():
     chunk_qs = Chunk.select().where(Chunk.indexed == False)
     chunk_ids = [int(c.chunk_id) for c in chunk_qs]
     if len(chunk_ids):
+        chunk_storage_logger.info('index_new_chunks found {} unprocessed chunks. Processing...'.format(len(chunk_ids)))
         calculate_xor_distances_for_chunks(chunk_ids)
         # update all processed chunks with `indexed` = True
         for chunk in chunk_qs:
             chunk.indexed = True
         Chunk.bulk_update(chunk_qs, fields=[Chunk.indexed])
-
+        chunk_storage_logger.info('Updating Chunk.indexed flag for processed chunks in DB')
         # calculate chunk-mn-ranks as list of chunks was changed
         recalculate_mn_chunk_ranking_table()
 
 
 def get_registration_ticket_object_from_data(ticket):
-    # regticket_txid = act_ticket['ticket']['reg_txid']
-    # ticket = get_blockchain_connection().get_ticket(regticket_txid)
-    # ticket['ticket']['art_ticket']  - it's cnode package
     return RegistrationTicket(serialized_base64=ticket['ticket']['art_ticket'])
 
 
@@ -308,6 +308,7 @@ async def masternodes_refresh_task():
 
 
 async def index_new_chunks_task():
+    chunk_storage_logger.info('Index new chunks task started...')
     while True:
         await asyncio.sleep(1)
         try:

@@ -7,7 +7,7 @@ from aiohttp import web
 
 from cnode_connection import get_blockchain_connection
 from core_modules.database import Masternode
-from core_modules.logger import initlogging
+from core_modules.logger import get_logger
 from core_modules.rpc_serialization import RPCMessage
 from core_modules.settings import Settings
 from pynode.rpc_handlers import receive_rpc_fetchchunk, receive_rpc_download_image, receive_rpc_download_thumbnail
@@ -15,7 +15,7 @@ from pynode.rpc_handlers import receive_rpc_fetchchunk, receive_rpc_download_ima
 
 class RPCServer:
     def __init__(self):
-        self.__logger = initlogging('RPC Server', __name__)
+        self.__logger = get_logger('RPCServer')
 
         self.runner = None
         self.site = None
@@ -26,9 +26,7 @@ class RPCServer:
         self.app.add_routes([web.post('/', self.__http_proccess), web.get('/status', self.get_status)])
         # self.app.on_shutdown.append(self.stop_server)
 
-        self.__logger.debug("Starting RPC to listen on {}".format(Settings.RPC_PORT))
-
-        # MUST be removed before release -->
+        # FIXME !!!!! MUST be removed before release -->
         self.add_callback("PING_REQ", "PING_RESP", self.__receive_rpc_ping)
         self.add_callback("SQL_REQ", "SQL_RESP", self.__receive_rpc_sql)
         # <--
@@ -41,7 +39,6 @@ class RPCServer:
         self.add_callback("THUMBNAIL_DOWNLOAD_REQ", "THUMBNAIL_DOWNLOAD_RESP",
                           receive_rpc_download_thumbnail)
 
-        self.__logger.debug("RPC Server initialized")
 
     def add_callback(self, callback_req, callback_resp, callback_function, coroutine=False, allowed_pubkey=None):
         self.__RPCs[callback_req] = [callback_resp, callback_function, coroutine, allowed_pubkey]
@@ -124,6 +121,7 @@ class RPCServer:
         return web.Response(body=reply_packet)
 
     async def run_server(self):
+        self.__logger.info('Starting RPC Server')
         if not path.exists(Settings.HTTPS_CERTIFICATE_FILE):
             print("ERROR! HTTPS Certificate file doesn't exist - {0}", Settings.HTTPS_CERTIFICATE_FILE)
             print("Generating HTTPS certificates..")
@@ -147,6 +145,7 @@ class RPCServer:
                                     Settings.HTTPS_KEY_FILE)
         self.site = web.TCPSite(self.runner, port=Settings.RPC_PORT, ssl_context=ssl_context)
         await self.site.start()
+        self.__logger.info('RPC Server started, listening on port {}'.format(Settings.RPC_PORT))
 
     async def stop_server(self, *args, **kwargs):
         print('Stopping server')

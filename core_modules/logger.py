@@ -7,10 +7,7 @@ from core_modules.settings import Settings, LOG_DESTINATION_STDOUT
 loggers = {}
 
 
-def initlogging(logger_name, module, level=Settings.LOG_LEVEL):
-    name = "%s - %s" % (logger_name, module)
-
-    # TODO: perhaps this can be done in a more elegant way?
+def get_logger(name, level=Settings.LOG_LEVEL):
     logger = loggers.get(name)
     if logger is None:
         logger = logging.getLogger(name)
@@ -28,7 +25,7 @@ def initlogging(logger_name, module, level=Settings.LOG_LEVEL):
         else:
             raise ValueError("Invalid level: %s" % level)
 
-        formatter = logging.Formatter(' %(asctime)s - ' + name + ' - %(levelname)s - %(message)s')
+        formatter = logging.Formatter('%(asctime)s:%(levelname)s:' + name + ': - %(message)s')
 
         # use file handler for pyNode and console handler for wallet
         if os.environ.get('PYNODE_MODE') == 'WALLET' or Settings.LOG_DESTINATION == LOG_DESTINATION_STDOUT:
@@ -43,7 +40,6 @@ def initlogging(logger_name, module, level=Settings.LOG_LEVEL):
 
         # record this logger
         loggers[name] = logger
-
-        logger.debug("%s Logger started" % logger_name)
+        # logger.debug("%s Logger started" % name)
 
     return logger

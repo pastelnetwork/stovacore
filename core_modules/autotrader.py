@@ -1,10 +1,10 @@
-from core_modules.logger import initlogging
+from core_modules.logger import get_logger
 from cnode_connection import get_blockchain_connection
 
 
 class AutoTrader:
     def __init__(self, artregistry):
-        self.__logger = initlogging('Auto Trader', __name__)
+        self.__logger = get_logger('Auto Trader')
         self.__artregistry = artregistry
         self.__enabled = False
 

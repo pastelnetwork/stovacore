@@ -3,7 +3,7 @@ import requests
 
 from aiohttp import ClientSession, ClientTimeout
 
-from core_modules.logger import initlogging
+from core_modules.logger import get_logger
 from core_modules.rpc_serialization import RPCMessage
 from core_modules.helpers import chunkid_to_hex
 
@@ -14,7 +14,7 @@ class RPCException(Exception):
 
 class RPCClient:
     def __init__(self, remote_pastelid, server_ip, server_port):
-        self.__logger = initlogging('RPC Client', __name__)
+        self.__logger = get_logger('RPC Client')
         if not remote_pastelid:
             raise ValueError('Remove pastelid cannot be empty')
         if not server_ip:

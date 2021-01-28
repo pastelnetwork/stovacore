@@ -6,11 +6,11 @@ from cnode_connection import get_blockchain_connection
 from core_modules.ticket_models import RegistrationTicket, Signature, ImageData
 from core_modules.settings import Settings
 from core_modules.helpers import require_true
-from core_modules.logger import initlogging
+from core_modules.logger import get_logger
 from utils.mn_ordering import get_masternode_ordering
 from wallet.database import RegticketDB
 
-art_reg_client_logger = initlogging('Art Registration', __name__)
+art_reg_client_logger = get_logger('Art Registration')
 
 
 class ArtRegistrationClient:

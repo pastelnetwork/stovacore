@@ -1,7 +1,7 @@
 import os
 from core_modules.helpers import get_pynode_digest_int
 from core_modules.chunk_storage import ChunkStorage
-from core_modules.logger import initlogging
+from core_modules.logger import get_logger
 from core_modules.settings import Settings
 
 _chunkmanager = None
@@ -19,7 +19,7 @@ class ChunkManager:
         # initialize logger
         # IMPORTANT: we must ALWAYS use self.__logger.* for logging and not logging.*,
         # since we need instance-level logging
-        self.__logger = initlogging('Chunk Manager', __name__)
+        self.__logger = get_logger('Chunk Manager')
 
         # the actual storage layer
         self.__logger.debug("Setting ChunkStorage at %s" % Settings.CHUNK_DATA_DIR)
