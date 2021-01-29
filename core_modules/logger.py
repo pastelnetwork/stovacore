@@ -1,6 +1,7 @@
 import logging
 import logging.handlers
 import os
+from colorlog import ColoredFormatter
 
 from core_modules.settings import Settings, LOG_DESTINATION_STDOUT
 
@@ -25,7 +26,9 @@ def get_logger(name, level=Settings.LOG_LEVEL):
         else:
             raise ValueError("Invalid level: %s" % level)
 
-        formatter = logging.Formatter('%(asctime)s:%(levelname)s:' + name + ': - %(message)s')
+        # formatter = logging.Formatter('%(asctime)s:%(levelname)s:' + name + ': - %(message)s')
+        LOG_FORMAT = '%(log_color)s%(asctime)s:%(levelname)s:' + name + ': - %(message)s'
+        formatter = ColoredFormatter(LOG_FORMAT)
 
         # use file handler for pyNode and console handler for wallet
         if os.environ.get('PYNODE_MODE') == 'WALLET' or Settings.LOG_DESTINATION == LOG_DESTINATION_STDOUT:

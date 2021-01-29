@@ -1,3 +1,5 @@
+import peewee
+
 from core_modules.blackbox_modules import luby
 from core_modules.chunkmanager import get_chunkmanager
 from core_modules.database import Chunk, ChunkMnRanked, Masternode
@@ -20,9 +22,12 @@ def receive_rpc_fetchchunk(data, **kwargs):
     chunkid = hex_to_chunkid(data["chunkid"])  # here chunkid is long integer number
 
     # fetch chunk from DB, check if we store it
-    chunk = Chunk.get(chunk_id=str(chunkid))  # if we dont have chunk - exception will be raised and returned by RPC
+    try:
+        chunk = Chunk.get(chunk_id=str(chunkid))
+    except peewee.DoesNotExist:
+        return {"chunk": None}
+
     if not chunk.stored:
-        # raise RPCException('Given chunk is not stored')
         return {"chunk": None}
     chunk_data = get_chunkmanager().get_chunk_data(chunkid)
 

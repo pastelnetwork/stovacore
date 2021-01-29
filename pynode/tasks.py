@@ -179,7 +179,7 @@ def get_and_proccess_new_activation_tickets():
         chunk.save()
 
         chunks_created, chunks_updated = 0,0
-        tasks_logger.info('Creating chunks record for artwok chunks...')
+        tasks_logger.info('Creating chunks record for artwork chunks...')
         for chunkhash in chunk_hashes:
             # if chunk exists - mark it as confirmed
             # else - create it. And mark as confirmed. More frequently we'll have no such chunk.
@@ -336,7 +336,7 @@ async def fetch_single_chunk_via_rpc(chunkid):
             continue
 
         if data is None:
-            tasks_logger.info("MN %s returned None for fetchchunk %s" % (mn.server_ip, chunkid))
+            tasks_logger.debug("MN %s returned None for fetchchunk %s" % (mn.server_ip, chunkid))
             # chunk was not found
             continue
 

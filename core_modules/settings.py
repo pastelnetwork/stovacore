@@ -44,10 +44,10 @@ class __Settings:
             self.LOG_DESTINATION = section['log_destination']
         else:
             self.LOG_DESTINATION = LOG_DESTINATION_STDOUT
+        self.LOG_LEVEL = section['log_level']
 
         # hardcoded settings
         self.DEBUG = False
-        self.LOG_LEVEL = 'debug'
         BASEDIR = os.path.abspath(os.path.join(__file__, "..", ".."))
         self.NSFW_MODEL_FILE = os.path.join(BASEDIR, "misc", "nsfw_trained_model.pb")
         self.PASTEL_DIR = os.path.join(os.getenv('HOME'), '.pastel')

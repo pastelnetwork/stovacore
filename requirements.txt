@@ -16,6 +16,7 @@ Keras-Applications==1.0.2
 Keras-Preprocessing==1.0.1
 requests==2.22.0
 base58==2.0.0
+colorlog
 
 # dev
 PyInstaller==3.5

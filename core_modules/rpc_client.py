@@ -64,7 +64,7 @@ class RPCClient:
 
     async def __send_rpc_to_mn(self, response_name, request_packet):
         await asyncio.sleep(0)
-        self.__logger.info('Sending RPC message to {}'.format(self.__server_ip))
+        self.__logger.debug('Sending RPC message to {}'.format(self.__server_ip))
 
         response_packet = await self.__send_rpc_and_wait_for_response(request_packet)
 
@@ -77,7 +77,7 @@ class RPCClient:
         sender_id, response_msg = rpc_message.sender_id, rpc_message.data
         rpcname, success, response_data = response_msg
         # fixme: log data only if it's not very long.
-        self.__logger.warn('RPC {} from {} success: {}, data: {}'.format(rpcname,
+        self.__logger.debug('RPC {} from {} success: {}, data: {}'.format(rpcname,
                                                                          self.__server_ip, success, response_data))
 
         if rpcname != response_name:
@@ -100,14 +100,14 @@ class RPCClient:
         sender_id, response_msg = rpc_message.sender_id, rpc_message.data
         rpcname, success, response_data = response_msg
         # fixme: log data only if it's not very long
-        self.__logger.info('RPC {} from {} success: {}, data: {}'.format(rpcname, node_name, success, response_data))
+        self.__logger.debug('RPC {} from {} success: {}, data: {}'.format(rpcname, node_name, success, response_data))
 
         if rpcname != response_name:
             raise ValueError("Spotcheck response has rpc name: %s" % rpcname)
 
         if success != "SUCCESS":
             self.__logger.warn('Error from masternode {}'.format(node_name))
-            raise RPCException(response_data)
+            self.__logger.info('Data: {}'.format(response_data))
 
         return response_data
 
@@ -173,8 +173,8 @@ class RPCClient:
 
         await asyncio.sleep(0)
 
-        self.__logger.warn("FETCHCHUNK REQUEST to {} ({})".format(self.__name, self.server_ip))
-        self.__logger.warn("FETCHCHUNK REQUEST to {}, chunkid: {}".format(self, chunkid_to_hex(int(chunkid))))
+        self.__logger.debug("FETCHCHUNK REQUEST to {}".format(self.server_ip))
+        self.__logger.debug("Chunkid: {}".format(chunkid_to_hex(int(chunkid))))
 
         # chunkid is bignum so we need to serialize it
         chunkid_str = chunkid_to_hex(int(chunkid))
