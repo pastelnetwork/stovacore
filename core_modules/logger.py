@@ -41,5 +41,4 @@ def get_logger(name, level=Settings.LOG_LEVEL):
         # record this logger
         loggers[name] = logger
         # logger.debug("%s Logger started" % name)
-
     return logger

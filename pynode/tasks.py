@@ -98,15 +98,18 @@ def calculate_xor_distances_for_chunks(chunk_ids):
     """
     `chunk_ids` - list of chunks ids. Chunk ID is a very long integer.
     """
-    chunk_storage_logger.info('calculate_xor_distances_for_chunks - started')
+    chunk_storage_logger.info('Calculating XOR distance for {} chunks...'.format(len(chunk_ids)))
     chunk_ids_str = [str(x) for x in chunk_ids]
     chunks_db = Chunk.select().where(Chunk.chunk_id.in_(chunk_ids_str))
+    counter = 0
     for chunk in chunks_db:
         for mn in Masternode.get_active_nodes():
             # we store chunk.chunk_id as CharField, but essentially it's very long integer (more then 8 bytes,
             # doesn't fit in database INT type)
             xor_distance = calculate_xor_distance(mn.pastel_id, int(chunk.chunk_id))
             ChunkMnDistance.create(chunk=chunk, masternode=mn, distance=str(xor_distance))
+            counter +=1
+    chunk_storage_logger.info('..Caculated {} distances'.format(counter))
 
 
 def index_new_chunks():
@@ -222,6 +225,7 @@ def recalculate_mn_chunk_ranking_table():
     There is a sense to limit frequence of calls (say, no more then once a minute or so).
     """
     # calculate each masternode rank for each chunk
+    tasks_logger.info('ChunkMnRanked table has {} record. Recalculating...'.format(ChunkMnRanked.select().count()))
     subquery = '''
     select chunk_id, masternode_id, row_number() 
     over (partition by chunk_id order by distance asc) as r 
@@ -239,8 +243,8 @@ def recalculate_mn_chunk_ranking_table():
 
     # insert (chunk, masternode, rank) for all chunk-owners in a separate table for convinience
     insert_sql = '''insert into chunkmnranked (chunk_id, masternode_id, rank) {}'''.format(sql)
-    tasks_logger.info('query: {}'.format(insert_sql))
     MASTERNODE_DB.execute_sql(insert_sql)
+    tasks_logger.info('...Done. Now here are {} records'.format(ChunkMnRanked.select().count()))
 
 
 def get_owned_chunks():
@@ -355,43 +359,29 @@ async def fetch_chunk_and_store_it(chunkid):
         # add chunk to persistant storage and update DB info (`stored` flag) to True
         get_chunkmanager().store_chunk_in_storage(int(chunkid), data)
         Chunk.update(stored=True).where(Chunk.chunk_id == chunkid).execute()
+        return True
 
 
 async def chunk_fetcher_task_body(pastel_id=None):
-    missing_chunks = get_missing_chunk_ids(pastel_id)[:Settings.CHUNK_FETCH_PARALLELISM]
+    missing_chunk_ids = get_missing_chunk_ids(pastel_id)
+    if len(missing_chunk_ids):
+        tasks_logger.info('Chunk fetcher found {} chunks to fetch...'.format(len(missing_chunk_ids)))
+    else:
+        return
+    missing_chunk_ids_to_process = missing_chunk_ids[:Settings.CHUNK_FETCH_PARALLELISM]
     tasks = []
-    for missing_chunk in missing_chunks:
+    for missing_chunk in missing_chunk_ids_to_process:
         tasks.append(fetch_chunk_and_store_it(missing_chunk))
 
-    await asyncio.gather(*tasks)
+    results = await asyncio.gather(*tasks)
+    tasks_logger.info('...Fetched {} chunks'.format(results.count(True)))
 
 
 async def chunk_fetcher_task():
+    tasks_logger.info("Starting chunk fetcher...")
     while True:
         try:
             await chunk_fetcher_task_body()
         except Exception as ex:
             tasks_logger.exception('Exception in chunk fetcher task: {}'.format(ex))
         await asyncio.sleep(1)
-
-
-async def run_ping_test_forever(self):
-    while True:
-        await asyncio.sleep(1)
-
-        Masternode.get_active_nodes()
-        mn = random.sample(Masternode.get_active_nodes())
-        if mn is None:
-            continue
-
-        data = b'PING'
-
-        try:
-            response_data = await mn.send_rpc_ping(data)
-        except RPCException as exc:
-            tasks_logger.exception("PING RPC FAILED for node %s with exception %s" % (mn, exc))
-        else:
-            if response_data != data:
-                tasks_logger.warning("PING FAILED for node %s (%s != %s)" % (mn, data, response_data))
-            else:
-                 tasks_logger.debug("PING SUCCESS for node %s for chunk: %s" % (mn, data))

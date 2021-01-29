@@ -53,7 +53,6 @@ class MasterNodeDaemon:
         loop.create_task(self.rpcserver.run_server())
 
         loop.create_task(chunk_fetcher_task())
-        self.__logger.debug("Chunk fetcher started")
 
         # refresh masternode list, calculate XOR distances for added masternode
         loop.create_task(masternodes_refresh_task())

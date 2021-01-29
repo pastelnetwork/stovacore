@@ -4,11 +4,10 @@ import math
 import os
 import hashlib
 
-from decimal import Decimal
-
 
 class ConfigIsNotSet(Exception):
     pass
+
 
 LOG_DESTINATION_STDOUT = 'stdout'
 
@@ -27,6 +26,9 @@ class __Settings:
             raise Exception(
                 'Unable to read the config at "{}". Please check if it exists and has appropriate permissions'.format(
                     self.config_filename))
+
+        print('Reading configuration at {}'.format(self.config_filename))
+
         config = configparser.ConfigParser()
         config.read(self.config_filename)
         if 'default' not in config:
@@ -59,6 +61,7 @@ class __Settings:
         self.CNODE_RPC_PWD = 'rt'
         self.CNODE_RPC_IP = '127.0.0.1'
         self.CNODE_RPC_PORT = 19932 if self.IS_TESTNET else 9932
+        print('Pynode confguration initialized')
 
 
 Settings = __Settings()
@@ -70,7 +73,7 @@ Settings.PYNODE_HEX_DIGEST_SIZE = Settings.PYNODE_HASH_ALGO().digest_size * 2
 
 Settings.RPC_MSG_SIZELIMIT = 100 * 1024 * 1024  # 100MB
 
-Settings.REPLICATION_FACTOR = 15
+Settings.REPLICATION_FACTOR = 7
 Settings.CHUNKSIZE = 1 * 1024 * 1024  # 1MB
 Settings.CHUNK_FETCH_PARALLELISM = 15  # we will fetch this many chunks simultaneously in coroutines
 

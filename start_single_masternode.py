@@ -1,8 +1,8 @@
-import logging
 from peewee import logger as peewee_logger
 from bitcoinrpc.authproxy import log as bitcoinrpc_logger
-from core_modules.database import MASTERNODE_DB
+
 from core_modules.settings import Settings
+from core_modules.database import MASTERNODE_DB
 from pynode.masternode_daemon import MasterNodeDaemon
 
 from os import path
@@ -14,14 +14,10 @@ if __name__ == "__main__":
     bitcoinrpc_logger.disabled = True
 
     if not path.exists(Settings.MN_DATABASE_FILE):
-        logging.basicConfig(level=logging.DEBUG)
         print("Database file {} does not exist".format(Settings.MN_DATABASE_FILE))
         print("Creating database...")
         create_database()
         print("Database {} created!".format(Settings.MN_DATABASE_FILE))
-        # print("ERROR! Database file doesn't exist - {}. Create DB or Change value of 'Settings.MN_DATABASE_FILE' "
-        #       "in settings.py ", Settings.MN_DATABASE_FILE)
-        # raise SystemExit('Exiting')
 
     # initialize the database
     MASTERNODE_DB.init(Settings.MN_DATABASE_FILE)
