@@ -41,6 +41,7 @@ function status()
 
 function start()
 {
+    export CONFIG_FILE=/home/animecoinuser/.pastel/pynode.ini
     line=`ps aux | grep [s]ingle_masternode`
     if [ -z "$line" ];
     then
