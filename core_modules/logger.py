@@ -26,19 +26,19 @@ def get_logger(name, level=Settings.LOG_LEVEL):
         else:
             raise ValueError("Invalid level: %s" % level)
 
-        # formatter = logging.Formatter('%(asctime)s:%(levelname)s:' + name + ': - %(message)s')
+        plain_formatter = logging.Formatter('%(asctime)s:%(levelname)s:' + name + ': - %(message)s')
         LOG_FORMAT = '%(log_color)s%(asctime)s:%(levelname)s:' + name + ': - %(message)s'
-        formatter = ColoredFormatter(LOG_FORMAT)
+        color_formatter = ColoredFormatter(LOG_FORMAT)
 
         # use file handler for pyNode and console handler for wallet
         if os.environ.get('PYNODE_MODE') == 'WALLET' or Settings.LOG_DESTINATION == LOG_DESTINATION_STDOUT:
             console_handler = logging.StreamHandler()
-            console_handler.setFormatter(formatter)
+            console_handler.setFormatter(color_formatter)
             logger.addHandler(console_handler)
         else:
             # total maximum 5 files up to 100MB each
             file_handler = logging.handlers.RotatingFileHandler(Settings.LOG_DESTINATION, maxBytes=100 * 1024 * 1024, backupCount=5)
-            file_handler.setFormatter(formatter)
+            file_handler.setFormatter(plain_formatter)
             logger.addHandler(file_handler)
 
         # record this logger
