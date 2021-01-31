@@ -46,6 +46,7 @@ function start()
     if [ -z "$line" ];
     then
         cd ~/StoVaCore
+        /home/animecoinuser/.virtualenvs/StoVaCore/bin/pip install -r requirements.txt
         nohup /home/animecoinuser/.virtualenvs/StoVaCore/bin/python /home/animecoinuser/StoVaCore/start_single_masternode.py > nohup.out 2> nohup.err < /dev/null &
         echo "Started"
     else
