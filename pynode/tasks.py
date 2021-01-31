@@ -336,6 +336,7 @@ async def fetch_single_chunk_via_rpc(chunkid):
             continue
         except Exception as ex:
             tasks_logger.exception("FETCHCHUNK RPC FAILED for node %s with exception %s" % (mn.server_ip, ex))
+            continue
 
         if data is None:
             tasks_logger.debug("MN %s returned None for fetchchunk %s" % (mn.server_ip, chunkid))
@@ -360,7 +361,7 @@ FIBONACHI_ROW = {0, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987}
 async def fetch_chunk_and_store_it(chunkid):
     chunk = Chunk.get(Chunk.chunk_id == chunkid)
     if chunk.attempts_to_load not in FIBONACHI_ROW:
-        chunk.attempts_to_load += 1
+        chunk.attempts_to_load = chunk.attempts_to_load+1
         chunk.save()
         return False
 
