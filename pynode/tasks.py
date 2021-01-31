@@ -334,6 +334,8 @@ async def fetch_single_chunk_via_rpc(chunkid):
         except RPCException as exc:
             tasks_logger.exception("FETCHCHUNK RPC FAILED for node %s with exception %s" % (mn.server_ip, exc))
             continue
+        except Exception as ex:
+            tasks_logger.exception("FETCHCHUNK RPC FAILED for node %s with exception %s" % (mn.server_ip, ex))
 
         if data is None:
             tasks_logger.debug("MN %s returned None for fetchchunk %s" % (mn.server_ip, chunkid))
