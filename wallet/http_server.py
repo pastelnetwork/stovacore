@@ -1,5 +1,7 @@
 import os
 import sys
+import logging
+
 from aiohttp import web
 from bitcoinrpc.authproxy import JSONRPCException
 
@@ -8,6 +10,7 @@ from wallet.settings import get_artwork_dir
 
 routes = web.RouteTableDef()
 pastel_client = None
+
 
 def get_pastel_client():
     # this import should be local to let env varibles be set earlier than blockchain object will be created
@@ -140,6 +143,7 @@ app.add_routes(routes)
 async def run_http_server():
     runner = web.AppRunner(app)
     await runner.setup()
-
+    aiohttp_access_logger = logging.getLogger('aiohttp.access')
+    aiohttp_access_logger.disabled = True
     site = web.TCPSite(runner, port=5000)
     await site.start()

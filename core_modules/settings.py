@@ -15,36 +15,40 @@ LOG_DESTINATION_STDOUT = 'stdout'
 # SETTINGS - global settings for everyone
 class __Settings:
     def __init__(self):
-        if 'CONFIG_FILE' not in os.environ:
-            raise ConfigIsNotSet(
-                'Config file is not set up. Please set environment variable CONFIG_FILE to point the config file')
-        self.config_filename = os.environ['CONFIG_FILE']
+        if os.environ.get('PYNODE_MODE') != 'WALLET':
+            if 'CONFIG_FILE' not in os.environ:
+                raise ConfigIsNotSet(
+                    'Config file is not set up. Please set environment variable CONFIG_FILE to point the config file')
+            self.config_filename = os.environ['CONFIG_FILE']
 
-        if not self.config_filename:
-            raise Exception('Settings: config file is not provided')
-        if not os.path.isfile(self.config_filename):
-            raise Exception(
-                'Unable to read the config at "{}". Please check if it exists and has appropriate permissions'.format(
-                    self.config_filename))
+            if not self.config_filename:
+                raise Exception('Settings: config file is not provided')
+            if not os.path.isfile(self.config_filename):
+                raise Exception(
+                    'Unable to read the config at "{}". Please check if it exists and has appropriate permissions'.format(
+                        self.config_filename))
 
-        print('Reading configuration at {}'.format(self.config_filename))
+            print('Reading configuration at {}'.format(self.config_filename))
 
-        config = configparser.ConfigParser()
-        config.read(self.config_filename)
-        if 'default' not in config:
-            raise Exception('Config file should have "default" section')
-        section = config['default']
+            config = configparser.ConfigParser()
+            config.read(self.config_filename)
+            if 'default' not in config:
+                raise Exception('Config file should have "default" section')
+            section = config['default']
 
-        # settings read from config
-        self.IS_TESTNET = section.getboolean('testnet')
-        self.PASTEL_ID_PASSPHRASE = section['passphrase']
-        self.CHUNK_DATA_DIR = section['storage_dir']
-        self.TEMP_STORAGE_DIR = section['tmp_storage_dir']
-        if 'log_destination' in section:
-            self.LOG_DESTINATION = section['log_destination']
+            # settings read from config
+            self.IS_TESTNET = section.getboolean('testnet')
+            self.PASTEL_ID_PASSPHRASE = section['passphrase']
+            self.CHUNK_DATA_DIR = section['storage_dir']
+            self.TEMP_STORAGE_DIR = section['tmp_storage_dir']
+            if 'log_destination' in section:
+                self.LOG_DESTINATION = section['log_destination']
+            else:
+                self.LOG_DESTINATION = LOG_DESTINATION_STDOUT
+            self.LOG_LEVEL = section['log_level']
         else:
-            self.LOG_DESTINATION = LOG_DESTINATION_STDOUT
-        self.LOG_LEVEL = section['log_level']
+            self.IS_TESTNET = True
+            self.LOG_LEVEL = 'debug'
 
         # hardcoded settings
         self.DEBUG = False

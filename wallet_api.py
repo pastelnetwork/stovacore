@@ -4,6 +4,9 @@ import signal
 import sys
 import logging
 
+from peewee import logger as peewee_logger
+from bitcoinrpc.authproxy import log as bitcoinrpc_logger
+
 os.environ['PYNODE_MODE'] = 'WALLET'
 
 
@@ -42,6 +45,9 @@ def run_event_loop():
 if __name__ == '__main__':
     if len(sys.argv) < 4:
         raise Exception('Usage: ./wallet_api <wallet_dir> <pastelid> <passphrase>')
+    peewee_logger.disabled = True
+    bitcoinrpc_logger.disabled = True
+
     app_dir = sys.argv[1]
     pastelid = sys.argv[2]
     passphrase = sys.argv[3]
