@@ -2,6 +2,7 @@ import asyncio
 import base64
 import json
 import random
+from aiohttp import ClientConnectorError, ServerTimeoutError
 
 from bitcoinrpc.authproxy import JSONRPCException
 from peewee import DoesNotExist, IntegrityError
@@ -333,6 +334,9 @@ async def fetch_single_chunk_via_rpc(chunkid):
             data = await mn.send_rpc_fetchchunk(chunkid)
         except RPCException as exc:
             tasks_logger.exception("FETCHCHUNK RPC FAILED for node %s with exception %s" % (mn.server_ip, exc))
+            continue
+        except (ClientConnectorError, ServerTimeoutError) as clien_ex:
+            tasks_logger.error('{} for {}'.format(str(clien_ex), mn.server_ip))
             continue
         except Exception as ex:
             tasks_logger.exception("FETCHCHUNK RPC FAILED for node %s with exception %s" % (mn.server_ip, ex))
