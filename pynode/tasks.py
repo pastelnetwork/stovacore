@@ -361,7 +361,7 @@ FIBONACHI_ROW = {0, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987}
 async def fetch_chunk_and_store_it(chunkid):
     chunk = Chunk.get(Chunk.chunk_id == chunkid)
     if chunk.attempts_to_load not in FIBONACHI_ROW:
-        chunk.attempts_to_load = chunk.attempts_to_load+1
+        chunk.attempts_to_load += 1
         chunk.save()
         return False
 
@@ -370,11 +370,12 @@ async def fetch_chunk_and_store_it(chunkid):
         # add chunk to persistant storage and update DB info (`stored` flag) to True
         get_chunkmanager().store_chunk_in_storage(int(chunkid), data)
         chunk.stored = True
-        chunk.attempts_to_load = chunk.attempts_to_load+1
+        chunk.attempts_to_load += 1
         chunk.save()
         return True
     else:
-        chunk.attempts_to_load = chunk.attempts_to_load+1
+        chunk.attempts_to_load += 1
+        chunk.save()
         return False
 
 
