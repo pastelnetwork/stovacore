@@ -370,11 +370,11 @@ async def fetch_chunk_and_store_it(chunkid):
         # add chunk to persistant storage and update DB info (`stored` flag) to True
         get_chunkmanager().store_chunk_in_storage(int(chunkid), data)
         chunk.stored = True
-        chunk.attempts_to_load += 1
+        chunk.attempts_to_load = chunk.attempts_to_load+1
         chunk.save()
         return True
     else:
-        chunk.attempts_to_load += 1
+        chunk.attempts_to_load = chunk.attempts_to_load+1
         return False
 
 
