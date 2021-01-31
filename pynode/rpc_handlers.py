@@ -29,7 +29,12 @@ def receive_rpc_fetchchunk(data, **kwargs):
 
     if not chunk.stored:
         return {"chunk": None}
-    chunk_data = get_chunkmanager().get_chunk_data(chunkid)
+    try:
+        chunk_data = get_chunkmanager().get_chunk_data(chunkid)
+    except FileNotFoundError:
+        chunk.stored = False
+        chunk.save()
+        chunk_data = None
 
     return {"chunk": chunk_data}
 
