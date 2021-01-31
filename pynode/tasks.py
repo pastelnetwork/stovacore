@@ -269,7 +269,7 @@ def get_missing_chunk_ids(pastel_id=None):
     except DoesNotExist:
         return []
     chunks_ranked_qs = ChunkMnRanked.select().join(Chunk).where(
-        (ChunkMnRanked.masternode_id == current_mn_id) & (Chunk.stored == False))
+        (ChunkMnRanked.masternode_id == current_mn_id) & (Chunk.stored == False) & (Chunk.attempts_to_load < 1000))
     return [c.chunk.chunk_id for c in chunks_ranked_qs]
 
 
@@ -352,14 +352,27 @@ async def fetch_single_chunk_via_rpc(chunkid):
     tasks_logger.error("Unable to fetch chunk %s" %
                      chunkid_to_hex(int(chunkid)))
 
+FIBONACHI_ROW = {0, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987}
+
 
 async def fetch_chunk_and_store_it(chunkid):
+    chunk = Chunk.get(Chunk.chunk_id == chunkid)
+    if chunk.attempts_to_load not in FIBONACHI_ROW:
+        chunk.attempts_to_load += 1
+        chunk.save()
+        return False
+
     data = await fetch_single_chunk_via_rpc(chunkid)
     if data:
         # add chunk to persistant storage and update DB info (`stored` flag) to True
         get_chunkmanager().store_chunk_in_storage(int(chunkid), data)
-        Chunk.update(stored=True).where(Chunk.chunk_id == chunkid).execute()
+        chunk.stored = True
+        chunk.attempts_to_load += 1
+        chunk.save()
         return True
+    else:
+        chunk.attempts_to_load += 1
+        return False
 
 
 async def chunk_fetcher_task_body(pastel_id=None):
@@ -384,4 +397,4 @@ async def chunk_fetcher_task():
             await chunk_fetcher_task_body()
         except Exception as ex:
             tasks_logger.exception('Exception in chunk fetcher task: {}'.format(ex))
-        await asyncio.sleep(1)
+        await asyncio.sleep(10)

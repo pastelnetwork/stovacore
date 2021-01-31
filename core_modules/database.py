@@ -95,6 +95,7 @@ class Chunk(Model):
     indexed = BooleanField(default=False)  # to track fresh added chunks, and calculate XOR distances for them.
     confirmed = BooleanField(default=False)  # indicates if chunk ID is contained in one of confirmed registration tickets
     stored = BooleanField(default=False)
+    attempts_to_load = IntegerField(default=0)
 
     class Meta:
         database = MASTERNODE_DB
