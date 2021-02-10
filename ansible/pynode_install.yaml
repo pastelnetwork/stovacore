@@ -21,8 +21,5 @@
     - name: generate https certificates
       shell: mkdir ~/.pastel/pynode_https_cert && cd ~/.pastel/pynode_https_cert && openssl req -newkey rsa:2048 -nodes -keyout privkey.pem -x509 -days 36500 -out certificate.pem -subj "/C=US"
 
-    - name: create database
-      shell: PYTHONPATH=/home/animecoinuser/StoVaCore/ /home/animecoinuser/.virtualenvs/StoVaCore/bin/python ~/StoVaCore/utils/create_tables.py  
-
     - name: create pastelID
       shell: cd ~/StoVaCore && ./pynode.sh create_pastelid
