@@ -58,7 +58,8 @@ class ArtRegistrationClient:
             "imagedata_hash": image.get_artwork_hash(),
         })
 
-    async def get_workers_fee(self, image_data, regticket):
+    async def send_regticket_and_image_to_mn0(self, image_data, regticket):
+        # Sign ticket using authors pastelid
         regticket_signature = self.generate_signed_ticket(regticket)
 
         regticket_db = RegticketDB.create(created=datetime.now(), blocknum=regticket.blocknum,
@@ -68,13 +69,16 @@ class ArtRegistrationClient:
 
         mn0 = get_masternode_ordering()[0]
         art_reg_client_logger.debug('Top masternode received: {}'.format(mn0.server_ip))
+        # send ticket; get upload code
         upload_code = await mn0.call_masternode("REGTICKET_REQ", "REGTICKET_RESP",
                                                 [regticket.serialize(), regticket_signature.serialize()])
+        # send image
         worker_fee = await mn0.call_masternode("IMAGE_UPLOAD_MN0_REQ", "IMAGE_UPLOAD_MN0_RESP",
                                                {'image_data': image_data, 'upload_code': upload_code})
         regticket_db.worker_fee = worker_fee
         regticket_db.upload_code_mn0 = upload_code
         regticket_db.save()
+        # return fee offered by MN0
         return {'regticket_id': regticket_db.id, 'worker_fee': worker_fee}
 
     async def send_regticket_to_mn2_mn3(self, regticket_id):
@@ -98,6 +102,7 @@ class ArtRegistrationClient:
                 return None, str(ex)
             return upload_code, None
 
+        # Send regticket and image to MN1 and MN2
         result_mn1, result_mn2 = await asyncio.gather(
             send_regticket_to_mn(mn1, regticket_db.serialized_regticket, regticket_db.serialized_signature, image_data),
             send_regticket_to_mn(mn2, regticket_db.serialized_regticket, regticket_db.serialized_signature, image_data),
