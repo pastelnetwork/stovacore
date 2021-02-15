@@ -34,13 +34,7 @@
       become: yes
       become_user: animecoinuser
       become_method: su
-      shell: mkdir -p ~/.ssh && touch ~/.ssh/authorized_keys && echo 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDHv8VsEeLaywTBkj2GL0fkasCcPP18xnV43ECQMgVY4IWm+XZUh3nk0QVVby1Om5VpsuOANp5yCZxmO6rQO4/7i4V7qYPpR2J3qdC6AvwAP+5EPMy1TEvU2UIbNwNfjhpeBcYv/YvR3gLLYZd0w/uq/a3PCkqBDHYafVcUhfAGBYfBzMFlzqWWuBkPg/R5RhfztGdpGGPCCwEQIys5NqRC2z3N68+mnkLDoEYbTVlyi3HOBjPG+3yx3iyyoYMVlvpuGcWn049BcaoF7B0nUMXUVnKO0VCNqQ6tmTRcq+CKKX2Sucwyaf2uringjAg1K19Rcts49lsL+qilayUgfyXD a.dobrushskiy@gmail.com' >> ~/.ssh/authorized_keys
-
-    - name: Add ssh key for animecoinuser
-      become: yes
-      become_user: animecoinuser
-      become_method: su
-      shell: echo 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDChY+/Vx5b4ZKqy1dSajxxyBjuooeuRjDe6jHKvV6XxvCN+29ERbvUD/emCaX9t7EBglIfjAfIrZpeI+ph1jy263BXqmwTawitd9qLqIjVsd13Mbc7GHo3BCQyKUf01xHBCH5uwXmpTSDt5vrNtmmrxlxrkRx7cjEC45JbkiIJrI74k0OlyUuUV6fnA57i099GvrRFafb7uGkHEVAh9my/nzSu0ELLu96bZFthjqf6F4x8JJqJSY6ivuJ95++ZIOCPv7CrhOdBsTUQktX58YN25fMJPAAc8jtuMvkcwMuGjHRwlfLCzd6vRrEHn3wC+/R5oK5JG3TAc/HAgrsBE5YH root@cli-srv-funny-darwin' >> ~/.ssh/authorized_keys
+      shell: mkdir -p ~/.ssh && touch ~/.ssh/authorized_keys && echo 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDk38NuRUpLO5V0U7wi/R0DL1+Bkf03bSRTx44mZ6MyyGaXIGlgUwh8qpnYPCg1r9vk4Vs47UteRbaouyKuafyiFoQuBpghqmxMuPrRVz/WumD/5rBcV3CRCt7ussXZ7Xamuw/anlzaxhFue9LpJYC1q6Gkb1fpZVI3R80iyQGU5WBLi7ATMsYce4MhPtUpx+rVCneDdyzuexTjfD2U+dSKBPZVZSu2GmjbUgjqbKMbzM1+54WSIFrEBFI6MLSOxosWt9ih2qK9qJU82SjBAF13N8Iv4hETBTnOQfnbTqFAWh79tjRp+OE8As6Vo1jlY5e2VXZ2K+RzREf7W54A9XR9 alex@MacBook-Pro-2.local' >> ~/.ssh/authorized_keys
 
     - name: Get Pastel binaries
       become: yes
