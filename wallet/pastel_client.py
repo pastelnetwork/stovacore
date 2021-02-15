@@ -60,9 +60,17 @@ class PastelClient:
     # Image registration methods
     async def image_registration_step_2(self, regticket_data: dict, image_data: bytes):
 
+        # Create and populate ticket ()
         artreg = ArtRegistrationClient()
+        # generate_regticket creates:
+        #   fingerprints
+        #   luby blocks (hashes and seeds)
+        #   thumbnail
+        #   hashes of images and thumbnail
         regticket = ArtRegistrationClient.generate_regticket(image_data, regticket_data)
-        result = await artreg.get_workers_fee(
+
+        # Send regticket to MN0; Receive upload_code; Upload image; Receive worker's fee
+        result = await artreg.send_regticket_and_image_to_mn0(
             image_data=image_data,
             regticket=regticket
         )
@@ -75,8 +83,10 @@ class PastelClient:
         success, err = await artreg.send_regticket_to_mn2_mn3(regticket_id)
         if not success:
             return {'status': 'ERROR', 'msg': err}
+
         regticket_db = RegticketDB.get(RegticketDB.id == regticket_id)
         amount = "{0:.5f}".format(regticket_db.worker_fee * 0.1)
+
         # burn 10% of worker's fee
         # TODO: current BURN_ADDRESS is taken from MN3. Pick another burn address.
         self.__logger.warn('Sending to BURN_ADDRESS, amount: {}'.format(amount))
@@ -86,6 +96,7 @@ class PastelClient:
         regticket_db.burn_tx_id = burn_10_percent_txid
         regticket_db.save()
 
+        # Send txid of burnt 10% to MN0, MN1 and MN2
         mn0, mn1, mn2 = get_masternode_ordering(regticket_db.blocknum)[:3]
 
         async def send_txid_10_req_to_mn(mn, data):

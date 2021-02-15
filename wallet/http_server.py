@@ -32,7 +32,7 @@ async def image_registration_step_2(request):
     - Receive upload_code
     - Upload image
     - Receive worker's fee
-    - Store regticket metadata to loca db
+    - Store regticket metadata to local db
     Input {image: path_to_image_file, title: image_title}
     Returns {workers_fee, regticket_id}
     """
@@ -51,13 +51,18 @@ async def image_registration_step_2(request):
     image_path = data.pop('image')
     with open(image_path, 'rb') as f:
         content = f.read()
+
+    # Send regticket and image to MN0; Receive worker's fee
     try:
         result = await get_pastel_client().image_registration_step_2(regticket_data=data, image_data=content)
     except Exception as ex:
         return web.json_response({'error': str(ex)}, status=400)
+
+    # Store regticket metadata to local db
     regticket_db = RegticketDB.get(RegticketDB.id == result['regticket_id'])
     regticket_db.path_to_image = image_path
     regticket_db.save()
+
     print('Fee received: {}'.format(result['worker_fee']))
     return web.json_response({'fee': result['worker_fee'], 'regticket_id': regticket_db.id})
 
@@ -74,6 +79,7 @@ async def image_registration_step_3(request):
     data = await request.json()
     regticket_id = data['regticket_id']
 
+    # Send regticket and image to MN1 and MN2
     response = await get_pastel_client().image_registration_step_3(regticket_id)
     # return ticket height ticket fee pastelid and passphrase
     print('Img registration step 3 response: {}'.format(response), file=sys.stderr)
