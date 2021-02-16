@@ -93,7 +93,7 @@ function create_pastelid()
 function register_mnid()
 {
     cd ~/StoVaCore/utils
-    PYTHONPATH=/home/animecoinuser/StoVaCore/ /home/animecoinuser/.virtualenvs/StoVaCore/bin/python register_mnid.py
+    PYTHONPATH=/home/animecoinuser/StoVaCore/ CONFIG_FILE=/home/animecoinuser/StoVaCore/pynode.ini /home/animecoinuser/.virtualenvs/StoVaCore/bin/python register_mnid.py
 }
 
 case $1 in
