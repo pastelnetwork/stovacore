@@ -87,7 +87,7 @@ function clear_tmp_storage()
 function create_pastelid()
 {
     cd ~/StoVaCore/utils
-    PYTHONPATH=/home/animecoinuser/StoVaCore/ /home/animecoinuser/.virtualenvs/StoVaCore/bin/python create_pastelid.py
+    PYTHONPATH=/home/animecoinuser/StoVaCore/ CONFIG_FILE=/home/animecoinuser/StoVaCore/pynode.ini /home/animecoinuser/.virtualenvs/StoVaCore/bin/python create_pastelid.py
 }
 
 function register_mnid()
