@@ -243,7 +243,7 @@ class PastelClient:
             if response == 'Key is not found':
                 pass
             elif type(response) == list:
-                resp_json = json.loads(response[0])
+                resp_json = response[0]
                 sale_data = {
                     'forSale': True,
                     'price': resp_json['ticket']['asked_price']
