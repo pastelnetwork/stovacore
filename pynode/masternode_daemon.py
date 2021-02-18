@@ -1,10 +1,10 @@
+"""
+This file contains MasterNodeDaemon class which `run_event_loop` is basically pynode entry point.
+"""
 import asyncio
 import signal
 
-from core_modules.artregistry import ArtRegistry
-from core_modules.autotrader import AutoTrader
-from core_modules.masternode_ticketing import ArtRegistrationServer
-from core_modules.settings import Settings
+from core_modules.masternode_ticketing import RPC_HANDLER_LIST
 from pynode.rpc_server import RPCServer
 from core_modules.logger import get_logger
 
@@ -29,13 +29,7 @@ class MasterNodeDaemon:
 
         self.rpcserver = RPCServer()
 
-        # legacy entities. Review and delete if not required
-        self.__artregistry = ArtRegistry()
-        self.__autotrader = AutoTrader(self.__artregistry)
-        self.__artregistrationserver = ArtRegistrationServer()
-        # end of legacy entities
-
-        for rpc_handler in self.__artregistrationserver.rpc_handler_list:
+        for rpc_handler in RPC_HANDLER_LIST:
             self.rpcserver.add_callback(*rpc_handler)
         self.__logger.debug("Art Registration callback handlers set")
 

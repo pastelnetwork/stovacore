@@ -1,3 +1,7 @@
+"""
+Client for cNode http API implementation.
+"""
+
 import base64
 import json
 

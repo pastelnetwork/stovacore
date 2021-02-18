@@ -1,3 +1,7 @@
+"""
+This file contains some RPC method handlers' implementaetion (pynode to pynode endpoints).
+"""
+
 import peewee
 
 from core_modules.blackbox_modules import luby

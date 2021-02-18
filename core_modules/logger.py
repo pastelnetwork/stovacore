@@ -1,3 +1,6 @@
+"""
+Logger management logic (different loggers depending on config, run type - wallet or pynode) on top of python logging module.
+"""
 import logging
 import logging.handlers
 import os

@@ -1,3 +1,6 @@
+"""
+Message serialization and signing logic based on MSGPack
+"""
 from typing import Optional
 
 import nacl.utils
@@ -7,9 +10,8 @@ import msgpack
 from decimal import Decimal
 from copy import copy
 
-from core_modules.blackbox_modules.helpers import sleep_rand
-from core_modules.helpers import get_pynode_digest_bytes, get_pynode_digest_bytes_base64
-from core_modules.helpers_type import ensure_type, ensure_type_of_field
+from core_modules.helpers import get_pynode_digest_bytes, get_pynode_digest_bytes_base64, ensure_type, \
+    ensure_type_of_field
 from core_modules.helpers import require_true
 from core_modules.settings import Settings
 from cnode_connection import get_blockchain_connection

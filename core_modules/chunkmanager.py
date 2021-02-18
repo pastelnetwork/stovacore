@@ -1,4 +1,7 @@
-import os
+"""
+Storage management (filesystem paths, more or less high level methods).
+"""
+
 from core_modules.helpers import get_pynode_digest_int
 from core_modules.chunk_storage import ChunkStorage
 from core_modules.logger import get_logger

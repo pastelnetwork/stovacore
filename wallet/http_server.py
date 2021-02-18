@@ -1,3 +1,8 @@
+"""
+Wallet local http python layer API.
+Based on AIOhttp server.
+"""
+
 import os
 import sys
 import logging

@@ -1,3 +1,6 @@
+"""
+Wallet python API entrypoint.
+"""
 import asyncio
 import os
 import signal

@@ -1,6 +1,5 @@
 import time
 import random
-import hashlib
 
 
 class Timer:

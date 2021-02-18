@@ -1,3 +1,8 @@
+"""
+Pynode ticket models (actually, only Registration ticket).
+This is overcomplicated because of legacy - initially it was designed to have several ticket types for Pynode, but finally pynode is responsible only for registration ticket validation.
+"""
+
 import base64
 import io
 import json
@@ -7,18 +12,30 @@ import msgpack
 from PIL import Image
 
 from cnode_connection import get_blockchain_connection
-from core_modules.chainwrapper import get_block_distance
 from core_modules.helpers import get_pynode_digest_bytes, require_true
 from core_modules.logger import get_logger
 from core_modules.model_validators import FieldValidator, StringField, IntegerField, FingerprintField, SHA3512Field, \
-    LubyChunkHashField, LubyChunkField, ImageField, ThumbnailField, TXIDField, UUIDField, SignatureField, \
-    PastelIDField, LubySeedField, BlockChainAddressField, UnixTimeField
+    LubyChunkHashField, LubyChunkField, ImageField, ThumbnailField, TXIDField, SignatureField, \
+    PastelIDField, LubySeedField
 
 from core_modules.settings import Settings
-
+from core_modules.helpers import bytes_to_hex
 from core_modules.blackbox_modules import luby
 
 ticket_logger = get_logger('Tickets')
+
+
+def get_block_distance(atxid, btxid):
+    if type(atxid) == bytes:
+        atxid = bytes_to_hex(atxid)
+    if type(btxid) == bytes:
+        btxid = bytes_to_hex(btxid)
+
+    block_a = get_blockchain_connection().getblock(atxid)
+    block_b = get_blockchain_connection().getblock(btxid)
+    height_a = int(block_a["height"])
+    height_b = int(block_b["height"])
+    return abs(height_a - height_b)
 
 
 # ===== VALIDATORS ===== #

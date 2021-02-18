@@ -1,3 +1,6 @@
+"""
+Utils for image duplication detection.
+"""
 import random
 import functools
 import concurrent.futures
