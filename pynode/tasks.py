@@ -1,13 +1,14 @@
+"""
+Distributes storage (chunk storage) tasks logic implementation.
+"""
+
 import asyncio
-import base64
-import json
-import random
 from aiohttp import ClientConnectorError, ServerTimeoutError
 
 from bitcoinrpc.authproxy import JSONRPCException
 from peewee import DoesNotExist, IntegrityError
 
-from core_modules.database import Masternode, Chunk, ChunkMnDistance, Regticket, ChunkMnRanked, MASTERNODE_DB, \
+from core_modules.database import Masternode, Chunk, ChunkMnDistance, ChunkMnRanked, MASTERNODE_DB, \
     ActivationTicket
 from core_modules.logger import get_logger
 from core_modules.chunkmanager import get_chunkmanager

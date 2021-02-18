@@ -1,3 +1,6 @@
+"""
+Wallet python layer periodic tasks.
+"""
 from cnode_connection import get_blockchain_connection
 from wallet.database import Masternode
 

@@ -1,4 +1,7 @@
-import json
+"""
+pyNode database models implementation.
+SQLite, using Peewee ORM.
+"""
 
 from peewee import (Model, SqliteDatabase, BlobField, DateTimeField, DecimalField, BooleanField, IntegerField,
                     CharField,

@@ -1,3 +1,6 @@
+"""
+Pynode settings, config parsing.
+"""
 import configparser
 
 import math

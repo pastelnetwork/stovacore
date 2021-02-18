@@ -6,11 +6,9 @@ import uuid
 from bitcoinrpc.authproxy import JSONRPCException
 
 from cnode_connection import get_blockchain_connection
-from core_modules.artregistry import ArtRegistry
 from core_modules.rpc_client import RPCException, RPCClient
 from core_modules.logger import get_logger
-from core_modules.ticket_models import RegistrationTicket, Signature
-from pynode.tasks import TXID_LENGTH
+from core_modules.ticket_models import RegistrationTicket
 from utils.mn_ordering import get_masternode_ordering
 from wallet.art_registration_client import ArtRegistrationClient
 from wallet.client_node_manager import ClientNodeManager
@@ -40,8 +38,6 @@ class PastelClient:
         self.pastelid = pastelid
         self.passphrase = passphrase
 
-        self.__artregistry = ArtRegistry()
-        self.__nodemanager = ClientNodeManager()
         self.__active_tasks = {}
 
     def __defer_execution(self, future):

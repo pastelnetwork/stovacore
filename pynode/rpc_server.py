@@ -1,3 +1,6 @@
+"""
+RPC server implementation based on AIOhttp server part.
+"""
 import os
 
 import ssl

@@ -1,3 +1,9 @@
+"""
+Low leve storage operation implementation, like:
+ - Get chunk from filesystem
+ - Store chunk to filesystem
+ - ...etc
+"""
 import os
 
 from core_modules.helpers import get_pynode_digest_int

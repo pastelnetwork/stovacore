@@ -1,3 +1,6 @@
+"""
+Connection client for pasteld http API.
+"""
 import os
 import time
 import bitcoinrpc

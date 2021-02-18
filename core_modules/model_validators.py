@@ -1,3 +1,7 @@
+"""
+Low-level fields implementation for ticket models.
+"""
+
 import io
 
 from PIL import Image

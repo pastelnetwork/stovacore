@@ -1,3 +1,6 @@
+"""
+Image verification - dupe detection
+"""
 import multiprocessing
 import pandas as pd
 

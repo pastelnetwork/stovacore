@@ -1,5 +1,7 @@
-# console util for converting ANI private key to PSL private key (has nothing in common with ID!)
-# it's built to executable with pyInstaller and called from wallet main process when user tries to import ANI key
+"""
+console util for converting ANI private key to PSL private key (has nothing in common with ID!)
+it's built to executable with pyInstaller and called from wallet main process when user tries to import ANI key
+"""
 import sys
 
 import base58

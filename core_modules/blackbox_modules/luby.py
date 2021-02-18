@@ -1,3 +1,6 @@
+"""
+Image chunking algorithms (generate chunks, reconstruct image).
+"""
 import hashlib
 import struct
 import random

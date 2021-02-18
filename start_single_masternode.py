@@ -1,3 +1,6 @@
+"""
+PyNode entrypoint
+"""
 from peewee import logger as peewee_logger
 from bitcoinrpc.authproxy import log as bitcoinrpc_logger
 

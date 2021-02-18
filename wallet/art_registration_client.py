@@ -1,11 +1,8 @@
-import uuid
 import asyncio
 from datetime import datetime
 
 from cnode_connection import get_blockchain_connection
 from core_modules.ticket_models import RegistrationTicket, Signature, ImageData
-from core_modules.settings import Settings
-from core_modules.helpers import require_true
 from core_modules.logger import get_logger
 from utils.mn_ordering import get_masternode_ordering
 from wallet.database import RegticketDB

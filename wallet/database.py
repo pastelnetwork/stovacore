@@ -1,3 +1,7 @@
+"""
+Wallet python layer local database structure.
+SQLite + Peewee ORM.
+"""
 import os
 
 from peewee import Model, SqliteDatabase, DateTimeField, FloatField, IntegerField, BlobField, CharField, BooleanField
