@@ -1,5 +1,6 @@
-import asyncio
 import json
+
+import asyncio
 import os
 import uuid
 
@@ -11,7 +12,6 @@ from core_modules.logger import get_logger
 from core_modules.ticket_models import RegistrationTicket
 from utils.mn_ordering import get_masternode_ordering
 from wallet.art_registration_client import ArtRegistrationClient
-from wallet.client_node_manager import ClientNodeManager
 from wallet.database import RegticketDB, Masternode, Artwork
 from wallet.settings import BURN_ADDRESS, get_thumbnail_dir
 
@@ -250,7 +250,6 @@ class PastelClient:
                     'forSale': True,
                     'price': resp_json['ticket']['asked_price']
                 }
-
             result.append({
                 'artistPastelId': artwork.artist_pastelid,
                 'name': artwork.artwork_title,
