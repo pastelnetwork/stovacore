@@ -33,6 +33,14 @@ class RegticketDB(Model):
         database = db
         table_name = 'regticket'
 
+class SellticketDB(Model):
+    pastelid = CharField()
+    price = IntegerField()
+    act_ticket_txid = CharField()
+
+    class Meta:
+        database = db
+        table_name = 'sellticket'
 
 class Masternode(Model):
     ext_address = CharField(unique=True)  # ip:port
