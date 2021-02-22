@@ -12,7 +12,7 @@ from core_modules.logger import get_logger
 from core_modules.ticket_models import RegistrationTicket
 from utils.mn_ordering import get_masternode_ordering
 from wallet.art_registration_client import ArtRegistrationClient
-from wallet.database import RegticketDB, Masternode, Artwork
+from wallet.database import RegticketDB, Masternode, Artwork, SellticketDB
 from wallet.settings import BURN_ADDRESS, get_thumbnail_dir
 
 
@@ -236,8 +236,16 @@ class PastelClient:
                 'price': -1
             }
             response = get_blockchain_connection().find_ticket('sell', artwork.act_ticket_txid)
+            sell_ticket = SellticketDB.get_or_none(SellticketDB.act_ticket_txid == artwork.act_ticket_txid)
             if response == 'Key is not found':
-                pass
+                if sell_ticket == None:
+                    pass
+                else:
+                    sale_data = {
+                        'forSale': True,
+                        'price': sell_ticket.price
+                    }
+
             elif type(response) == list:
                 resp_json = response[0]
                 sale_data = {
@@ -271,4 +279,7 @@ class PastelClient:
         return result
 
     async def register_sell_ticket(self, txid, price):
-        return get_blockchain_connection().register_sell_ticket(txid, price)
+        act_txid = txid
+        result = get_blockchain_connection().register_sell_ticket(act_txid, price)
+        SellticketDB.create(pastelid=self.pastelid, price=price, act_ticket_txid=act_txid)
+        return result
