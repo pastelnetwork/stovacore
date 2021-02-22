@@ -12,10 +12,8 @@ from core_modules.logger import get_logger
 from core_modules.ticket_models import RegistrationTicket
 from utils.mn_ordering import get_masternode_ordering
 from wallet.art_registration_client import ArtRegistrationClient
-from wallet.database import RegticketDB, Masternode, Artwork
+from wallet.database import RegticketDB, Masternode, Artwork, SellticketDB
 from wallet.settings import BURN_ADDRESS, get_thumbnail_dir
-
-from StoVaCore.wallet.database import SellticketDB
 
 
 def masternodes_by_distance_from_image(image_hash):
