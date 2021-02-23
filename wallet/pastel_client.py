@@ -252,7 +252,7 @@ class PastelClient:
                 sale_data = {
                     'forSale': True,
                     'price': resp_json['ticket']['asked_price'],
-                    'sell_txid': response['txid']
+                    'sell_txid': resp_json['txid']
                 }
             elif type(response) == str:
                 resp_json = json.loads(response)
