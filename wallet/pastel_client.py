@@ -286,3 +286,6 @@ class PastelClient:
         result = get_blockchain_connection().register_sell_ticket(act_txid, price)
         SellticketDB.create(pastelid=self.pastelid, price=price, act_ticket_txid=act_txid)
         return result
+
+    async def register_buy_ticket(self, sell_txid, price):
+        return get_blockchain_connection().register_buy_ticket(sell_txid, price)

@@ -131,6 +131,17 @@ async def create_sell_ticket(request):
     # returning same image hash as we received to associate this response with a given artwork for node process.
     return web.json_response(response)
 
+@routes.post('/create_buy_ticket')
+async def create_buy_ticket(request):
+    data = await request.json()
+    try:
+        response = await get_pastel_client().register_buy_ticket(**data)
+    except JSONRPCException as ex:
+        return web.json_response({'error': str(ex)}, status=400)
+
+    # returning same image hash as we received to associate this response with a given artwork for node process.
+    return web.json_response(response)
+
 
 @routes.get('/artworks_data')
 async def artworks_data(request):
