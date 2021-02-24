@@ -233,30 +233,33 @@ class PastelClient:
         for artwork in Artwork.select().where(Artwork.blocknum > 0):
             sale_data = {
                 'forSale': False,
-                'price': -1
+                'price': -1,
+                'sell_txid': None
             }
             response = get_blockchain_connection().find_ticket('sell', artwork.act_ticket_txid)
-            sell_ticket = SellticketDB.get_or_none(SellticketDB.act_ticket_txid == artwork.act_ticket_txid)
+
             if response == 'Key is not found':
-                if sell_ticket == None:
-                    pass
-                else:
+                sell_ticket = SellticketDB.get_or_none(SellticketDB.act_ticket_txid == artwork.act_ticket_txid)
+                if sell_ticket:
                     sale_data = {
                         'forSale': True,
-                        'price': sell_ticket.price
+                        'price': sell_ticket.price,
+                        'sell_txid': None
                     }
 
             elif type(response) == list:
                 resp_json = response[0]
                 sale_data = {
                     'forSale': True,
-                    'price': resp_json['ticket']['asked_price']
+                    'price': resp_json['ticket']['asked_price'],
+                    'sell_txid': resp_json['txid']
                 }
             elif type(response) == str:
                 resp_json = json.loads(response)
                 sale_data = {
                     'forSale': True,
-                    'price': resp_json['ticket']['asked_price']
+                    'price': resp_json['ticket']['asked_price'],
+                    'sell_txid': response['txid']
                 }
             result.append({
                 'artistPastelId': artwork.artist_pastelid,
