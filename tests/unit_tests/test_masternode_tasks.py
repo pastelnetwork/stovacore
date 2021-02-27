@@ -174,13 +174,12 @@ class ProcessNewActTicketsTaskTestCase(unittest.TestCase):
 
     @patch('pynode.tasks.get_blockchain_connection', autospec=True)
     def test_process_twice(self, get_blockchain_connection):
-        get_blockchain_connection().list_tickets.return_value = [
-            '1c6d9708f47489062a0da7e5548ef3b89d67fbd8ba7702ae1e3acc0403376d47']
+        get_blockchain_connection().list_tickets.return_value = TICKETS_LIST_ACT_RESPONSE
         get_blockchain_connection().get_ticket.side_effect = get_ticket_side_effect
         get_and_proccess_new_activation_tickets()
         get_and_proccess_new_activation_tickets()
         self.assertEqual(ActivationTicket.select().count(), 1)
-        self.assertEqual(Chunk.select().count(), 3)
+        self.assertEqual(Chunk.select().count(), 9)
 
     @patch('pynode.tasks.get_blockchain_connection', autospec=True)
     def test_no_act_ticket(self, get_blockchain_connection):
@@ -197,7 +196,7 @@ class ProcessNewActTicketsTaskTestCase(unittest.TestCase):
         self.assertEqual(ActivationTicket.select().count(), 0)
         get_and_proccess_new_activation_tickets()
         self.assertEqual(ActivationTicket.select().count(), 1)
-        self.assertEqual(Chunk.select().count(), 3)
+        self.assertEqual(Chunk.select().count(), 9)
 
 
 class GetMissingChunkTestCase(unittest.TestCase):

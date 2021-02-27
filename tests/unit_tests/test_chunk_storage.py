@@ -7,6 +7,7 @@ import shutil
 import tempfile
 import warnings
 
+from cnode_connection import reset_blockchain_connection
 from core_modules.chunk_storage import ChunkStorage
 from core_modules.chunkmanager import get_chunkmanager
 from core_modules.database import MASTERNODE_DB, DB_MODELS, Chunk
@@ -16,9 +17,21 @@ from core_modules.masternode_ticketing import masternode_place_image_data_in_chu
 from core_modules.ticket_models import RegistrationTicket, ImageData
 from core_modules.settings import Settings
 from pynode.tasks import move_confirmed_chunks_to_persistant_storage
-from tests.system_tests.test_system import switch_pastelid, CLIENT_PASTELID, PASSPHRASE
 from tests.test_utils import png_1x1_data
 from wallet.art_registration_client import ArtRegistrationClient
+
+
+CLIENT_PASTELID = 'jXYvNRFnX1c1fsuD3JvwdfSvBmhaKrNrFVeaQmmtJJ45WZ9vxbFDF4NQUgibMF3gQvtdjuQjy9YnDSXveZ1aXa'
+PASSPHRASE = 'taksa'
+
+
+def switch_pastelid(pastelid: str, passphrase: str):
+    """
+    To emulate situation when we're now on another node and using another pastelID.
+    """
+    reset_blockchain_connection()
+    os.environ['PASTEL_ID'] = pastelid
+    os.environ['PASSPHRASE'] = passphrase
 
 
 def get_regticket():
@@ -164,11 +177,15 @@ class RegticketImageToChunkStorageTestCase(unittest.TestCase):
         MASTERNODE_DB.connect(reuse_if_open=True)
         MASTERNODE_DB.create_tables(DB_MODELS)
 
+    def tearDown(self) -> None:
+        shutil.rmtree('tmpstorage')
+
     @patch('core_modules.chunkmanager.ChunkStorage', autospec=True)
     def test_place_in_chunkstorage(self, chunkstorage):
         image_data = png_1x1_data
         regticket = get_regticket()
         masternode_place_image_data_in_chunkstorage(regticket, image_data)
+        self.assertEqual(len(os.listdir('tmpstorage')), 2)
         self.assertEqual(Chunk.select().count(), 2)
 
 
