@@ -6,7 +6,20 @@ from core_modules.database import MASTERNODE_DB, DB_MODELS, Masternode, Chunk, C
 from pynode.tasks import index_new_chunks, recalculate_mn_chunk_ranking_table, get_missing_chunk_ids, \
     refresh_masternode_list, update_masternode_list, move_confirmed_chunks_to_persistant_storage, \
     get_and_proccess_new_activation_tickets
-from tests.ticket_data.actticket import ACTTICKET_DATA, REGTICKET_DATA
+from tests.ticket_data.actticket import REGTICKET_DATA
+
+TICKETS_LIST_ACT_RESPONSE = [{
+    "height": 1772,
+    "ticket": {
+        "artist_height": 1760,
+        "pastelID": "jXZaZFa2sXDVNmtiAc3nriVenDFzZ9Te3snXsRGmjKwtBPkoGjQAJmVmh1PQi5utnjnjzmNhn4iBG281jNnkBS",
+        "reg_txid": "f13528ae2740288153da5a1dae1aa28a0b97cf62d4763e15982f47df2375d8ea",
+        "signature": "3f508d82e9a91f0519ab3fc5945e021c52075600ba13c7d75aad683c354b6749e27255a9e76662e3993e6559c992640445becf63af12f0eb00b8eaba636363915793f86c87c0e84b724a26756ffe21c90919180861b9efb09257e99fa9ed6bcf79968737eac8886277fd674d807929670200",
+        "storage_fee": 100,
+        "type": "art-act"
+    },
+    "txid": "a2644ec09e69bd5af203b36789afe2f31a709aa5fa491a3fff031988c771b411"
+}]
 
 
 class TestXORDistanceTask(unittest.TestCase):
@@ -135,11 +148,12 @@ class TmpStorageTaskTestCase(unittest.TestCase):
 
 
 def get_ticket_side_effect(txid):
-    return json.dumps(REGTICKET_DATA)
-    # if txid == '1c6d9708f47489062a0da7e5548ef3b89d67fbd8ba7702ae1e3acc0403376d47':
-    #     return ACTTICKET_DATA
-    # if txid == '77996c90fd99ee60788333da62f7586e2f7b1c61d399484c2379927cba8f1356':
-    #     return REGTICKET_DATA
+    if txid == 'a2644ec09e69bd5af203b36789afe2f31a709aa5fa491a3fff031988c771b411':
+        return TICKETS_LIST_ACT_RESPONSE[0]
+    elif txid == 'f13528ae2740288153da5a1dae1aa28a0b97cf62d4763e15982f47df2375d8ea':
+        return REGTICKET_DATA
+    else:
+        raise ValueError('No ticket with txid {}'.format(txid))
 
 
 class ProcessNewActTicketsTaskTestCase(unittest.TestCase):
@@ -150,14 +164,13 @@ class ProcessNewActTicketsTaskTestCase(unittest.TestCase):
 
     @patch('pynode.tasks.get_blockchain_connection', autospec=True)
     def test_task(self, get_blockchain_connection):
-        get_blockchain_connection().list_tickets.return_value = [
-            '1c6d9708f47489062a0da7e5548ef3b89d67fbd8ba7702ae1e3acc0403376d47']
+        get_blockchain_connection().list_tickets.return_value = TICKETS_LIST_ACT_RESPONSE
         get_blockchain_connection().get_ticket.side_effect = get_ticket_side_effect
         self.assertEqual(Chunk.select().count(), 0)
         self.assertEqual(ActivationTicket.select().count(), 0)
         get_and_proccess_new_activation_tickets()
         self.assertEqual(ActivationTicket.select().count(), 1)
-        self.assertEqual(Chunk.select().count(), 3)
+        self.assertEqual(Chunk.select().count(), 9)
 
     @patch('pynode.tasks.get_blockchain_connection', autospec=True)
     def test_process_twice(self, get_blockchain_connection):
@@ -178,10 +191,7 @@ class ProcessNewActTicketsTaskTestCase(unittest.TestCase):
 
     @patch('pynode.tasks.get_blockchain_connection', autospec=True)
     def test_list_tickets_act_output_has_pastel_ids(self, get_blockchain_connection):
-        get_blockchain_connection().list_tickets.return_value = [
-            '1c6d9708f47489062a0da7e5548ef3b89d67fbd8ba7702ae1e3acc0403376d47',
-            'jXaQj8FA9FGP6KzKNKz9bPEX7owTWqF7CeQ2Vy1fT21pEMUeveqBf6DXhRv3o6mBN3AX5bBcTuvafDcepkZ3wp'
-        ]
+        get_blockchain_connection().list_tickets.return_value = TICKETS_LIST_ACT_RESPONSE
         get_blockchain_connection().get_ticket.side_effect = get_ticket_side_effect
         self.assertEqual(Chunk.select().count(), 0)
         self.assertEqual(ActivationTicket.select().count(), 0)
