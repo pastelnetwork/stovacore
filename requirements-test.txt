@@ -5,7 +5,7 @@ PyNaCl==1.2.1
 msgpack==0.5.6
 pyzmq==17.1.2
 zstandard==0.9.1
-pandas==0.23.0
+#pandas==0.23.0
 tensorflow==1.13.1
 scipy==1.1.0
 #numpy==1.14.3
