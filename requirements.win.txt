@@ -14,7 +14,7 @@ Keras-Applications
 Keras-Preprocessing
 requests==2.22.0
 base58==2.0.0
-tensorflow==1.13.1
+tensorflow==2.4.0
 colorlog
 
 # dev
