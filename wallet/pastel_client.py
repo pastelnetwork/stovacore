@@ -289,3 +289,6 @@ class PastelClient:
 
     async def register_buy_ticket(self, sell_txid, price):
         return get_blockchain_connection().register_buy_ticket(sell_txid, price)
+
+    async def register_trade_ticket(self, sell_txid, buy_txid):
+        return get_blockchain_connection().register_trade_ticket(sell_txid, buy_txid)
