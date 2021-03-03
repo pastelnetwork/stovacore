@@ -4,7 +4,7 @@ block_cipher = None
 
 
 a = Analysis(['wallet_api.py'],
-             pathex=['/Users/alex/PycharmProjects/spa/src/StoVaCore'],
+             pathex=['C:\\Users\\adobr\\PastelWallet\\src\\StoVaCore'],
              binaries=[],
              datas=[('misc', 'misc')],
              hiddenimports=[],
