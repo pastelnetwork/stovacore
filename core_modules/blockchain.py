@@ -242,8 +242,8 @@ class BlockChain:
         parameters = [txid, price, self.pastelid, self.passphrase]
         return self.__call_jsonrpc("tickets", "register", "sell", *parameters)
 
-    def register_buy_ticket(self):
-        parameters = []
+    def register_buy_ticket(self, sell_txid, price):
+        parameters = [sell_txid, price, self.pastelid, self.passphrase]
         return self.__call_jsonrpc("tickets", "register", "buy", *parameters)
 
     def register_trade_ticket(self):

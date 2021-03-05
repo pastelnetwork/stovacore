@@ -100,4 +100,4 @@ class Artwork(Model):
         return get_pynode_digest_hex(self.imagedata_hash)
 
 
-WALLET_DB_MODELS = [RegticketDB, Masternode, Artwork]
+WALLET_DB_MODELS = [RegticketDB, Masternode, Artwork, SellticketDB]

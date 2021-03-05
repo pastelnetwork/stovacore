@@ -50,7 +50,7 @@ class __Settings:
                 self.LOG_DESTINATION = LOG_DESTINATION_STDOUT
             self.LOG_LEVEL = section['log_level']
         else:
-            self.IS_TESTNET = True
+            self.IS_TESTNET = False
             self.LOG_LEVEL = 'debug'
 
         # hardcoded settings

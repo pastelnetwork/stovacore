@@ -1,0 +1,120 @@
+Host alexmn1
+    HostName 51.15.198.10
+    User root
+    StrictHostKeyChecking no
+    IdentityFile /Users/mac/.ssh/pastel_testnet_rsa
+
+Host alexmn2
+    HostName 51.158.75.245
+    User root
+    StrictHostKeyChecking no
+    IdentityFile /Users/mac/.ssh/pastel_testnet_rsa
+
+Host alexmn3
+    HostName 163.172.141.171
+    User root
+    StrictHostKeyChecking no
+    IdentityFile /Users/mac/.ssh/pastel_testnet_rsa
+
+Host alexmn4
+    HostName 163.172.177.214
+    User root
+    StrictHostKeyChecking no
+    IdentityFile /Users/mac/.ssh/pastel_testnet_rsa
+
+Host alexmn5
+    HostName 163.172.165.125
+    User root
+    StrictHostKeyChecking no
+    IdentityFile /Users/mac/.ssh/pastel_testnet_rsa
+
+Host alexmn6
+    HostName 212.47.238.191
+    User root
+    StrictHostKeyChecking no
+    IdentityFile /Users/mac/.ssh/pastel_testnet_rsa
+
+Host alexmn7
+    HostName 51.15.201.181
+    User root
+    StrictHostKeyChecking no
+    IdentityFile /Users/mac/.ssh/pastel_testnet_rsa
+
+Host alexmn8
+    HostName 51.15.216.229
+    User root
+    StrictHostKeyChecking no
+    IdentityFile /Users/mac/.ssh/pastel_testnet_rsa
+
+Host alexmn9
+    HostName 51.158.114.227
+    User root
+    StrictHostKeyChecking no
+    IdentityFile /Users/mac/.ssh/pastel_testnet_rsa
+
+Host alexmn10
+    HostName 212.47.252.173
+    User root
+    StrictHostKeyChecking no
+    IdentityFile /Users/mac/.ssh/pastel_testnet_rsa
+
+Host _alexmn1
+    HostName 51.15.198.10
+    User animecoinuser
+    StrictHostKeyChecking no
+    IdentityFile /Users/mac/.ssh/pastel_testnet_rsa
+
+Host _alexmn2
+    HostName 51.158.75.245
+    User animecoinuser
+    StrictHostKeyChecking no
+    IdentityFile /Users/mac/.ssh/pastel_testnet_rsa
+
+Host _alexmn3
+    HostName 163.172.141.171
+    User animecoinuser
+    StrictHostKeyChecking no
+    IdentityFile /Users/mac/.ssh/pastel_testnet_rsa
+
+Host _alexmn4
+    HostName 163.172.177.214
+    User animecoinuser
+    StrictHostKeyChecking no
+    IdentityFile /Users/mac/.ssh/pastel_testnet_rsa
+
+Host _alexmn5
+    HostName 163.172.165.125
+    User animecoinuser
+    StrictHostKeyChecking no
+    IdentityFile /Users/mac/.ssh/pastel_testnet_rsa
+
+Host _alexmn6
+    HostName 212.47.238.191
+    User animecoinuser
+    StrictHostKeyChecking no
+    IdentityFile /Users/mac/.ssh/pastel_testnet_rsa
+
+Host _alexmn7
+    HostName 51.15.201.181
+    User animecoinuser
+    StrictHostKeyChecking no
+    IdentityFile /Users/mac/.ssh/pastel_testnet_rsa
+
+Host _alexmn8
+    HostName 51.15.216.229
+    User animecoinuser
+    StrictHostKeyChecking no
+    IdentityFile /Users/mac/.ssh/pastel_testnet_rsa
+
+Host _alexmn9
+    HostName 51.158.114.227
+    User animecoinuser
+    StrictHostKeyChecking no
+    IdentityFile /Users/mac/.ssh/pastel_testnet_rsa
+
+Host _alexmn10
+    HostName 212.47.252.173
+    User animecoinuser
+    StrictHostKeyChecking no
+    IdentityFile /Users/mac/.ssh/pastel_testnet_rsa
+
